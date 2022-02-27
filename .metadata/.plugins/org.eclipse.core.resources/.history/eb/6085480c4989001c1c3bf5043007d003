@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+ 
+      var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************        
+          
+          data: {  pgmid : "[[${param.pgm_id}]]",
+                   columnlayout : [],
+                   columnlayoutOpinet : [],
+                   newgriditem : {USE_YN:"1"},
+                   gridView : "",
+                   // https://www.opinet.co.kr/api/avgAllPrice.do?out=json&code=F839200825
+          },//data
+          created () { //초기화================================================================
+                //그리드 초기화
+
+                this.columnlayout =   
+                   [   
+                       {dataField : "MILEAGE_RATE_CD",   headerText : "유류비적용율코드",  width: 120, editable : true, style : "aui_col_center", maxlength : 10, filter : { showIcon : true}},
+                       {dataField : "MILEAGE_RATE_NM",   headerText : "유류비적용율명",  width: 150, style : "aui_col_left", maxlength : 20, filter : { showIcon : true}},
+                       {dataField : "MILEAGE_RATE",   headerText : "적용율", width: 150, style : "aui_col_left", maxlength : 20, filter : { showIcon : true}},
+                       {dataField : "FR_DT",  headerText : "적용시작일", width: 160, dateInputFormat : "yyyymmdd", dataType : "date", formatString : "yyyy-mm-dd", editRenderer : auiCalendarRenderer() , filter : { showIcon : true}}, 
+                       {dataField : "USE_YN", headerText : "사용여부",  width : 80, editable : true, renderer : auiCheckboxRenderer() , filter : { showIcon : true}},
+                 ] ;//columnlayout
+                 
+                 this.columnlayoutOpinet =   
+                     [   
+                         {dataField : "PRODCD",   headerText : "유종코드",  width: 120, editable : true, style : "aui_col_center", maxlength : 210, filter : { showIcon : true}},
+                         {dataField : "PRODNM",   headerText : "유종",  width: 120, editable : true, style : "aui_col_center", maxlength : 210, filter : { showIcon : true}},
+                         {dataField : "PRICE",   headerText : "가격(원)",  width: 120, editable : true, style : "aui_col_center", maxlength : 210, filter : { showIcon : true}},
+                         {dataField : "DIFF",   headerText : "등락(전일대비)",  width: 120, editable : true, style : "aui_col_center", maxlength : 210, filter : { showIcon : true}},
+                         {dataField : "TRADE_DT",  headerText : "기준일", width: 160, dateInputFormat : "yyyymmdd", dataType : "date", formatString : "yyyy-mm-dd", editRenderer : auiCalendarRenderer() , filter : { showIcon : true}}, 
+                   ] ;//columnlayout              
+//                    {"RESULT": {"OIL":[ {"TRADE_DT":"20200827","PRODCD":"B034","PRODNM":"고급휘발유","PRICE":"1635.98", "DIFF":"-0.07" }, {"TRADE_DT":"20200827","PRODCD":"B027","PRODNM":"휘발유","PRICE":"1361.06", "DIFF":"-0.03" }, {"TRADE_DT":"20200827","PRODCD":"D047","PRODNM":"자동차용경유","PRICE":"1163.41", "DIFF":"-0.12" }, {"TRADE_DT":"20200827","PRODCD":"C004","PRODNM":"실내등유","PRICE":"816.94", "DIFF":"-0.39" }, {"TRADE_DT":"20200827","PRODCD":"K015","PRODNM":"자동차용부탄","PRICE":"760.36", "DIFF":"-0.09" } ]} }
+          }, // created       
+          methods : {  // ======================================================================================
+        	  
+        	  searchOpinet : function() {
+                  var param = {
+                          svcId:"searchOpinet",
+                          strUrl:"https://www.opinet.co.kr/api/avgAllPrice.do?out=json&code=F839200825",   //전송 url    
+                          inDs :  "" ,  
+                          param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+                          pCall : this.tranCallBack, 
+                          pLoad : true          
+                      };
+                      //트랜젝션 실행
+                      ajax_tmap(param);    		  
+        	  },
+              searchButtonOnClick : function() {
+              
+                            var param = {
+                                svcId:"search",
+                                strUrl:"/ec/ex/config/gasprice/searchGasPrice",   //전송 url    
+                                inDs :  "" ,  
+                                param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+                                pCall : this.tranCallBack, 
+                                pLoad : true          
+                            };
+                            //트랜젝션 실행
+                            ajaxReadJsonData(param);
+                      }, // end of searchButtonOnClick
+              
+              saveButtonOnClick : function() {
+              
+                            // 그리드 필수항목 체크
+                            if (auiValidateGridData(this.gridView, ["MILEAGE_RATE_CD", "MILEAGE_RATE_NM","MILEAGE_RATE"] ) == false){
+                                 return;
+                            }
+                            
+                            // 변경된 데이터가 있는지 없는지 체크
+                            var    ds_master = getCRUDdata(this.gridView);
+                            
+                            if (ds_master['data'].length == 0 ) {
+                                customAlert('','','변경된 데이터가 없습니다.');
+                                return;
+                            }
+                            // Confirmation dialog, 시스템 설정에 따라 보이고 안보이고
+                            bootboxSaveConfirm(this);             
+              },  //saveButtonOnClick
+              
+              saveButtonOnClickCallback(){
+                
+                   saveColumnLayout(this.gridView);
+                
+                // 저장할 데이터 만들기
+                var    ds_master = {};
+                ds_master['ds_master'] = getCRUDdata(this.gridView);
+                
+                if(!ds_master){ return; }
+                
+                var param = {
+                    svcId:"save", 
+                    strUrl: "/ec/ex/config/gasprice/saveGasPrice",   //전송 url 
+                    inDs : {
+                        ds_master:ds_master
+                    },
+                    param : ds_master,        // 전송할 파라미터
+                    pCall : this.tranCallBack, 
+                    pLoad : true          // 로딩이미지 노출 여부  
+                };
+
+                //트랜젝션 실행
+                ajaxReadJsonData(param); 
+            }, //   saveButtonOnClickCallback         
+              
+                tranCallBack : function(svcId, data, errCd, msgTp, msgCd, msgText) { //******************************
+                      if(svcId=="search"){
+                            if(data["ds_master"]['data'].length >= 0) {
+                                this.$refs.gridmaster.setGridData(data["ds_master"]['data']);
+                            }
+                      }else if(svcId =="searchOpinet"){
+                    	  data = JSON.parse(data);
+                          this.$refs.gridapi.setGridData(data["RESULT"]['OIL']);
+                      }else if(svcId =="save"){
+                            this.searchButtonOnClick(); // 재조회  
+                            saveGritter();
+                      } // end if
+                    },  // tranCallBack
+                    
+          }, // end of methods
+
+          mounted: function() {
+             var ref = this;
+             this.$nextTick(function () {
+                   ref.gridView = ref.$refs.gridmaster.myGridID;
+                   // pk컬럼(신규는 가능, update불가)
+                   auiSetAddedRowEnabledCell(ref.gridView,['MILEAGE_RATE_CD']);
+              });
+             
+//**********************************************************************************************              
+             vueArr.push(this);
+            },
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

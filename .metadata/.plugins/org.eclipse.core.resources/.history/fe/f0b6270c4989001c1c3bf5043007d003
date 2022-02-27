@@ -1,0 +1,139 @@
+<!-- 	-- 프로그램명 : 카드 / 카드업종 -->
+<!-- 	-- 날짜 : 2021.007.07 by 배고현 -->
+<!-- 	-- 수정 :  -->
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+ 
+      var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************        
+          
+          data: {  pgmid : "[[${param.pgm_id}]]",
+                   columnlayout : [],
+                   newgriditem : {EVID_YN: "0", NO_VAT_YN: "0", NO_POSTING_YN: "0",},
+                   gridView : {},
+          },//data
+          created () { //초기화================================================================
+                //그리드 초기화
+               
+                this.columnlayout =   
+                   [   
+                	   {dataField : "BIZ_NO",   headerText : "<label class='label-required m-0'>사업자번호</label>", editable : true , width: 120, editRenderer : { onlyNumeric : true,maxlength : 10}, labelFunction : function( rowIndex, columnIndex, value, headerText, item ) { return biznoformat(nvl(value,''));} , filter : { showIcon : true}},
+                       {dataField : "BIZ_NM",     headerText : "<label class='label-required m-0'>상호</label>",  editable : true ,style : "aui_col_left" ,   editRenderer : {maxlength : 100},  width: 200, filter : { showIcon : true} },
+                       {dataField : "EVID_YN",   headerText : "증빙필수", editable : true , width: 80, renderer : auiCheckboxRenderer() },
+                       {dataField : "NO_VAT_YN",     headerText : "불공제",  editable : true ,  width: 80,  renderer : auiCheckboxRenderer() },
+                       {dataField : "NO_POSTING_YN",   headerText : "전표통제",  width: 80, editable : true , renderer : auiCheckboxRenderer() },
+                       {dataField : "RMK",   headerText : "비고",  width: 150, editable : true , style : "aui_col_left" ,editRenderer : {maxlength : 200} },
+                       {dataField : "REGR_NM",   headerText : "등록자",style : "bg-light", editable : false , width: 100, editRenderer : {maxlength : 14}},
+                       {dataField : "REGR_DH",     headerText : "등록일시",style : "bg-light",  editable : false ,   editRenderer : {maxlength :14},  width: 120, },
+                       {dataField : "MOD_NM",   headerText : "변경자",style : "bg-light", editable : false , width: 100, editRenderer : {maxlength : 20}},
+                       {dataField : "MOD_DH",   headerText : "변경일시",style : "bg-light", editable : false , width: 120, editRenderer : {maxlength : 20}},
+
+                       ] ;//columnlayout
+                  
+          }, // created       
+          methods : {  // ======================================================================================
+              searchButtonOnClick : function() {
+              
+                            var param = {
+                                svcId:"search",
+                                strUrl:"/ec/ex/config/cardbiz/searchCardBiz",   //전송 url    
+                                inDs :  "" ,  
+                                param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+                                pCall : this.tranCallBack, 
+                                pLoad : true          
+                            };
+                            //트랜젝션 실행
+                            ajaxReadJsonData(param);
+                            
+                      }, // end of searchButtonOnClick
+              
+               saveButtonOnClick : function() {
+            	   var    j = getCRUDdata(this.gridView);
+       				if (j.data[0].BIZ_NO.toString().length < 10 ){
+       					customAlert('','','사업자번호를 확인 하세요.');
+                         return;
+       				}
+     	   
+            	   
+                            // 그리드 필수항목 체크
+                             if (auiValidateGridData(this.gridView, ["BIZ_NO", "BIZ_NM"] ) == false){
+                                 return;
+                            } 
+                            
+                            // 변경된 데이터가 있는지 없는지 체크
+                            var    ds_master = getCRUDdata(this.gridView);
+                            
+                            if (ds_master['data'].length == 0 ) {
+                                customAlert('','','변경된 데이터가 없습니다.');
+                                return;
+                            }
+                            // Confirmation dialog, 시스템 설정에 따라 보이고 안보이고
+                            bootboxSaveConfirm(this);             
+              },   //saveButtonOnClick
+              
+              saveButtonOnClickCallback(){
+                
+                   saveColumnLayout(this.gridView);
+                
+                // 저장할 데이터 만들기
+                var    ds_master = {};
+                ds_master['ds_master'] = getCRUDdata(this.gridView);
+                
+                if(!ds_master){ return; }
+                
+                var param = {
+                    svcId:"save", 
+                    strUrl: "/ec/ex/config/cardbiz/saveCardBiz",   //전송 url 
+                    inDs : {
+                        ds_master:ds_master
+                    },
+                    param : ds_master,        // 전송할 파라미터
+                    pCall : this.tranCallBack, 
+                    pLoad : true,          // 로딩이미지 노출 여부  
+                    async : false,
+                };
+
+                //트랜젝션 실행
+                ajaxReadJsonData(param); 
+            }, //   saveButtonOnClickCallback         
+              
+                tranCallBack : function(svcId, data, errCd, msgTp, msgCd, msgText) { //******************************
+                      if(svcId=="search"){
+                            if(data["ds_master"]['data'].length >= 0) {
+                                this.$refs.gridmaster.setGridData(data["ds_master"]['data']);
+                            }
+                      }else if(svcId =="save"){
+                            this.searchButtonOnClick(); // 재조회  
+                            saveGritter();
+                      } // end if
+                    },  // tranCallBack
+                    
+          }, // end of methods
+
+          mounted: function() {
+             var ref = this;
+             this.$nextTick(function () {
+                   ref.gridView = ref.$refs.gridmaster.myGridID;
+                   // pk컬럼(신규는 가능, update불가)
+                   auiSetAddedRowEnabledCell(ref.gridView,['BIZ_NO']);
+              });
+             
+//**********************************************************************************************              
+             vueArr.push(this);
+            },
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

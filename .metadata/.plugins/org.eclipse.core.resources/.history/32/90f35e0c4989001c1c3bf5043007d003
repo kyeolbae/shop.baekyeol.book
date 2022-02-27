@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper namespace="com.ec.eframework.mapper.ex.expense.ExpMyOfficeServiceMapper">
+
+	  <select id="getExpMyOffice" resultType="HashMap">
+		     SELECT /* com.ec.eframework.mapper.ex.expense.ExpMyOfficeServiceMapper.getExpMyOffice 출장비-근무지 조회 2021.11.18 hshwang */
+				USER_ID,
+				COMPANY_CODE,
+				OFFICE_LAT,
+				OFFICE_LONG,
+				OFFICE_ADDR,
+				REGR_DH,
+				REGR_ID,
+				REGR_NM
+			FROM EXPENSE_MY_OFFICE
+			WHERE REGR_ID = #{g_userId}
+			AND COMPANY_CODE = #{g_comCd};
+     </select>
+     
+      <update id="saveExpMyOffice">
+      		<selectKey  resultType="int" keyProperty="CNT" order="BEFORE">
+                    SELECT COUNT(*)
+                    /* com.ec.eframework.mapper.ex.expense.ExpMyOfficeServiceMapper.insertExpMyOffice 출장비-근무지 등록 2021.11.18 hshwang */
+                    FROM EXPENSE_MY_OFFICE
+					WHERE USER_ID = #{g_userId}
+					AND COMPANY_CODE = #{g_comCd};;
+             </selectKey>
+             
+            <if test="CNT == 0">
+	            INSERT INTO EXPENSE_MY_OFFICE (
+	            	USER_ID,
+					COMPANY_CODE,
+					OFFICE_LAT,
+					OFFICE_LONG,
+					OFFICE_ADDR,
+					REGR_DH,
+					REGR_ID,
+					REGR_NM
+	            ) VALUES (
+	            	#{g_userId},
+					#{g_comCd},
+					#{OFFICE_LAT},
+					#{OFFICE_LONG},
+					#{OFFICE_ADDR},
+					REGR_DH(),
+					#{g_userId},
+					#{g_userNm}
+	            )
+            </if>
+            
+            <if test="CNT > 0">
+	            UPDATE EXPENSE_MY_OFFICE 
+            	SET OFFICE_LAT = #{OFFICE_LAT}, 
+				OFFICE_LONG = #{OFFICE_LONG},
+				OFFICE_ADDR = #{OFFICE_ADDR},
+				REGR_DH = REGR_DH()
+            </if>
+      </update>  
+      
+      <select id="getExpBizTrip" resultType="HashMap">
+		     SELECT /* com.ec.eframework.mapper.ex.expense.ExpMyOfficeServiceMapper.getExpBizTrip 출장비-일자별*일당유형조회 2021.11.22 hshwang */
+				ROW_NUMBER() OVER() AS ID,
+				EXPENSE_NO,
+				BIZTRIP_ORDER,
+				COMPANY_CODE,
+				BIZTRIP_DT,
+				BIZTRIP_TP,
+				BIZTRIP_RATE,
+				REGR_DH,
+				REGR_ID,
+				REGR_NM
+			FROM EXPENSE_BIZTRIP
+			WHERE REGR_ID = #{g_userId}
+			AND COMPANY_CODE = #{g_comCd}
+			AND EXPENSE_NO = #{EXPENSE_NO}
+			ORDER BY BIZTRIP_DT;
+     </select>
+      
+      <insert id="insertExpBizTrip">
+            INSERT INTO EXPENSE_BIZTRIP (
+            	EXPENSE_NO,
+				BIZTRIP_ORDER,
+				COMPANY_CODE,
+				BIZTRIP_DT,
+				BIZTRIP_TP,
+				BIZTRIP_RATE,
+				REGR_DH,
+				REGR_ID,
+				REGR_NM
+            ) VALUES (
+            	#{EXPENSE_NO},
+				#{BIZTRIP_ORDER},
+				#{g_comCd},
+				#{BIZTRIP_DT},
+				#{BIZTRIP_TP},
+				#{BIZTRIP_RATE},
+				REGR_DH(),
+				#{g_userId},
+				#{g_userNm}
+            )
+      </insert> 
+      
+      <update id="updateExpBizTrip">
+            UPDATE EXPENSE_BIZTRIP SET
+				BIZTRIP_DT = #{BIZTRIP_DT},
+				BIZTRIP_TP = #{BIZTRIP_TP},
+				BIZTRIP_RATE = #{BIZTRIP_RATE},
+				REGR_DH = REGR_DH()
+			WHERE REGR_ID = #{g_userId}
+			AND COMPANY_CODE = #{g_comCd}
+			AND EXPENSE_NO = #{EXPENSE_NO}
+			AND BIZTRIP_ORDER = #{BIZTRIP_ORDER};
+      </update> 
+      
+      <delete id="deleteExpBizTrip">
+            DELETE FROM EXPENSE_BIZTRIP 
+			WHERE REGR_ID = #{g_userId}
+			AND COMPANY_CODE = #{g_comCd}
+			AND EXPENSE_NO = #{EXPENSE_NO}
+			AND BIZTRIP_ORDER = #{BIZTRIP_ORDER};
+      </delete> 
+
+</mapper>

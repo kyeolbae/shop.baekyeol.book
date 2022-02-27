@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id}, board_tp=${param.board_tp})}">
+<head>
+  <meta charset="utf-8" />
+</head>
+
+<body>
+  <section layout:fragment="content">
+   <form class="d-flex  flex-column" th:id=${param.pgm_id}  >
+   
+  	<div class="">
+		<input class="d-none" :id="pgmid+'mobileFlag'" value="web">
+		</input>
+<!--         searchbar -->
+         <div class=" d-flex justify-content-between row m-20" >
+             <select class="form-control col-xs-4 col-sm-2" name="searchType" >
+                <option value="BOARD_TITLE">제목</option>
+                <option value="BOARD_CONTENTS">내용</option>
+                <option value="USER_NM">작성자</option>
+             </select>
+             <div class="col-xs-8 col-sm-8 p-0">
+				<input @keydown.enter.prevent="getPageInfo('search')" type="text" name="searchKeyword" :id="pgmid+'searchKeyword'" data-parsley-maxlength="50"  class="form-control"/>
+			 </div>
+			 <div class="col-xs-12 col-sm-2 btn btn-md btn-primary bg-maintheme center text-nowrap" @click="getPageInfo('search')">
+			 	<span>검색</span>
+			 </div>
+        </div> 		
+  		
+  		<div class="p-0 m-20 text-nowrap">
+	        <div class="border bg-light pt-2 pb-1 pl-0 pr-0 d-flex align-items-center text-dark font-size-md font-weight-bold text-center border-bottom">
+		       <div class="col-1">No.</div>
+		       <div  class="col-8">제목</div>
+		       <div  class="col-1">등록자</div>
+		       <div  class="col-2">등록일</div>
+	        </div>
+	        <div class="height-350">
+	          <div v-if="NoResult" class="text-center">
+	          	<div class = "align-middle mt-5">조회결과가 없습니다</div>
+	          </div>
+		      <div v-if="isLoaded" v-for="item in boardlist "  @click="clickBoardTitle(item.BOARD_SEQ)" class="d-flex align-items-center pb-2 pt-2 px-0 btn-white text-center cursor-pointer border-bottom border-left border-right" >   
+		         <div class="col-1 p-0"><a v-if="item.POPUP_YN > 0" class="label rounded-pill bg-grey text-white">HOME</a><a v-else>{{item.ID }}</a></div>
+		         <div class="col-8 d-flex overflow-hidden">{{item.BOARD_TITLE}}<a v-if="item.FILE_YN > 0" class="mx-2 mt-1 fas fa-xl fa-paperclip d-block"></a></div>
+	 	         <div class="col-1 overflow-hidden">{{item.REGR_NM}}</div>
+	 	         <div class="col-2">{{item.REGR_DH}}</div>         
+		      </div>
+		    </div>
+	    </div>
+	    
+	    
+	    
+	    <div class="text-center mt-5">
+			<ul class="pagination justify-content-center">
+				<li v-if="pageno[0].prevBlockYN != null" @click="makePageInfo(pageno[0].prevBlockNo)" class="page-item cursor-pointer text-nowrap">
+					<a class="page-link">{{pageno[0].prevBlockYN}}</a>
+				</li>
+				<li v-if="pageno[0].pageNo != ''" v-for="item in pageno" class="page-item cursor-pointer text-nowrap" :class="{active : currPageNo == item.pageNo, hidden : item.pageNo != currPageNo}">
+					<a @click="searchButtonOnClick(item.pageNo)" class="page-link" :class="{'bg-maintheme' : currPageNo == item.pageNo}">{{item.pageNo}}</a>
+				</li>
+				<li v-if="pageno[0].nextBlockYN != null" @click="makePageInfo(pageno[0].nextBlockNo)" class="page-item cursor-pointer text-nowrap">
+					<a class="page-link">{{pageno[0].nextBlockYN}}</a>
+				</li>
+				<li v-if="searchFlag != 'firstsearch' && NoResult == false && pageinfo[0].TOT_CNT >= 1000" @click="getPageInfo('searchmore')" class="col-auto btn btn-default border text-nowrap ml-1" ><span class="mx-1">계속 검색</span></li>    
+			</ul>	
+	    </div>
+
+
+	    
+	 
+
+
+<!-- 	clickboard 모달 -->
+		<div class=" modal ec-modal h-100" data-backdrop="false" :id="pgmid+'modal_BoardList'"   >
+		    <div class="modal-dialog modal-lg modal-dialog-centered ui-draggable" >
+		        <div class="p-25 modal-content modal-content d-flex flex-column" >
+		            <div class="modal-header ec-modal-header ui-draggable-handle">
+		                <div class="f-title-plane">공지사항</div>
+		            </div>
+		            <div class="modal-body  d-flex flex-column h-100 p-0">
+		                <!-- grid -->
+		                <div class="ec-grid-box-search" >
+		                    <div class="ec-grid-row">
+		                        <label class="col-lg-2 col-md-2 ec-col-label-search justify-content-md-end">제목</label>
+		                        <div class="col-lg-7 col-md-10 ec-col-input " :id="pgmid+'title'">
+		                            <span>{{ modalboard.BOARD_TITLE }}</span> 
+		                        </div>
+		                    </div>
+		                <div class="ec-grid-row justify-content-center">
+		                        <label class="col-lg-2 col-md-2 ec-col-label-search justify-content-md-end">내용</label>
+		                        <div class="col-lg-10 col-md-10 ec-col-input overflow-auto ec-scrollbar" :id="pgmid+'BOARD_CONTENTS'" >
+		                            <div class="w-100" :id="pgmid+'summernote'" ></div>
+		                        </div>
+		                </div>
+		                <div    class="ec-grid-row  justify-content-center">
+		                        <label class="col-2 col-md-2 ec-col-label justify-content-md-end text-nowrap">파일</label>
+		                        <div class="col-10 col-md-10 ">
+		                            <div  v-for="(item,index) in fileList" class="w-100"  >
+		                                <a :href="'/ec/common/syscommon/fileupload/downloadFile/'+item.FILE_NO" > {{ item.ORG_FILE_NAME }}  </a>
+		                            </div>
+		                        </div>
+		                </div>
+		            </div>
+		        </div>
+		            <div v-if="$options.filters.isNotEmpty(modalboard.BOARD_SEQ)" class="d-flex justify-content-end">
+		                    등록:{{modalboard.REGR_NM}}({{modalboard.REGR_DH | dateformat("card") }}) 
+		            </div>
+		                <div class="d-flex flex-row btn-row ec-btn-bottom-row">
+		                <button type="button" class="btn ec-btn-bottom w-100  bg-light" data-dismiss="modal" @click="closeModal()" >닫기</button>
+		                </div> 
+		            </div> 
+		        </div>
+		    </div>
+	
+	
+	</div>
+
+	  
+		     
+   
+           
+  </form>
+	  	<!-- ================== BEGIN THIS PAGE JS ================== -->
+ 	<div th:insert="contents/ex/config/boarduserlist-js :: js"></div>  
+   </section>
+</body>
+</html>

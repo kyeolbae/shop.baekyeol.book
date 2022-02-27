@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="utf-8" />
+</head>
+<body>
+   
+<script th:fragment="js">
+
+
+Vue.component('rpt-expenselist', { // ==================================================================
+    data: function () { 
+    return {
+              id : objId(),
+              cameraid : objId(),
+      }
+    },
+
+    props: {pgmid : String ,subname:String,   }, 
+    template: 
+    '<div class="modal ec-modal" data-backdrop="false" :id="id"  style="z-index : 1060;"  > \
+	    <div  class="modal-xl modal-dialog  modal-dialog-centered ui-draggable " style="height: calc(100% - 66px) !important;"> \
+	    <div class="modal-content h-100"> \
+	        <div class="modal-body overflow-auto ec-scrollbar" > \
+	          <input type="file" :id="cameraid" name="camera" capture="camera" accept="image/*" /> \
+	        \
+            \
+	        \
+	        \
+	        \
+	        \
+	        \
+		           </div> \
+			    </div> \
+		   </div> \
+		</div>',
+				created () { 
+	               
+	            
+	                  
+	          },
+   methods : {
+	   showmodal : function() { 
+		   $('#'+this.id).modal("show");
+	   },
+
+     
+
+   },//method
+
+   mounted: function() {
+
+    },
+}); // test
+
+//비용 상신 컴포넌트
+Vue.component('ex-report-component-v1', { // ==================================================================
+    data: function () { 
+    return {
+              id : objId(),
+              modalId : objId(),
+              deptid : objId(),
+              
+              
+              apprvdata : {}, // 결재관련 모든 데이터
+              
+              apprvid : objId(), //  결재 리포트 컴포넌트
+              
+              reportNo : '',
+              modDh : '',
+              reportMngList : [],
+              approveLine : [],
+              approveLines: [],
+              reportFiles : [],
+              copy_approveLines : [],
+              
+              approveLineTp : "",
+              processApprvGrp : "",
+              
+              reportTitle : "",
+              reportTp : this.reporttp,
+              reportTpNm : "",
+              
+              reportDetail : [],
+              
+              headerid : objId(), 
+              dlgid : objId(), 
+
+              headerpopupid : objId(), 
+              dlgpopupid : objId(),
+      }
+    },
+
+    props: {pgmid : String ,subname:String, reporttp: String, 
+    	    reportno : String, detail : String, apprvline : Object,  tblname : String, 
+    	    ismobile : String  }, 
+    template: 
+     ' <div> \
+             \
+        <div v-if="ismobile ==\'true\'" class="modal ec-modal height-full animated animated_ec fadeInRight border-0" tabindex="-1" role="dialog"  aria-hidden="true" :id="id" > \
+	         <div class="modal ec-modal height-full animated animated_ec fadeInRight border-0" data-backdrop="false" :id="id+\'approvemp\'"    > \
+	          <div :id="dlgpopupid" class="modal-dialog h-100 m-0"> \
+	          <div class="modal-content border-0 h-100 rounded-0"> \
+	          <div class="modal-header bg-light p-0 d-flex justify-content-between"> \
+	              <a class="icon-arrow-left col-1 my-3"  @click="closeApprvModal()"></a> \
+	              <h4 class="modal-title text-center">결재선</h4> \
+	              <div class="col-1"></div> \
+	                </div> \
+	                <div class="modal-body  d-flex flex-column h-100 p-25 " >  \
+	                       <div class="d-flex flex-column overflow-y ec-scrollbar" > \
+	                          <div class="d-flex flex-column" > \
+	                             <div v-for="(items, index) in copy_approveLines" class="d-flex flex-column form-horizontal form-bordered p-10 border bg-light mb-2 ml-1" > \
+	                             		<div class="d-flex justify-content-between"> \
+	                                 	<span class="f-subtitle-plane">{{items.APPROVE_STEP_NM}}</span> \
+	                                    <popup-m-code icon="fa fa-plus p-l-3 p-r-3" :ref="\'popupapprovemp\'+index" :pgmid="deptid+index"  :pgmnm="index+1 + \'차 결재선\'" subname="popupapprovemp"  searchname="결재자"  columnlayout="popupuser"   tablename="USER" @codechanged="changeApproveLine(arguments,items,index)" inputvisible="false"></popup-m-code>  \
+									    </div> \
+									    <hr> \
+	                             		<div v-for="(item, idx) in items.APPROVE_LIST"  class="d-flex justify-content-between mb-1" >  \
+	                                   <a class="d-flex btn btn-xs text-nowrap"   > \
+	                                      <span class="d-flex justify-content-center align-items-center">{{item.APPROVE_NAME}}/{{item.DEPT_NM}}</span> \
+	                                      <span v-if="item.APPROVE_TP == \'1\'" class="ml-1 badge badge-warning">{{item.APPROVE_TP_NM}}</span> \
+	                                   </a> \
+	                                   <a href="#" v-if="item.APPROVE_TP != \'1\'"  @click="deleteApproveLine(items,index, item, idx)"  class="btn btn-sm btn-default border-secondary rounded-0  p-l-7 p-r-7" > \
+											<i class="fa fa-minus"></i> \
+									     </a>   \
+	                             		</div> \
+	                             </div> \
+	                          </div>      \
+	                       </div> \
+			           	</div> \
+		                  <div class="d-flex flex-row btn-row ec-btn-bottom-row m-0"> \
+	                      <a class="btn ec-btn-bottom w-100  btn-submaintheme" @click="saveChangedApprovemp">저장</a> \
+	                      <a class="btn ec-btn-bottom w-100  btn-maintheme " @click="setChangedAppvLine">선택</a> \
+					  </div>  \
+			     		</div> \
+			  </div>  \
+			 </div>  \
+        \
+        \
+        \
+            <div :id="dlgid" class="modal-dialog h-100 m-0"> \
+              <div class="modal-content border-0 h-100 rounded-0"> \
+	              <div class="modal-header bg-light p-0 d-flex justify-content-between"> \
+		              <a class="icon-arrow-left col-1 my-3"  data-dismiss="modal"></a> \
+		              <h4 class="modal-title text-center">결재요청</h4> \
+		              <div class="col-1"></div> \
+	              </div>  \
+	              <div class="modal-body h-100  p-0 overflow-auto bg-light"> \
+	                   \
+	                   \
+	                   <div class="bg-light  d-flex flex-column h-100 p-5"> \
+                         <div class="d-flex align-items-center justify-content-between ml-2"> \
+	                           <span class="f-subtitle m-5"><i class="icon-doc mr-2"></i>{{reportTpNm}}</span> \
+	                           <div class=" checkbox checkbox-css p-0 "> \
+	                          	<input type="checkbox" :id="id+\'URGENCY_YN\'" name="URGENCY_YN" /> \
+	                          	<label :for="id+\'URGENCY_YN\'">중요</label> \
+	                           </div>   \
+                          </div>  \
+			                    \
+			                    \
+                                <div  class="d-flex flex-wrap  align-items-center justify-content-between"> \
+                                 <div class="w-100 mb-1" v-for="(items, index) in approveLines" >  \
+                                 <div class="bg-white form-horizontal form-bordered border "> \
+                                         <div  v-for="(item, index) in items.APPROVE_LIST" class="form-group row flex-nowrap"> \
+                                              <label  class=" justify-content-center col-2 col-form-label p-1 text-nowrap f-plane-bold"><span  class="badge badge-warning">{{item.APPROVE_TP_NM}}</span></label> \
+                                              <label  class="px-3 justify-content-left col-4 col-form-label py-1 text-nowrap f-plane-bold">{{item.APPROVE_NAME}}</label> \
+                                              <label  class="pr-3 justify-content-end col-6 col-form-label px-0 py-1 text-nowrap f-plane-bold">{{item.DEPT_NM}}</label> \
+                                         </div> \
+                                 </div> \
+                                </div> \
+                               </div>  \
+			                    \
+			                    \
+			                    \
+		                        <div class="d-flex flex-column"> \
+		                             <report-apprv-comp :pgmid="pgmid" :ref="apprvid"  ismobile="true"></report-apprv-comp> \
+			  	    	             <slot name="left-mobile">  \
+					    	                  \
+					    	                  \
+					    	                  \
+					    	                  \
+					    	         </slot> \
+		                        </div> \
+		                        \
+		                        \
+		                        \
+							    \
+							   </div> \
+							   </div> \
+			                      <div class="modal-footer bg-light p-0"> \
+			                        <div class="w-100 m-0 d-flex"> \
+                                      <a v-show="approveLineTp == \'LINE10\'" :class="approveLineTp" class="col-4 rounded-0 ec-btn-bottom btn btn-submaintheme " @click="changeapprovemp"> \
+                                          결재선 \
+                                      </a> \
+                                      <a class="col rounded-0 ec-btn-bottom btn btn-maintheme " @click="procApprove"> \
+                                          결재요청 \
+                                      </a> \
+                                    </div> \
+			                      </div>   \
+							    \
+	                  \
+	           </div> \
+	         </div> \
+	       </div> \
+        \
+        \
+        \
+        \
+        <div v-if="ismobile !=\'true\'" class="modal ec-modal" data-backdrop="false" :id="id" > \
+	         \
+         <div class="modal ec-modal" data-backdrop="false" :id="id+\'approvemp\'"    > \
+         <div :id="dlgpopupid" class="modal-dialog modal-md  modal-dialog-centered ui-draggable h-100"> \
+             <div class="modal-content border-0" > \
+                 <div :id="headerpopupid" class="modal-header ec-modal-header ui-draggable-handle"> \
+                     <div class="modal-title f-title-plane">결재선</div> \
+                     	<div class="pl-1"> \
+                     		<popup-help :helpkey="pgmid+\'approvempLineChange\'" :pgmid="pgmid" subname="결재선변경"  ></popup-help> \
+                     	</div> \
+                     <a class="close h-100" aria-hidden="true" type="button" @click="closeApprvModal();"><i class="mi-close mi-3x"></i></a> \
+                 </div> \
+                 <div class="modal-body  d-flex flex-column h-100 p-25 " >  \
+                        <div class="d-flex flex-column overflow-y ec-scrollbar" style="height:450px;"> \
+                           <div class="d-flex flex-column" > \
+                              <div v-for="(items, index) in copy_approveLines" class="d-flex flex-column form-horizontal form-bordered p-10 border bg-light mb-2 ml-1" > \
+                              		<div class="d-flex justify-content-between"> \
+                                  	<span class="f-subtitle-plane">{{items.APPROVE_STEP_NM}}</span> \
+                                    <popup-code icon="fa fa-plus p-l-3 p-r-3" :ref="\'popupapprovemp\'+index" :pgmid="deptid+index"  :pgmnm="index+1 + \'차 결재선\'" subname="popupapprovemp"  name="" searchname="결재자"  columnlayout="popupuser"   tablename="USER" @codechanged="changeApproveLine(arguments,items,index)" inputvisible="false"></popup-code>  \
+								    </div> \
+								    <hr> \
+                              		<div class="d-flex justify-content-between mb-1" v-for="(item, idx) in items.APPROVE_LIST" >  \
+                                    <a class="d-flex btn btn-xs text-nowrap"   > \
+                                       <span class="d-flex justify-content-center align-items-center">{{item.APPROVE_NAME}}/{{item.DEPT_NM}}</span> \
+                                       <span v-if="item.APPROVE_TP == \'1\'" class="ml-1 badge badge-warning">{{item.APPROVE_TP_NM}}</span> \
+                                    </a> \
+                                    <a href="#" v-if="item.APPROVE_TP != \'1\'"  @click="deleteApproveLine(items,index, item, idx)"  class="btn btn-sm btn-default border-secondary rounded-0  p-l-7 p-r-7" > \
+										<i class="fa fa-minus"></i> \
+								     </a>   \
+                              		</div> \
+                              </div> \
+                           </div>      \
+                        </div> \
+                   <div class="d-flex flex-row btn-row ec-btn-bottom-row"> \
+                       <a class="btn ec-btn-bottom w-100  bg-light" @click="saveChangedApprovemp">저장</a> \
+                       <a class="btn ec-btn-bottom w-100  btn-maintheme " @click="setChangedAppvLine">선택</a> \
+					</div>  \
+		           	</div> \
+		     		</div> \
+		  </div>  \
+		 </div>  \
+         \
+         \
+             <div :id="dlgid" class="modal-dialog modal-xl modal-dialog-centered ui-draggable"> \
+               <div class="modal-content border-0"> \
+			        <div :id="headerid" class="text-nowrap d-flex flex-column modal-header " :class="id+\'modal-header-receipt\'"> \
+			               <div class="d-flex w-100 justify-content-between"> \
+			                  <div class="d-flex"> \
+			                    <div class="f-title-plane d-flex align-items-center">{{reportTpNm}} \
+			                    </div>  \
+			                  </div> \
+			                  <a class="close " aria-hidden="true" type="button" @click="close()"><i class="mi-close mi-2x"></i></a> \
+			               </div> \
+			         </div> \
+	                <div class="modal-body p-0 d-flex flex-column " :id="modalId"> \
+	                   \
+	                   \
+	                   <div class="overflow-y ec-scrollbar" style="height:560px"> \
+	                      <div :class="{\'col-md-6\' : detail != \'false\'}" class="col-12  p-25 d-flex flex-column "> \
+	                    \
+			                    \
+			                    \
+		                        <div class="d-flex flex-column mb-2"> \
+	                              <div class="justify-content-start ec-grid-row m-0"> \
+	                               <div class="d-flex position-relative flex-wrap"  > \
+	                                  <div v-for="(items, index) in approveLines"  class="d-flex form-horizontal form-bordered  border bg-light mb-1 ml-1" > \
+	                                        <div class="d-flex flex-column m-0 vertical-text text-center bg-submaintheme text-maintheme align-items-stretch">{{items.APPROVE_STEP_NM}} </div> \
+	                                        <div class="approve-box form-group d-flex flex-column border-left m-0" v-for="(item, index) in items.APPROVE_LIST" >  \
+	                                            <div  class="justify-content-center col-form-label px-0 py-0 text-center border-bottom bg-submaintheme"><span  class="">{{item.APPROVE_TP_NM}}</span></div> \
+	                                            <div class="d-flex flex-column  justify-content-around p-0 h-100"> \
+	                                              <div  class="justify-content-center col-form-label px-0 py-0 text-center f-w-600"><label class="m-0">{{item.APPROVE_NAME}}</label></div> \
+	                                              <div  class="f-s-10 px-0 py-0 text-center"><label class="m-0 text-max-70">{{item.DEPT_NM}}</label></div> \
+	                                            </div> \
+	                                       </div> \
+	                                  </div> \
+	                                 </div> \
+	                              </div> \
+	                            </div> \
+			                    \
+			                    \
+			                    \
+			                    \
+			                    \
+			                    \
+			                    \
+			                    \
+		                        <div class="d-flex flex-column h-100 "> \
+		                             <report-apprv-comp :pgmid="pgmid" :ref="apprvid" ></report-apprv-comp> \
+			  	    	             <slot name="left">  \
+					    	                  \
+					    	                  \
+					    	                  \
+					    	                  \
+					    	         </slot>  \
+		                        </div> \
+		                        </div> \
+		                        </div> \
+			                    <div v-if="detail == \'false\'" class="d-flex flex-row btn-row "> \
+			                       <a v-show="approveLineTp == \'LINE10\'" :class="approveLineTp" class="col-4 btn ec-btn-bottom w-100  btn-submaintheme" @click="changeapprovemp" >결재선</a> \
+							       <a  class="btn  ec-btn-bottom w-100  btn-maintheme"  @click="procApprove">결재요청</a> \
+							    </div>  \
+			         </div> \
+	                     \
+	                 <div v-if="detail != \'false\'" class="col-12 col-md-6 receipt-box-modal  p-25 d-flex flex-column h-100 border-left " :id="id+\'ApproveModalBody\'"> \
+	                        <div class="d-flex flex-column h-100 overflow-y ec-scrollbar"> \
+		  	    	             <slot name="right">  \
+				    	                  \
+				    	                  \
+				    	                  \
+				    	                  \
+				    	         </slot> \
+		                    </div> \
+		                    <div class="d-flex flex-row btn-row ec-btn-bottom-row"> \
+		                       <a v-show="approveLineTp == \'LINE10\'" :class="approveLineTp" class="col-4 btn ec-btn-bottom w-100  btn-submaintheme" @click="changeapprovemp" >결재선</a> \
+		                       <a  class="btn ec-btn-bottom w-100  btn-maintheme"  @click="procApprove">결재요청</a> \
+						    </div>  \
+	                   </div> \
+	                </div> \
+	                  \
+	           </div> \
+	         </div> \
+	       </div> \
+	       </div> \
+	       </div>',
+          
+          
+		created () { 
+	                  
+	          },
+   methods : {
+       resetReportAddedFile : function() {
+           $('#'+this.id+'reportAddedFile').val('');
+       }, 
+
+	  closeApprvModal:  function () {
+		  $('#'+this.id+'approvemp').modal("hide");
+	  },	   
+	  
+	  
+ 	  deleteApproveLine:  function (items, index, item, idx) {
+		  this.copy_approveLines[index].APPROVE_LIST.splice(idx,1);
+      },  
+      changeApproveLine : function(args, items, index ) {
+    	   
+    	  var o = {};
+    	  o.APPROVE_ID = args[2].CODE;
+          
+          var param = {
+                  svcId:"getUserDetail",
+                  strUrl:"/ec/common/syscommon/userInformation/getUserDetail", 
+                  inDs :  "" ,  
+                  param : o, 
+                  pCall : this.changeApproveLineCallback, 
+                  pLoad : true,
+                  pData : { ITEMS : items , INDEX : index }
+              };
+             ajaxReadJsonData(param);  
+          
+      },
+      changeApproveLineCallback : function(svcId, data, pData ) {
+    	  
+    	 if (data.ds_master.data.length == 0){
+    	      customAlert("","","사용자 아이디와 연결된 결재정보가 없습니다.(부서, 사원번호)");
+    	      return false;
+    	 }
+          var o = {};
+          o.APPROVE_ID = data.ds_master.data[0].USER_ID;
+          o.APPROVE_NAME = data.ds_master.data[0].USER_NM;
+          o.EMAIL = data.ds_master.data[0].EMAIL;  
+          o.APPROVE_LINE_TP = "LINE10"; 
+          
+          o.DEPT_CD = data.ds_master.data[0].DEPT_CD;  
+          o.DEPT_NM = data.ds_master.data[0].DEPT_NM;   
+          o.PROCESS_APPRV_GRP = this.processApprvGrp;
+          o.APPROVE_STEP = pData.ITEMS.APPROVE_STEP;
+          o.APPROVE_TP = '3';
+          o.APPROVE_TP_NM = '결재';
+          
+          var len = pData.ITEMS.APPROVE_LIST.length;
+          if (len == 0 ) {
+        	  o.APPROVE_ORDER = 0;
+          }else{
+              var item = pData.ITEMS.APPROVE_LIST[pData.ITEMS.APPROVE_LIST.length-1];
+              o.APPROVE_ORDER = item.APPROVE_ORDER + 1;     	  
+          }
+
+          pData.ITEMS.APPROVE_LIST.push(o);
+    	  
+      },
+       // 변경된 결재라인 적용
+       setChangedAppvLine: function (){
+     	  $('#'+this.id+'approvemp').modal("hide");
+     	  this.approveLines = [];
+     	  this.approveLines = deepClone(this.copy_approveLines);
+
+          this.approveLine = [];
+          var ref = this;
+          this.approveLines.forEach( function (items) {
+       	   ref.approveLine.push(...items.APPROVE_LIST);
+              }  );
+       
+       }, //   setChangedAppvLine   
+       saveChangedApprovemp :  function() {
+       	// 저장할 데이터 만들기
+              var o = [];
+              this.copy_approveLines.forEach( function (items, index) {
+           	      o.push(...items.APPROVE_LIST);
+                });
+              
+               	o.splice(0,1);
+		    
+           var param = {
+                   svcId:"saveApproveLine",
+                   strUrl:"/ex/expense/approve/saveApproveLine", 
+                   inDs :  "" ,
+                   param : { data : o , PROCESS_APPRV_GRP : this.processApprvGrp },
+                   pCall : this.saveChangedApprovempCallback, 
+                   pLoad : true          
+               };    
+           
+        ajaxReadJsonData(param);  
+		    
+       }, 
+       
+       saveChangedApprovempCallback : function(svc, data) {
+       	   saveGritter();
+       },   
+	   openModal : function(o) { 
+		   // 결재선 최신으로 재조회
+		   this.getInitData();
+		   this.getApproveLine(this.apprvline);
+		   this.reportDetail = o;
+		   $('#'+this.id).modal("show");
+		   // 제목 등 기안지 초기화
+		   //this.$refs[this.apprvid].initData();
+	   },
+	   
+	   //결재선 변경
+       changeapprovemp : function (){
+       	this.copy_approveLines = [];
+       	this.copy_approveLines = deepClone(this.approveLines);
+       	
+       	    $('#'+this.id+ 'approvemp').modal('show');
+
+       }, // changeapprovemp
+	   // 제목, 결재선, 관리항목 등.
+	   getInitData  : function() {  
+            this.getReportConfig(this.reportTp);
+            this.getReportMng(this.reportTp);
+//             this.getApproveLine(this.apprvline); 
+	   },
+       getReportConfig : function(reportTp) {
+     	  var param = {
+                   svcId:"getReportConfig",
+                   strUrl:"/ex/expense/expensemst/getReportConfig",   
+                   param : {REPORT_TP : reportTp},
+                   pCall : this.getReportConfigCallback,  
+                   pLoad : true
+               };
+               ajaxReadJsonData(param);  	  
+       },
+       getReportConfigCallback : function(svc, data) {
+    	 if (data.ds_master.data.length > 0 ) {
+		     	  $('#'+this.id+ 'REPORT_TITLE').val(data.ds_master.data[0].REPORT_TITLE);
+		     	  this.reportTpNm =  data.ds_master.data[0].REPORT_TP_NM;
+		     	  this.processApprvGrp  = data.ds_master.data[0].PROCESS_APPRV_GRP
+    	 }else{
+	     	      $('#'+this.id+ 'REPORT_TITLE').val('');
+	     	      this.reportTpNm = '';
+	     	      this.processApprvGrp  = '';
+    	 }
+       },
+       //관리항목
+       getReportMng : function(reportTp) {
+        	 
+     	  var param = {
+                   svcId:"getReportMng",
+                   strUrl:"/ex/expense/expensemst/getReportMng",   
+                   param : {REPORT_TP : this.reportTp},
+                   pCall : this.getReportMngCallback,  
+                   pLoad : true
+               };
+     	  
+               //트랜젝션 실행
+               ajaxReadJsonData(param);       	 
+       }, //getReportMng
+       getReportMngCallback : function(svc , data) {
+     	  this.reportMngList = data.ds_master.data;
+       }, //getReportMngCallback  
+       //결재라인
+       getApproveLine : function (obj) { 
+//       	 LINE10  수동-결재선본인선택
+//       	 LINE20  자동-코스트센터결재선
+//       	 LINE30  자동-보고서유형결재선
+//       	 LINE40  자동-부서기준결재선   
+
+      	this.approveLineTp = obj.APPROVE_LINE_TP;
+      	 var val = '';
+      	 var cctrorps = '';
+      	   if (obj.APPROVE_LINE_TP == 'LINE10') {
+      		 val =  '[[${session.g_userId}]]';  // 본인 id
+           }else if (obj.APPROVE_LINE_TP == 'LINE20') {
+               if (obj.BELONGING_TP == '1') {
+              	 val = obj.CCTR_CD;
+              	 cctrorps = 'CCTR';
+               }else if (obj.BELONGING_TP == '2'){
+              	 val = obj.PS_CD;
+              	 cctrorps = 'PS';
+               }
+           }else if (obj.APPROVE_LINE_TP == 'LINE30') {
+          	 val =  obj.APPROVE_LINE_TP;  // 보고서유형
+           }else if (obj.APPROVE_LINE_TP == 'LINE40') {
+          	 val =  '[[${session.g_deptCd}]]';  // 부서
+           }
+      	  
+          var sObj =  { REPORT_TP : this.reportTp , 
+          		      REF : val, CCTRORPS : cctrorps,  
+          		      APPROVE_LINE_TP : obj.APPROVE_LINE_TP  ,
+          		      PROCESS_APPRV_GRP : obj.PROCESS_APPRV_GRP 
+                       };
+          
+          var param = {
+                  svcId:"getApproveLine",
+                  strUrl:"/ex/expense/report/getApproveLine", 
+                  inDs :  "" ,
+                  param : sObj, 
+                  pCall : this.getApproveLineCallback, 
+                  pLoad : true          
+              };
+              //트랜젝션 실행
+            ajaxReadJsonData(param);    
+        },
+        getApproveLineCallback : function (svcId, data) { 
+      	  
+             this.approveLines = data.ds_master.data;
+             this.approveLines.forEach( function (item) {
+          	   item.APPROVE_LIST =  JSON.parse( item.APPROVE_LIST ) ;
+                 })
+
+             this.approveLine = [];
+             var ref = this;
+             this.approveLines.forEach( function (items) {
+          	   ref.approveLine.push(...items.APPROVE_LIST);
+                 }  );
+             
+             
+        },    
+        procApprove : function (){
+            
+            //필수체크
+            if (checkRequiredInput(this.modalId) == false){
+                customAlert("필수항목","","필수항목 입력하세요.");  
+                return false;
+            };
+            
+            //임시
+//             if (this.approveLines[0].APPROVE_LIST.length < 2){
+//                   customAlert("필수항목","","필수항목(결재자) 입력하세요.");  
+//                 return false;
+//             };    
+
+            this.apprvdata  = this.$refs[this.apprvid].getObj();
+            
+            for (var i = 0; i < this.approveLines.length; i++) {
+              if  (this.approveLines[i].APPROVE_LIST.length == 0){
+            	  customAlert("필수항목","",  this.approveLines[i].APPROVE_STEP_NM +  "을(를) 입력하세요.");  
+            	  return false;
+              }
+            }
+            
+            ajaxUploadFile('#'+ this.apprvdata.ds_report.FILE_INPUT_ID, null ,this.procApproveCallback);
+        },
+        procApproveCallback : function (svcId, data, errCd, msgTp, msgCd, msgText) {
+            if (data == "") {
+                this.reportFiles = [];
+            }else{
+                this.reportFiles = data;
+            }
+            
+            //save
+            this.saveApprove();
+        },
+        saveApprove: function() {
+        	var ref = this;
+        	
+             this.apprvdata.ds_report.MOD_DH = this.modDh;
+             this.apprvdata.ds_report.REPORT_TP = this.reportTp;
+             this.apprvdata.ds_report.REPORT_NO = this.reportNo;
+             
+             this.apprvdata.ds_appvline = {data : setArrChangeFlag(this.approveLine,'I')  };
+             // added files
+             this.reportFiles = setArrChangeFlag(this.reportFiles,'I');
+             this.apprvdata.ds_reportfiles = {data : this.reportFiles };
+             
+            var param = {
+                    svcId:"saveApprove",
+                    strUrl:"/ex/expense/expensemst/saveApprove", 
+                    param : this.apprvdata, 
+                    pCall : this.saveApproveCallback, 
+                    pLoad : true
+                };
+                //트랜젝션 실행
+               ajaxReadJsonData(param);  
+        },
+        saveApproveCallback : function(svc, data) {
+      	  
+      	  if (data.ErrorCode != 0 ) return;
+      	  this.$emit('saveapproved', data);
+          $('#'+this.id).modal('hide');
+          this.$refs[this.apprvid].initData();
+          saveGritter();
+          
+
+           },
+       close: function() {
+    	   this.$refs[this.apprvid].initData();
+    	   $('#'+this.id).modal('hide');
+       },
+       setReportNo : function(reportNo) {
+         this.reportNo = reportNo;
+         this.$refs[this.apprvid].setReportNo(this.reportNo);
+            },   
+       setReportTp : function(reportTp) {
+    	   this.reportTp = reportTp;
+           this.$refs[this.apprvid].setReportTp(reportTp);
+              },    
+       setObj : function(obj) {
+           this.$refs[this.apprvid].setObj(obj);
+              },              
+   },//method
+
+   mounted: function() {
+	   
+	   var ref = this;
+	   this.$nextTick(function(){
+		   
+		      ref.getInitData();
+		 	  $("#"+ ref.dlgid).draggable({
+		          handle: "#"+ref.headerid
+		       }); 
+		 	  $("#"+ ref.dlgpopupid).draggable({
+		          handle: "#"+ref.headerpopupid
+		       }); 	 	  
+	   })
+	   
+    },
+}); // test
+
+</script>
+   
+</body>
+</html>
+
+

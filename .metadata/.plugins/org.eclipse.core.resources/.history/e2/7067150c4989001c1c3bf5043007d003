@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="utf-8" />
+</head>
+<body>
+   
+<script th:fragment="js">
+
+//국내출장 정산서(결재화면)
+
+Vue.component('report-biztrip-exp-list', { // ==================================================================
+    data: function () { 
+    return {
+              id : objId(),
+              refHeader :objId(),
+              refMng :objId(),
+              refFile : objId(),
+              
+              imgid : objId(),
+              reportFileList : [],
+              reportFiles : [],
+              reportNo : '',
+              expFiles : [],
+              expenseList : [],
+              reportMngList : [],
+              expListTravel : [],
+              
+              reportTitle : '',
+              reportRmk : '',
+              paySumAmt : '',
+              bizTripPlace : '',
+              bizTripGoal : '',
+              bizTripFrdt : '',
+              bizTripTodt : '',
+              bizTripNight : '',
+              bizTripDays : '',
+              
+              expListBizTrv : [],
+              amt : 0,
+              cnt : 0,
+
+      }
+    },
+
+    props: {pgmid : String ,subname:String, ismobile : String  }, 
+    template: 
+    '<div class=""  > \
+    \
+    \
+	    <div v-if="ismobile == \'true\'" > \
+	                \
+		        <report-header-read-comp :ref="refHeader" v-show="false"  title="false"  ismobile="true"></report-header-read-comp> \
+		        <report-mng-read-comp :ref="refMng" v-show="false"   ismobile="true" ></report-mng-read-comp> \
+			        \
+			        <div class=""  > \
+				        <div class="col col-md-9 col-12 p-0"> \
+				                  <div class="d-flex flex-nowrap  border-bottom "> \
+				                      <label class="col-3 col-form-label">출장지</label> \
+				                      <div class="col-lg-10  col-9 py-1"> \
+				                          <label class="m-2"><strong>{{bizTripPlace}}</strong> </label> \
+				                      </div> \
+				                  </div> \
+				                  <div class="d-flex flex-nowrap border-bottom"> \
+				                      <label class="col-3 col-form-label">출장목적</label> \
+				                      <div class="col-lg-10  col-9 py-1"> \
+				                          <label class="m-2"><strong>{{bizTripGoal}}</strong> </label> \
+				                      </div> \
+				                  </div> \
+				                  <div class="d-flex flex-nowrap border-bottom"> \
+				                      <label class="col-3 col-form-label">출장기간</label> \
+				                      <div class="col-lg-10  col-9 py-1 d-flex"> \
+				                          <label class="m-2"><strong>{{bizTripFrdt}} &nbsp - &nbsp {{bizTripTodt}} </strong> </label> \
+				                      </div> \
+				                  </div> \
+				         \
+						       <div class="mb-2 p-10 d-flex justify-content-between algin-items-center bg-submaintheme"> \
+				                   <small class="d-flex justify-content-left align-items-center f-plane w-100"><p class="m-0">TOTAL &nbsp {{cnt}}건</p></small> \
+				                   <span class="w-100 text-right justify-content-end align-items-center border-white f-title d-flex">{{amt | numberformat("0,000") }}원</span> \
+				               </div> \
+				         \
+			 					\
+			 					<div class=" form-horizontal p-0 flex-column w-100  f-s-13 " :id="\'accordionexpDetailBizTrv\'+pgmid" >  \
+				                    <div v-if="expListTravel.length > 0">   \
+				                       <div class="d-flex justify-content-between mb-1">  \
+				                           <div class="text-maintheme"><i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>출장자</div>  \
+				                           <div class="collapsed" data-toggle="collapse" :data-target="\'#expDetailBiztrv\'+pgmid" ><i class="icon-arrow-down mr-2"></i></div>  \
+				                       </div>  \
+				                       <div v-for="(item, index) in expListBizTrv"  class="rounded-0 card  row border-right-0 border-left-0 border-bottom-0    m-0 p-0"  >  \
+				                           <div class="d-flex align-content-center flex-wrap p-0 p-t-5 border-0 bg-black-transparent-1" data-toggle="collapse" :data-target="\'#expListBizTrv\'+pgmid+index">   \
+				 	                             <div class="d-inline-flex w-100">  \
+				 	                                 <span class="col-6 mb-1 text-nowrap"><strong>사원명</strong>&nbsp{{item.EMP_NM}}</span>  \
+				 	                                 <span class="col-6 mb-1"><strong>부서명</strong>&nbsp{{item.DEPT_NM}}</span>  \
+				 	                             </div>   \
+				 	                             <div class="d-inline-flex w-100">  \
+				 	                                 <p class="col-6 mb-1"><strong>시작일</strong>&nbsp{{item.BIZTRIP_FRDT | dateformat(\'card-week\')}}&nbsp{{item.BIZTRIP_FRDT | dateformat(\'card-time\') }}</p>  \
+				 	                                 <p class="col-6 mb-1"><strong>종료일</strong>&nbsp{{item.BIZTRIP_TODT | dateformat(\'card-week\')}}&nbsp{{item.BIZTRIP_TODT | dateformat(\'card-time\') }}</p>  \
+				 	                             </div>     \
+				                           </div>  \
+				                           <div :id="\'expDetailBiztrv\'+pgmid" class="collapse bg-light" :data-parent="\'#accordionexpDetailBizTrv\'+pgmid"  >    \
+					                           <div class="w-100">  \
+				                                     <div class="d-flex justify-content-between col" ><span class="f-plane-bold">사번</span><span>{{item.EMP_NO}}</span></div>  \
+			                                  </div> \
+				                           </div>  \
+				                       </div>  \
+				                  	</div>   \
+				          	 	</div>    \
+				          	 	\
+				          	 	\
+			 			</div> \
+			 		</div> \
+				   \
+				   \
+				   \
+                <div class=" form-horizontal p-0 flex-column w-100  f-s-13 " :id="\'accordionexpDetail\'+pgmid" >  \
+                   <div v-if="expListTravel.length > 0">   \
+                      <div class="d-flex justify-content-between mb-1">  \
+                          <div class="text-maintheme"><i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expListTravel[0].SOURCE_TP_NM}}</div>  \
+                          <div class="collapsed" data-toggle="collapse" :data-target="\'#expDetailTravel\'+pgmid" ><i class="icon-arrow-down mr-2"></i></div>  \
+                      </div>  \
+                      <div v-for="(item, index) in expListTravel"  class="rounded-0 card  row border-right-0 border-left-0 border-bottom-0    m-0 p-0"  >  \
+                          <div class="d-flex align-content-center flex-wrap p-0 p-t-5 border-0 bg-black-transparent-1" data-toggle="collapse" :data-target="\'#expDetailTravel\'+pgmid+index">   \
+	                             <div class="d-inline-flex w-100">  \
+	                                 <span class="col-6 mb-1 text-nowrap"><strong>비용항목</strong>&nbsp{{item.EXPENSE_NM}}</span>  \
+	                                 <span class="col-6 mb-1 text-right"><strong>금액</strong>&nbsp{{item.PAY_AMT | numberformat(\'0,000\')}}원</span>  \
+	                             </div>   \
+	                             <div class="d-inline-flex w-100">  \
+	                                 <p class="col-12 mb-1"><strong>사용일시</strong>&nbsp{{item.RECEIPT_DT | dateformat(\'card-week\')}}&nbsp{{item.RECEIPT_DT | dateformat(\'card-time\') }}</p>  \
+	                             </div>     \
+                          </div>  \
+                          <div :id="\'expDetailTravel\'+pgmid" class="collapse bg-light" :data-parent="\'#accordionexpDetail\'+pgmid"  >    \
+                                  <div class="w-100">  \
+                                     <div  class="d-flex flex-wrap justify-content-around">  \
+                                          <div v-for="(i, idx) in item.FILE_LISTS" class="m-2" >  \
+                                             <img  v-if="i.FILE_NO != null" @click.stop="fileClick(i, idx)" :src="\'/ec/common/syscommon/fileupload/downloadFile/\'+i.FILE_NO" height="150" >  \
+                                         </div>  \
+                                     </div>   \
+                                  </div>   \
+                          </div>  \
+                      </div>  \
+                 </div>   \
+         	 </div>    \
+         \
+         \
+	         <img-modal ref="imgmodal" :pgmid="imgid" subname="imgmodal" ></img-modal> \
+	         <report-file-comp :ref="refFile" v-show="false"  >   </report-file-comp> \
+				   \
+	    </div> \
+    \
+    \
+      <div v-if="ismobile != \'true\'" > \
+        \
+         <report-header-read-comp :ref="refHeader" v-show="false"  title="false" ></report-header-read-comp> \
+         <report-mng-read-comp :ref="refMng" v-show="false"   ></report-mng-read-comp> \
+    \
+    \
+    	<div class=""  > \
+		    <div class="d-flex flex-column h-100"> \
+					<div class="ec-grid-row m-0"> \
+						   <label class="col-2 d-flex justify-content-end ec-col-label-0 bg-white">출장지</label> \
+						   <div class="col-10  ec-col-input border-0"> \
+						       <input type="text" name="BIZTRIP_PLACE" :id="id+\'BIZTRIP_PLACE\'" :value="bizTripPlace" class="form-control form-control-sm " readonly/>  \
+						   </div> \
+					</div> \
+					<div class="ec-grid-row m-0"> \
+						   <label class="col-2 d-flex justify-content-end ec-col-label-0 bg-white">출장목적</label> \
+						   <div class="col-10  ec-col-input border-0"> \
+						       <textarea class="form-control" NAME="BIZTRIP_GOAL" :id="id+\'BIZTRIP_GOAL\'" :value="bizTripGoal" rows="2" readonly></textarea> \
+						   </div> \
+					</div>  \
+					\
+					<div class="ec-grid-row m-0"> \
+							<label class="col-2 d-flex justify-content-end ec-col-label-0 bg-white">출장기간</label> \
+							<div class="col-10 ec-col-input border-0 flex"> \
+								<div class="d-flex">	\
+									<input type="text" name="BIZTRIP_FRDT" :id="id+\'BIZTRIP_FRDT\'" :value="bizTripFrdt" class="col-6 form-control form-control-sm text-center" readonly/>\
+									<input type="text" name="BIZTRIP_TODT" :id="id+\'BIZTRIP_TODT\'" :value="bizTripTodt" class="col-6 form-control form-control-sm text-center ml-2" readonly /> \
+							    </div> \
+							    <div class="d-flex ml-3 align-items-center d-flex" style="width:120px"> \
+							   	   <span class="font-weight-bold">(</span>	\
+						       	   <input type="text" name="BIZTRIP_NIGHT" :id="id+\'BIZTRIP_NIGHT\'" :value="bizTripNight" class="form-control form-control-sm text-right" readonly/>  \
+						    	   <span class="font-weight-bold">박 </span> \
+						       	   <input type="text" name="BIZTRIP_DAYS" :id="id+\'BIZTRIP_DAYS\'" :value="bizTripDays" class="form-control form-control-sm text-right" readonly />  \
+						    	   <span class="font-weight-bold">일)</span> \
+						   		</div> \
+						    </div> \
+					</div> \
+					\
+		       \
+		       <div class="d-flex flex-wrap bg-light border mt-3">\
+					   <div class="col-12 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+					       <div class="col-2 py-2 px-0 text-center ">사원명</div>\
+					       <div class="col-3 py-2 px-0 text-center border-left">사번</div>\
+					       <div class="col-3 py-2 px-0 text-center border-left">부서명</div>\
+					       <div class="col-2 py-2 px-0 text-center border-left">시작일</div>\
+					       <div class="col-2 py-2 px-0 text-center border-left">종료일</div>\
+					   </div> \
+				</div>\
+				<div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in expListBizTrv" >\
+						 <div class="col-12 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+					         <div class="col-2 py-2 px-0 text-center">{{item.EMP_NM}}</div>\
+					         <div class="col-3 py-2 px-0 text-center border-left">{{item.EMP_NO}}</div>\
+					         <div class="col-3 py-2 px-0 text-center border-left">{{item.DEPT_NM}}</div>\
+					         <div class="col-2 py-2 px-0 text-center border-left">{{item.BIZTRIP_FRDT | dateformat("card-week")}}&nbsp{{item.BIZTRIP_FRDT | dateformat("card-time")}}</div>\
+					         <div class="col-2 py-2 px-0 text-center border-left">{{item.BIZTRIP_TODT | dateformat("card-week")}}&nbsp{{item.BIZTRIP_TODT | dateformat("card-time")}}</div>\
+						 </div> \
+				</div> \
+			</div> \
+		</div> \
+    \
+	    <div class="col-12 mt-3 p-0 d-flex"> \
+				    <div class="col-9"> </div> \
+				    <div class="col-3 invoice-price-right bg-maintheme border"> \
+					       	<small>TOTAL</small> <span class="f-w-600">{{amt | numberformat("0,000")}}원</span> \
+				    </div> \
+				</div> \
+		       \
+		       <div class="d-flex flex-wrap bg-light border">\
+			   <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+			       <div class="col-1 py-2 px-0 text-center ">순번</div>\
+			       <div class="col-3 py-2 px-0 text-center border-left">사원명</div>\
+			       <div class="col-4 py-2 px-0 text-center border-left">코스트센터</div>\
+			       <div class="col-4 py-2 px-0 text-center border-left">비용항목</div>\
+			   </div> \
+			   <div class="col-12 col-xl-6 p-0 d-flex"> \
+			   	   <div class="col-3 py-2 px-0 text-center border-left">사용일</div>\
+			       <div class="col-3 py-2 px-0 text-center border-left">교통수단</div>\
+			       <div class="col-3 py-2 px-0 text-center border-left">운행구분</div>\
+			       <div class="col-3 py-2 px-0 text-center border-left">지급액</div>\
+			   </div> \
+		</div>\
+		<div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in expListTravel" >\
+				 <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+			         <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+			         <div class="col-3 py-2 px-0 text-center border-left">{{item.EMP_NM}}</div>\
+			         <div class="col-4 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+			         <div class="col-4 py-2 px-0 text-center border-left">{{item.EXPENSE_NM}}</div>\
+				 </div> \
+		      <div class="col-12 col-xl-6 p-0 d-flex"> \
+			         <div class="col-3 py-2 px-0 text-center border-left">{{item.RECEIPT_DT | dateformat("card-week")}}&nbsp{{item.RECEIPT_DT | dateformat("card-time")}}</div>\
+			         <div class="col-3 py-2 px-0 text-center border-left">{{item.TRANSPORT}}</div>\
+			         <div class="col-3 py-2 px-0 text-center border-left">{{item.TRANSWAY}}</div>\
+			         <div class="col-3 py-2 px-0 text-center border-left">{{item.PAY_AMT | numberformat("0,000")}}원</div>\
+			     </div> \
+		</div> \
+		   \
+		   \
+		</div> \
+       <div> \
+           <report-file-comp :ref="refFile" v-show="true"  >   </report-file-comp> \
+           \
+           \
+           \
+       </div> \
+     </div> \
+    \
+    \
+	</div>',
+	created () { 
+	                  
+	          },
+   methods : {
+	   sendObj: function( o ) { 
+		 return { COMPONENT_ID : this.$options.name} ; // 컴포넌트, detail, report header, files, mng
+	   },
+	   setObj : function( o ) { 
+		   this.expenseList = o;
+	   },
+	    search : function( reportno ) { 
+	        // 컴포넌트 1개당 컨트롤러(서비스), mapper, xml 각 한개씩
+	        // url은 /컴포넌트명/함수명
+	          this.reportNo = reportno;
+	        
+	          // header : title, 내용, 첨부파일
+	          this.$refs[this.refHeader].search(this.reportNo);
+	          this.$refs[this.refMng].search(this.reportNo);
+	          
+	          //비용 파일 (리포포 파일X)
+	          this.$refs[this.refFile].search(this.reportNo);
+	        
+	           var param = {
+	                   svcId:"getReportedList",
+	                   strUrl:"/ex/expense/approve/getReportByNo",
+	                   param : {REPORT_NO : this.reportNo}, //조회조건 부분만(전체는 에러 : 관리항목 input존재)
+	                   pCall : this.getReportByNoCallback, 
+	                   pLoad : true         
+	               };            
+	           ajaxReadJsonData(param);       
+	        
+	          var param = {
+                      svcId:"",
+                      strUrl:"/ex/expense/expensemst/getExpListByReportNo",    //전송 url    
+                      inDs :  "" ,  
+                      param : { REPORT_NO : this.reportNo },  
+                      pCall : this.getExpListByReportNoCallback, 
+                      pLoad : true,          
+              		};
+              ajaxReadJsonData(param);  
+              
+  			  this.amt = 0;
+   			  this.cnt = 0;
+              var param = {
+                      svcId:"getBizTripExpense",
+                      strUrl:"/report-biztrip-exp-list/getBizTripExpense", 
+                      inDs :  "" ,  
+                      param : {REPORT_NO: this.reportNo}, 
+                      pCall : this.getBizTripExpenseCallback, 
+                      pLoad : true          
+                  };
+              ajaxReadJsonData(param);  
+              
+              var param = {
+                      svcId:"getBizTripAndTrv",
+                      strUrl:"/report-biztrip-exp-list/getBizTripAndTrv", 
+                      inDs :  "" ,  
+                      param : {REPORT_NO: this.reportNo}, 
+                      pCall : this.getBizTripExpenseCallback, 
+                      pLoad : true          
+                  };
+              ajaxReadJsonData(param);  
+   	   
+   	   },
+   	   
+   		getBizTripExpenseCallback : function(svcId, data) {
+   		   var items = data.ds_master.data;
+   		   if(svcId == 'getBizTripExpense') {
+	   		    var t = 0 ;
+   				this.expListTravel = items.filter( function (item) {
+				   	item.FILE_LISTS = JSON.parse( item.FILE_LIST );
+				   	t = t + item.PAY_AMT;
+				   	return item.SOURCE_TP == '2'  
+				});
+	   		
+	           this.amt = t;
+	           this.cnt = this.expListTravel.length;
+   		   }else if(svcId == 'getBizTripAndTrv') {
+   			   if(items.BIZTRV.length > 0) {
+   					this.expListBizTrv =items.BIZTRV;
+   			   } 
+   			   
+   			   if(items.BIZTRIP != null) {
+	   				var biztrp = items.BIZTRIP;
+	   				this.bizTripPlace = biztrp.BIZTRIP_PLACE;
+	   				this.bizTripGoal = biztrp.BIZTRIP_GOAL;
+	   				this.bizTripFrdt = biztrp.BIZTRIP_FRDT;
+	   				this.bizTripTodt = biztrp.BIZTRIP_TODT;
+	   				this.bizTripNight = biztrp.BIZTRIP_NIGHT;
+	   				this.bizTripDays = biztrp.BIZTRIP_DAYS;
+   			   }
+   		   }
+   	   },
+	    
+	    getReportByNoCallback : function(svcId, data) {
+	    	   this.reportTitle = data.ds_master.data[0].REPORT_TITLE;
+	    	   this.reportRmk = data.ds_master.data[0].REPORT_RMK;
+	    	   this.paySumAmt = data.ds_master.data[0].PAY_SUM_AMT;	
+	    	   this.$refs[this.refHeader].setAmt(this.paySumAmt);
+	    	   this.cnt = data.ds_master.data[0].CNT;	
+	    	   this.$refs[this.refHeader].setCount(this.cnt);
+	    },
+	    
+        getExpListByReportNoCallback : function(svcId, data) {
+            this.expenseList = [];
+            this.expenseList = data["ds_master"]['data'];
+            this.reportMngList = [];
+            this.reportMngList = data["ds_mng"]['data'];
+//             this.expListTravel = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '3'  });
+            
+//          관리항목 값 조회
+            if (this.reportMngList.length > 0){
+                var ref = this;
+                
+              this.$nextTick( function () {
+            	  ref.reportMngList.forEach(item => {  
+                    if (item.INPUT_FORMAT_CD == '01') { 
+                        ref.$refs['popupreportmng'+item.MNG_CD][0].setData(item.MNGVAL_CD, item.MNGVAL_NM);
+                    }else if (item.INPUT_FORMAT_CD == '05' || item.INPUT_FORMAT_CD == '02' ){ // date , number
+                   	 ref.$refs['popupreportmng'+item.MNG_CD][0].setData(item.MNGVAL_NM);
+                    }else{
+                        $('#'+ref.pgmid+'popupreportmng'+item.MNG_CD).val(item.MNGVAL_NM); 
+                    }
+                 });
+              
+              })  // nextTick 
+            }
+        }, 
+        fileClick : function(item, index) {
+          	 this.$refs.imgmodal.setUrl('/ec/common/syscommon/fileupload/downloadFile/'+ item.FILE_NO, item.FILE_TYPE);
+          	 this.$refs.imgmodal.showModal();
+          },
+          tmapClick : function(url) {
+          	 this.$refs.imgmodal.setUrl(url, 'PNG');
+          	 this.$refs.imgmodal.showModal();
+          },	
+   },//method
+
+   mounted: function() {
+	   var ref = this;
+       this.$nextTick(function () {
+	  });
+
+    },
+}); // test
+
+
+//상신용 비용리스트(결재화면)
+Vue.component('report-apprv-biztrip-exp-list', { // ==================================================================
+    data: function () { 
+    return {
+              //필수 변수
+    	      id : objId(),
+              refHeader : objId(),
+          	  refMng : objId(),
+              refFile: objId(),
+          	  
+              //
+              reportFiles : [],
+              reportNo : '',
+              reportTp : '',
+              reportTpNm : '',
+              
+              expFiles : [],
+              expenseList : [],
+              reportMngList : [],
+              expListTravel : [],
+              
+              reportTitle : '',
+              reportRmk : '',
+              paySumAmt : '',
+              imgid: objId(),
+              
+              daterangeId :  objId(),
+              newgriditem : {DEPT_NM : '[[${session.g_deptNm}]]'} ,
+              gridView : '',
+              columnlayout : [] ,//columnlayout
+              bizTripEmpPopupId : objId(),
+              amt : 0,
+              cnt : 0,
+      }
+    },
+
+    props: {pgmid : String ,subname:String, ismobile : String  }, 
+    template: 
+    '<div class=""  > \
+    \
+    \
+	    <div v-if="ismobile == \'true\'" > \
+	    \
+	     	       <report-header-comp :ref="refHeader" v-show="false"  title="true" ismobile="true"></report-header-comp> \
+	      	       <report-mng-comp :ref="refMng" v-show="false" ismobile="true" ></report-mng-comp> \
+	      		   \
+	      		 <div class=""  > \
+			 		    <div class="bg-white d-flex flex-column h-100"> \
+			 					<div class="d-flex mb-1"> \
+			 						<span class="col-3 pl-2 label-required">출장지</span> \
+			 						   <div class="col-9 pl-0 ec-mobile-input border-0"> \
+			 						       <input type="text" name="BIZTRIP_PLACE" :id="id+\'BIZTRIP_PLACE\'" class="w-100 ec-mobile-input form-control-sm required" />  \
+			 						   </div> \
+			 					</div> \
+			 					<div class="d-flex mb-1"> \
+			 						  <span class="col-3 pl-2 label-required">출장목적</span> \
+			 						   <div class="col-9 pl-0 ec-mobile-input border-0"> \
+			 						       <input type="text" class="w-100 ec-mobile-input form-control-sm required" NAME="BIZTRIP_GOAL" :id="id+\'BIZTRIP_GOAL\'" ></input> \
+			 						   </div> \
+			 					</div>  \
+			 					\
+			 					<div class="d-flex mb-1"> \
+			 							<label class="col-3 pl-2 label-required">출장기간</label> \
+			 							<div class="col-9 p-0 ec-mobile-input border-0"> \
+			 									<daterange-m-component-v1 ref="searchBizTripdt" :id="daterangeId" subname1="BIZTRIP_FRDT" subname2="BIZTRIP_TODT"  required="true"  initval1="today" initval2="today" loc="center" @changedate="bizTripDateChanged"></daterange-m-component-v1> \
+			 									<div class="d-none ml-3 align-items-center" style="width:120px"> \
+				 							   	   <span class="font-weight-bold">(</span>	\
+				 						       	   <input type="text" name="BIZTRIP_NIGHT" :id="id+\'BIZTRIP_NIGHT\'" class="form-control form-control-sm required" value="0" readonly/>  \
+				 						    	   <span class="font-weight-bold">박 </span> \
+				 						       	   <input type="text" name="BIZTRIP_DAYS" :id="id+\'BIZTRIP_DAYS\'" class="form-control form-control-sm required" value="1" readonly />  \
+				 						    	   <span class="font-weight-bold">일)</span> \
+				 						   		</div> \
+			 							</div> \
+			 					</div> \
+			 					\
+			 					<div class="mb-1"> \
+			 							 <div class="w-100" style = "height : 150px"> \
+			 				                <grid-crud class="w-100" ref="gridBizTrip" :columnlayout="columnlayout" :pgmid="pgmid" subname="gridBizTrip"  :newitem="newgriditem"  buttons="ie"></grid-crud>  \
+			 				             </div> \
+			 				             <popup-gridcode ref="bizTripEmp" :refid="bizTripEmpPopupId" :pgmid="pgmid"  pgmnm="bizTripEmp" subname="bizTripEmp"  name="bizTripEmp" searchname="사원명"  columnlayout="popupemp"   tablename="EMP" codecl=""  :parentgrid="gridView" codecol="EMP_NO" namecol="EMP_NM" ></popup-gridcode> \
+			 				    </div> \
+			 			</div> \
+			 		</div> \
+				   \
+				   <div class="mb-2 p-10 d-flex justify-content-between algin-items-center bg-submaintheme"> \
+	                   <small class="d-flex justify-content-left align-items-center f-plane w-100"><p class="m-0">TOTAL &nbsp {{cnt}}건</p></small> \
+	                   <span class="w-100 text-right justify-content-end align-items-center border-white f-title d-flex">{{amt | numberformat("0,000") }}원</span> \
+	               </div> \
+                   <div class=" form-horizontal p-0 flex-column w-100  f-s-13 " :id="\'accordionexpDetail\'+pgmid" >  \
+		                   <div v-if="expListTravel.length > 0">   \
+			                      <div class="d-flex justify-content-between mb-1">  \
+			                          <div class="text-maintheme"><i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expListTravel[0].SOURCE_TP_NM}}</div>  \
+			                          <div class="collapsed" data-toggle="collapse" :data-target="\'#expDetailTravel\'+pgmid" ><i class="icon-arrow-down mr-2"></i></div>  \
+			                      </div>  \
+		                          <div v-for="(item, index) in expListTravel" class="rounded-0 card  row border-right-0 border-left-0 border-bottom-0    m-0 p-0"  >  \
+				                          <div class="bg-black-transparent-1 d-flex align-content-center flex-wrap p-0 p-t-5 border-0 collapsed" data-toggle="collapse" :data-target="\'#expDetailTravel\'+pgmid+index">    \
+				                                 <div class="d-inline-flex w-100">  \
+				                                   <span class="col-6 mb-1 text-nowrap">비용항목&nbsp<strong>{{item.EXPENSE_NM}}</strong></span>  \
+				                                   <span class="col-6 mb-1 text-right">금액&nbsp<strong>{{item.PAY_AMT | numberformat(\'0,000\')}}원</strong></span>  \
+				                                 </div>   \
+				                                 <div class="d-inline-flex w-100">  \
+				                                   <p class="col-12 mb-1">사용일시&nbsp<strong>{{item.RECEIPT_DT | dateformat(\'card-week\')}}&nbsp{{item.RECEIPT_DT | dateformat(\'card-time\')}}</strong></p>  \
+				                                 </div>  \
+				                          </div>  \
+				                          <div :id="\'expDetailTravel\'+pgmid" class="collapse bg-light" :data-parent="\'#accordionexpDetail\'+pgmid"  >    \
+		                                  <div class="w-100">  \
+				                                     <div  class="d-flex flex-wrap justify-content-around">  \
+				                                          <div v-for="(i, idx) in item.FILE_LISTS" class="m-2" >  \
+				                                             <img  v-if="i.FILE_NO != null" @click.stop="fileClick(i, idx)" :src="\'/ec/common/syscommon/fileupload/downloadFile/\'+i.FILE_NO" height="150" >  \
+				                                         </div>  \
+				                                     </div>   \
+				                                  </div>   \
+				                          </div>  \
+		                           </div>    \
+		                   </div>  \
+                   </div>  \
+                   <img-modal ref="imgmodal" :pgmid="imgid" subname="imgmodal" ></img-modal> \
+                   <report-file-comp v-show="false" :ref="refFile"></report-file-comp> \
+                   \
+        </div>    \
+         \
+    \
+    \
+      <div v-if="ismobile != \'true\'" > \
+        \
+        <report-header-comp :ref="refHeader" v-show="false"  title="true" ></report-header-comp> \
+        <report-mng-comp :ref="refMng" v-show="false"  ></report-mng-comp> \
+          \
+          <div class=""  > \
+		    <div class="d-flex flex-column h-100"> \
+					<div class="ec-grid-row m-0"> \
+						   <label class="col-2 d-flex justify-content-end ec-col-label-0 bg-white label-required">출장지</label> \
+						   <div class="col-10  ec-col-input border-0"> \
+						       <input type="text" name="BIZTRIP_PLACE" :id="id+\'BIZTRIP_PLACE\'" class="form-control form-control-sm required" />  \
+						   </div> \
+					</div> \
+					<div class="ec-grid-row m-0"> \
+						   <label class="col-2 d-flex justify-content-end ec-col-label-0 bg-white label-required">출장목적</label> \
+						   <div class="col-10  ec-col-input border-0"> \
+						       <textarea class="form-control required" NAME="BIZTRIP_GOAL" :id="id+\'BIZTRIP_GOAL\'"  rows="2"></textarea> \
+						   </div> \
+					</div>  \
+					\
+					<div class="ec-grid-row m-0"> \
+							<label class="col-2 d-flex justify-content-end ec-col-label-0 bg-white label-required">출장기간</label> \
+							<div class="col-10 ec-col-input border-0"> \
+								<div class="">	\
+									<daterange-m-component-v1 ref="searchBizTripdt" :id="daterangeId" subname1="BIZTRIP_FRDT" subname2="BIZTRIP_TODT"  required="true"  initval1="today" initval2="today" loc="center" @changedate="bizTripDateChanged"></daterange-m-component-v1> \
+							    </div> \
+							    <div class="d-flex ml-3 align-items-center" style="width:120px"> \
+							   	   <span class="font-weight-bold">(</span>	\
+						       	   <input type="text" name="BIZTRIP_NIGHT" :id="id+\'BIZTRIP_NIGHT\'" class="form-control form-control-sm required" value="0" readonly/>  \
+						    	   <span class="font-weight-bold">박 </span> \
+						       	   <input type="text" name="BIZTRIP_DAYS" :id="id+\'BIZTRIP_DAYS\'" class="form-control form-control-sm required" value="1" readonly />  \
+						    	   <span class="font-weight-bold">일)</span> \
+						   		</div> \
+						    </div> \
+					</div> \
+					\
+					<div class="ec-grid-row m-0"> \
+							 <div class="w-100" style = "height : 180px"> \
+				                <grid-crud class="w-100" ref="gridBizTrip" :columnlayout="columnlayout" :pgmid="pgmid" subname="gridBizTrip"  :newitem="newgriditem"  buttons="ie"></grid-crud>  \
+				             </div> \
+				             <popup-gridcode ref="bizTripEmp" :refid="bizTripEmpPopupId" :pgmid="pgmid"  pgmnm="bizTripEmp" subname="bizTripEmp"  name="bizTripEmp" searchname="사원명"  columnlayout="popupemp"   tablename="EMP" codecl=""  :parentgrid="gridView" codecol="EMP_NO" namecol="EMP_NM" ></popup-gridcode> \
+				    </div> \
+			</div> \
+		</div> \
+          \
+       <div class="col-12 mt-3 p-0 d-flex"> \
+      	  <div class="col-9"> </div> \
+          <div class="col-3 invoice-price-right bg-maintheme border"> \
+		       	<small>TOTAL</small> <span class="f-w-600">{{amt | numberformat("0,000")}}원</span> \
+		   </div> \
+	   </div> \
+	   \
+		   <div class="d-flex flex-wrap bg-light border">\
+				   <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+				       <div class="col-1 py-2 px-0 text-center ">순번</div>\
+				       <div class="col-3 py-2 px-0 text-center border-left">사원명</div>\
+				       <div class="col-4 py-2 px-0 text-center border-left">코스트센터</div>\
+				       <div class="col-4 py-2 px-0 text-right border-left pr-3">비용항목</div>\
+				   </div> \
+				   <div class="col-12 col-xl-6 p-0 d-flex"> \
+				   	   <div class="col-3 py-2 px-0 text-right border-left pr-3">사용일</div>\
+				       <div class="col-3 py-2 px-0 text-center border-left">교통수단</div>\
+				       <div class="col-3 py-2 px-0 text-center border-left">운행구분</div>\
+				       <div class="col-3 py-2 px-0 text-center border-left">지급액</div>\
+				   </div> \
+			</div>\
+			<div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in expListTravel" >\
+					 <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+				         <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+				         <div class="col-3 py-2 px-0 text-center border-left">{{item.EMP_NM}}</div>\
+				         <div class="col-4 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+				         <div class="col-4 py-2 px-0 text-center border-left">{{item.EXPENSE_NM}}</div>\
+					 </div> \
+			      <div class="col-12 col-xl-6 p-0 d-flex"> \
+				         <div class="col-3 py-2 px-0 text-right border-left">{{item.RECEIPT_DT | dateformat("card-week")}}&nbsp{{item.RECEIPT_DT | dateformat("card-time")}}</div>\
+				         <div class="col-3 py-2 px-0 text-center border-left">{{item.TRANSPORT}}</div>\
+				         <div class="col-3 py-2 px-0 text-center border-left">{{item.TRANSWAY}}</div>\
+				         <div class="col-3 py-2 px-0 text-center border-left">{{item.PAY_AMT | numberformat("0,000")}}원</div>\
+				     </div> \
+			</div> \
+	           \
+	           \
+	       </div> \
+          <report-file-comp :ref="refFile" v-show="true"  >   </report-file-comp> \
+       </div> \
+     </div> \
+    \
+    \
+    \
+	</div>',
+	created () { 
+		
+		this.columnlayout =
+            [   
+                {dataField : "EMP_NM",   headerText : "<span class='label-required'>사원명</span>", style : "aui_col_left", editable : true, renderer : {type : "TemplateRenderer" },  pgmid: this.pgmid,  gridname : "bizTripEmp" , refid : this.bizTripEmpPopupId,  labelFunction : auiComponentPopupCode },
+                {dataField : "EMP_NO",   headerText : "사번",  style : "aui_col_center", editable : false},
+                {dataField : "DEPT_NM",   headerText : "부서명",  style : "aui_col_left", editable : false},
+                {dataField : "BIZTRIP_FRDT",   headerText : "<span class='label-required'>시작일</span>", editable : false, dateInputFormat : "yyyymmdd", dataType : "date", formatString : "yyyy-mm-dd"},
+                {dataField : "BIZTRIP_TODT",   headerText : "<span class='label-required'>종료일</span>", editable : false, dateInputFormat : "yyyymmdd", dataType : "date", formatString : "yyyy-mm-dd"},
+          ]; //columnlayout
+          
+        },
+   methods : {
+	   initData: function() {  // 필수함수
+		   $('#'+this.id+'BIZTRIP_PLACE').val('');
+		   $('#'+this.id+'BIZTRIP_GOAL').val('');
+		   $('#'+this.id+'BIZTRIP_NIGHT').val('0');
+		   $('#'+this.id+'BIZTRIP_DAYS').val('1');
+		   this.$refs.searchBizTripdt.init('today');
+		   AUIGrid.clearGridData(this.gridView);
+		   
+		   this.$refs[this.refHeader].initData();
+		   this.$refs[this.refMng].initData();
+		   this.$refs[this.refFile].initData();
+		   
+		   var frDate = this.$refs.searchBizTripdt.getFrDate();
+ 	       var toDate = this.$refs.searchBizTripdt.getToDate();
+ 	       this.$refs.gridBizTrip.blankobj = {DEPT_NM : '[[${session.g_deptNm}]]', BIZTRIP_FRDT: frDate, BIZTRIP_TODT: toDate};
+			
+	   },
+	   sendObj: function( o ) {  // 필수함수
+		   
+	  		var nights = $('#'+this.id+'BIZTRIP_NIGHT').val();
+	  		var days = $('#'+this.id+'BIZTRIP_DAYS').val();
+	  		
+	  		if(nights < 0 && days <= 0) {
+	  			customAlert('','', '출장기간을 제대로 입력해주세요.')
+	  			return null;
+	  		}
+	  		
+		   var gridItems = getCRUDdata(this.gridView);
+	   		
+	   	    var items = {}
+	   		items.BIZTRIP_PLACE = $('#'+this.id+'BIZTRIP_PLACE').val()
+	   		items.BIZTRIP_GOAL = $('#'+this.id+'BIZTRIP_GOAL').val();
+	   		items.BIZTRIP_FRDT = this.$refs.searchBizTripdt.getFrDate();
+	   		items.BIZTRIP_TODT = this.$refs.searchBizTripdt.getToDate();
+	   		items.BIZTRIP_NIGHT = nights;
+	   		items.BIZTRIP_DAYS = days;
+	   		
+	   		
+		   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+			return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+			                     , ds_report : this.$refs[this.refHeader].getObj() 
+			                     , ds_etcList : { data : this.expenseList, CHG_MSG : "비용항목에 변경된 데이터가 있습니다. 조회 후 다시 처리하세요.",
+			                    	 			  item : items, gridItem : gridItems.data, }
+			                     , ds_files : this.reportFiles
+			                     }, this.$refs[this.refMng].getObj()   );
+			 
+		   },	   
+	   setObj : function( o ) { // 필수함수
+		   this.expenseList = o;
+		   this.amt = 0;
+		   this.cnt = 0;
+	       
+           // 비용item 첨부파일
+		   var arr = []
+		   this.expenseList.forEach( function (item) {
+			  arr.push({EXPENSE_NO : item.EXPENSE_NO});
+		   } );
+	       this.$refs[this.refFile].getFiles(arr);
+	       
+	       var param = {
+                   svcId:"getBizTripExpense",
+                   strUrl:"/report-biztrip-exp-list/getBizTripExpense", 
+                   inDs :  "" ,  
+                   param : {EXPENSE_NOS: arr}, 
+                   pCall : this.getBizTripExpenseCallback, 
+                   pLoad : true          
+               };
+           ajaxReadJsonData(param);  
+	   
+	   },
+	   
+	   getBizTripExpenseCallback : function(svcId, data) {
+		   var items = data.ds_master.data
+		   var t = 0 ;
+		   this.expListTravel = items.filter( function (item) { 
+			   item.FILE_LISTS = JSON.parse( item.FILE_LIST ); 
+			   t = t + item.PAY_AMT
+			   return item.SOURCE_TP == '2'  
+			});
+		   
+           this.amt = t;
+           this.cnt = this.expListTravel.length;
+	   },
+	   
+	   setReportTp : function( reporttp, reporttitle  ) { // 필수함수
+		   this.$refs[this.refMng].searchMng(reporttp);
+		   this.reportTp = reporttp;
+		   this.reportTitle = reporttitle;
+		   
+		   this.$refs[this.refHeader].setTitle(this.reportTitle);
+	   },
+       fileClick : function(item, index) {
+       	 this.$refs.imgmodal.setUrl('/ec/common/syscommon/fileupload/downloadFile/'+ item.FILE_NO, item.FILE_TYPE);
+       	 this.$refs.imgmodal.showModal();
+       },
+       tmapClick : function(url) {
+       	 this.$refs.imgmodal.setUrl(url, 'PNG');
+       	 this.$refs.imgmodal.showModal();
+       },	
+	    search : function( reportno ) { //필수함수
+	        // 컴포넌트 1개당 컨트롤러(서비스), mapper, xml 각 한개씩
+	        // url은 /컴포넌트명/함수명         
+	    },
+        
+        bizTripDateChanged : function(fr, to, du) {
+  	    	
+  	    	$('#'+this.id+'BIZTRIP_NIGHT').val(du-1);
+  	    	$('#'+this.id+'BIZTRIP_DAYS').val(du);
+  	    	
+  	    	AUIGrid.updateAllToValue(this.gridView,'BIZTRIP_FRDT',fr);
+  	    	AUIGrid.updateAllToValue(this.gridView,'BIZTRIP_TODT',to);
+  	    	
+  	    	this.$refs.gridBizTrip.blankobj.BIZTRIP_FRDT = fr;
+  	    	this.$refs.gridBizTrip.blankobj.BIZTRIP_TODT = to;
+	  	},   
+	    
+   },//method
+
+   mounted: function() {
+	   var ref = this;
+       this.$nextTick(function () {
+            ref.gridView  = ref.$refs.gridBizTrip.myGridID;
+            
+            var frDate = ref.$refs.searchBizTripdt.getFrDate();
+  	    	var toDate = ref.$refs.searchBizTripdt.getToDate();
+  	    	
+  	    	ref.$refs.gridBizTrip.blankobj.BIZTRIP_FRDT = frDate;
+  	    	ref.$refs.gridBizTrip.blankobj.BIZTRIP_TODT = toDate;
+       });
+
+    },
+}); // test
+
+
+// 호텔패키지 교통비 정산서
+Vue.component('report-hoteltrip-exp-list', { // ==================================================================
+    data: function () { 
+    return {
+              id : objId(),
+              refHeader :objId(),
+              refMng :objId(),
+              refFile : objId(),
+              
+              imgid : objId(),
+              reportFileList : [],
+              reportFiles : [],
+              reportNo : '',
+              expFiles : [],
+              expenseList : [],
+              reportMngList : [],
+              expListHoteltrip : [],
+              
+              reportTitle : '',
+              reportRmk : '',
+              paySumAmt : '',
+              
+              limitAmt : 0,
+              useAmtSum : 0,
+              payAmtSum : 0,
+
+      }
+    },
+
+    props: {pgmid : String ,subname:String, ismobile : String  }, 
+    template: 
+    '<div class=""  > \
+    \
+    \
+	    <div v-if="ismobile == \'true\'" > \
+	    \
+	     	       <report-header-comp :ref="refHeader" v-show="false"  title="true" ismobile="true"></report-header-comp> \
+	      	       <report-mng-comp :ref="refMng" v-show="false" ismobile="true" ></report-mng-comp> \
+	      		   \
+	      		 <div class=""  > \
+			 		    <div class="bg-white d-flex flex-column h-100"> \
+			 					<div class="d-flex mb-1"> \
+			 						<span class="col-4 pl-2 label-required">호텔패키지명</span> \
+			 						   <div class="col-8 pl-0 ec-mobile-input border-0"> \
+			 						  		<input type="text" class="w-100 ec-mobile-input form-control-sm required" NAME="EX_HOTEL_PKG" :id="id+\'EX_HOTEL_PKG\'" readonly></input> \
+			 						   </div> \
+			 					</div> \
+			 					<div class="d-flex mb-1"> \
+			 						  <span class="col-4 pl-2 label-required">구분</span> \
+			 						   <div class="col-8 pl-0 ec-mobile-input border-0"> \
+			 						  		<input type="text" class="w-100 ec-mobile-input form-control-sm required" NAME="EX_HOTEL_PKG_MRG" :id="id+\'EX_HOTEL_PKG_MRG\'" readonly></input> \
+			 						   </div> \
+			 					</div>  \
+			 					<div class="d-flex mb-1"> \
+			 						  <span class="col-4 pl-2 label-required">한도액</span> \
+			 						   <div class="col-8 pl-0 ec-mobile-input border-0"> \
+			 						       <input type="text" class="w-100 ec-mobile-input form-control-sm required" NAME="LIMIT_AMT" :id="id+\'LIMIT_AMT\'" :value="limitAmt | numberformat(\'0,000\')" readonly></input> \
+			 						   </div> \
+			 					</div>  \
+			 					<div class="d-flex mb-1"> \
+			 						  <span class="col-4 pl-2 label-required">총사용액</span> \
+			 						   <div class="col-8 pl-0 ec-mobile-input border-0"> \
+			 						       <input type="text" class="w-100 ec-mobile-input form-control-sm required" NAME="HOTELTRIP_TOTAL" :id="id+\'HOTELTRIP_TOTAL\'" :value="useAmtSum | numberformat(\'0,000\')" readonly></input> \
+			 						   </div> \
+			 					</div>  \
+			 					<div class="d-flex mb-1"> \
+			 						  <span class="col-4 pl-2 label-required">회사지원금</span> \
+			 						   <div class="col-8 pl-0 ec-mobile-input border-0"> \
+			 						       <input type="text" class="w-100 ec-mobile-input form-control-sm required" NAME="HOTELTRIP_SUP" :id="id+\'HOTELTRIP_SUP\'" :value="payAmtSum | numberformat(\'0,000\')"></input> \
+			 						   </div> \
+			 					</div>  \
+			 			</div> \
+			 		</div> \
+				   \
+                   <div class=" form-horizontal p-0 flex-column w-100  f-s-13 " :id="\'accordionexpDetail\'+pgmid" >  \
+		                   <div v-if="expListHoteltrip.length > 0">   \
+			                      <div class="d-flex justify-content-between mb-1">  \
+			                          <div class="text-maintheme"><i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expListHoteltrip[0].SOURCE_TP_NM}}</div>  \
+			                          <div class="collapsed" data-toggle="collapse" :data-target="\'#expDetailReceipt\'+pgmid" ><i class="icon-arrow-down mr-2"></i></div>  \
+			                      </div>  \
+		                          <div v-for="(item, index) in expListHoteltrip" class="rounded-0 card  row border-right-0 border-left-0 border-bottom-0    m-0 p-0"  >  \
+				                          <div class="bg-black-transparent-1 d-flex align-content-center flex-wrap p-0 p-t-5 border-0 collapsed" data-toggle="collapse" :data-target="\'#expDetailReceipt\'+pgmid+index">    \
+					                          <div class="d-inline-flex w-100">  \
+			                                     <span class="col-6 mb-1 text-nowrap">비용항목&nbsp<strong>{{item.EXPENSE_NM}}</strong></span>  \
+			                                     <span class="col-6 mb-1 text-right">사용금액&nbsp<strong>{{item.PAY_AMT | numberformat(\'0,000\')}}원</strong></span>  \
+			                                 </div>   \
+			                                 <div class="d-inline-flex w-100">  \
+				                                 <span class="col-6 mb-1 text-nowrap">사용일시&nbsp<strong>{{item.RECEIPT_DT | dateformat(\'card-week\')}}&nbsp{{item.RECEIPT_DT | dateformat(\'card-time\')}}</strong></span>  \
+			                                     <span class="col-6 mb-1 text-right">회사지원금&nbsp<strong>{{item.PAY_AMT | numberformat(\'0,000\')}}원</strong></span>  \
+			                                 </div>  \
+				                          </div>  \
+				                          <div :id="\'expDetailReceipt\'+pgmid" class="collapse bg-light" :data-parent="\'#accordionexpDetail\'+pgmid"  >   \
+				                                   <div  class="d-flex flex-wrap justify-content-around">  \
+				                                     <div v-for="(i, idx) in item.FILE_LISTS" class="m-2" >  \
+				                                        <img  v-if="i.FILE_NO != null" @click.stop="fileClick(i, idx)" :src="\'/ec/common/syscommon/fileupload/downloadFile/\'+i.FILE_NO" height="150" >  \
+				                                     </div>  \
+				                                  </div>  	  \
+				                          </div>  \
+		                           </div>    \
+		                   </div>  \
+                   </div>  \
+                   <img-modal ref="imgmodal" :pgmid="imgid" subname="imgmodal" ></img-modal> \
+                   <report-file-comp v-show="false" :ref="refFile"></report-file-comp> \
+                   \
+        </div>    \
+         \
+    \
+    \
+      <div v-if="ismobile != \'true\'" > \
+        \
+        <report-header-comp :ref="refHeader" v-show="false"  title="true" ></report-header-comp> \
+        <report-mng-comp :ref="refMng" v-show="false"  ></report-mng-comp> \
+          \
+          <div class=""  > \
+		    <div class="d-flex flex-column h-100"> \
+					<div class="ec-grid-row m-0 d-flex"> \
+						<div class="d-flex col-4"> \
+						   <label class="col-4 d-flex justify-content-end ec-col-label-0 bg-white">호텔패키지명</label> \
+						   <div class="col-8  ec-col-input border-0"> \
+						   		<input type="text" name="EX_HOTEL_PKG" :id="id+\'EX_HOTEL_PKG\'" class="form-control form-control-sm text-left" readonly/>  \
+						   </div> \
+						</div> \
+						<div class="d-flex col-4"> \
+						   <label class="col-4 d-flex justify-content-end ec-col-label-0 bg-white">구분</label> \
+						   <div class="col-8  ec-col-input border-0"> \
+						   		<input type="text" name="EX_HOTEL_PKG_MRG" :id="id+\'EX_HOTEL_PKG_MRG\'" class="form-control form-control-sm text-left" readonly/>  \
+						   </div> \
+					    </div> \
+					    <div class="d-flex col-4"> \
+						   <label class="col-4 d-flex justify-content-end ec-col-label-0 bg-white">한도액</label> \
+						   <div class="col-8  ec-col-input border-0"> \
+						   		<input type="text" name="LIMIT_AMT" :id="id+\'LIMIT_AMT\'" :value="limitAmt | numberformat(\'0,000\')" class="form-control form-control-sm text-right required" readonly/>  \
+						   </div> \
+					    </div> \
+					</div> \
+					\
+					<div class="ec-grid-row m-0 d-flex"> \
+						<div class="d-flex col-4"> \
+						   <label class="col-4 d-flex justify-content-end ec-col-label-0 bg-white">총사용액</label> \
+						   <div class="col-8  ec-col-input border-0"> \
+						   		<input type="text" name="HOTELTRIP_TOTAL" :id="id+\'HOTELTRIP_TOTAL\'" :value="useAmtSum | numberformat(\'0,000\')" class="form-control form-control-sm text-right required" readonly/>  \
+						   </div> \
+					    </div> \
+					    <div class="d-flex col-4"> \
+						   <label class="col-4 d-flex justify-content-end ec-col-label-0 bg-white">회사지원금</label> \
+						   <div class="col-8  ec-col-input border-0"> \
+						   		<input type="text" name="HOTELTRIP_SUP" :id="id+\'HOTELTRIP_SUP\'" :value="payAmtSum | numberformat(\'0,000\')" class="form-control form-control-sm text-right required" readonly/>  \
+						   </div> \
+					    </div> \
+					    <div class="d-flex col-4"> \
+					    </div> \
+					</div> \
+					\
+			</div> \
+		</div> \
+		\
+		<div class="d-flex flex-wrap bg-light border mt-2">\
+				   <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+				       <div class="col-1 py-2 px-0 text-center ">순번</div>\
+				       <div class="col-3 py-2 px-0 text-center border-left">코스트센터</div>\
+				       <div class="col-2 py-2 px-0 text-center border-left">사원명</div>\
+				       <div class="col-4 py-2 px-0 text-right border-left pr-3">사용일</div>\
+				   </div> \
+				   <div class="col-12 col-xl-6 p-0 d-flex"> \
+				   	   <div class="col-2 py-2 px-0 text-center border-left">출발지</div>\
+				       <div class="col-2 py-2 px-0 text-center border-left">도착지</div>\
+				       <div class="col-2 py-2 px-0 text-center border-left">교통수단</div>\
+				       <div class="col-3 py-2 px-0 text-center border-left">사용금액</div>\
+				       <div class="col-3 py-2 px-0 text-center border-left">회사지원금</div>\
+				   </div> \
+		  </div>\
+			<div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in expListHoteltrip" >\
+					 <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+				         <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+				         <div class="col-3 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+				         <div class="col-2 py-2 px-0 text-center border-left">{{item.EMP_NM}}</div>\
+				         <div class="col-4 py-2 px-0 text-right border-left">{{item.RECEIPT_DT | dateformat("card-week")}}&nbsp{{item.RECEIPT_DT | dateformat("card-time")}}</div>\
+					 </div> \
+		          <div class="col-12 col-xl-6 p-0 d-flex"> \
+		          		 <div class="col-2 py-2 px-0 text-center border-left">{{item.START_PLACE}}</div>\
+				         <div class="col-2 py-2 px-0 text-center border-left">{{item.END_PLACE}}</div>\
+				         <div class="col-2 py-2 px-0 text-center border-left">{{item.TRANSPORT}}</div>\
+				         <div class="col-3 py-2 px-0 text-center border-left">{{item.USE_AMT | numberformat("0,000")}}원</div>\
+				         <div class="col-3 py-2 px-0 text-center border-left">{{item.PAY_AMT | numberformat("0,000")}}원</div>\
+				     </div> \
+		   </div> \
+           \
+           \
+       </div> \
+          <report-file-comp :ref="refFile" v-show="true"  >   </report-file-comp> \
+       </div> \
+     </div> \
+    \
+    \
+    \
+	</div>',
+	created () { 
+		
+	          },
+   methods : {
+	   sendObj: function( o ) { 
+		 return { COMPONENT_ID : this.$options.name} ; // 컴포넌트, detail, report header, files, mng
+	   },
+	   setObj : function( o ) { 
+		   this.expenseList = o;
+	   },
+	    search : function( reportno ) { 
+	        // 컴포넌트 1개당 컨트롤러(서비스), mapper, xml 각 한개씩
+	        // url은 /컴포넌트명/함수명
+	          this.reportNo = reportno;
+	        
+	          // header : title, 내용, 첨부파일
+	          this.$refs[this.refHeader].search(this.reportNo);
+// 	          this.$refs[this.refMng].search(this.reportNo);
+	          
+	          //비용 파일 (리포포 파일X)
+	          this.$refs[this.refFile].search(this.reportNo);
+	        
+	           var param = {
+	                   svcId:"getReportedList",
+	                   strUrl:"/ex/expense/approve/getReportByNo",
+	                   param : {REPORT_NO : this.reportNo}, //조회조건 부분만(전체는 에러 : 관리항목 input존재)
+	                   pCall : this.getReportByNoCallback, 
+	                   pLoad : true         
+	               };            
+	           ajaxReadJsonData(param);       
+	        
+	          var param = {
+                      svcId:"",
+                      strUrl:"/ex/expense/expensemst/getExpListByReportNo",    //전송 url    
+                      inDs :  "" ,  
+                      param : { REPORT_NO : this.reportNo },  
+                      pCall : this.getExpListByReportNoCallback, 
+                      pLoad : true,          
+              		};
+              ajaxReadJsonData(param);  
+   			  
+   			var param = {
+                    svcId:"getHotelTripExpense",
+                    strUrl:"/report-hoteltrip-exp-list/getHotelTripExpense", 
+                    inDs :  "" ,  
+                    param : {REPORT_NO: this.reportNo}, 
+                    pCall : this.getExpReportHotelTripCallback, 
+                    pLoad : true          
+                };
+            ajaxReadJsonData(param);  
+            
+              var param = {
+                      svcId:"getExpReportHotelTrip",
+                      strUrl:"/report-hoteltrip-exp-list/getExpReportHotelTrip", 
+                      inDs :  "" ,  
+                      param : {REPORT_NO: this.reportNo}, 
+                      pCall : this.getExpReportHotelTripCallback, 
+                      pLoad : true          
+                  };
+              ajaxReadJsonData(param); 
+   	   },
+   	   
+   		getExpReportHotelTripCallback : function(svcId, data) {
+   		   var items = data.ds_master.data;
+   		   if(svcId == 'getHotelTripExpense') {
+	   		   var ua = 0;
+	   		   var pa = 0;
+   			   this.expListHoteltrip = items.filter( function (item) {
+   				   	item.FILE_LISTS = JSON.parse( item.FILE_LIST );
+   				 	ua = ua + to_number(item.USE_AMT); 
+   				 	pa = pa + item.PAY_AMT;
+   				   	return item.SOURCE_TP == '2'  
+   				});
+	           this.useAmtSum = ua;
+	           this.payAmtSum = pa;
+	   		   
+   		   }else if(svcId == 'getExpReportHotelTrip') {
+   				$('#'+this.id+'EX_HOTEL_PKG').val(items.HOTEL_PKG_NM);
+   				$('#'+this.id+'EX_HOTEL_PKG_MRG').val(items.MARRIED_TP_NM);
+   				this.limitAmt = items.LIMIT_AMT;
+   		   }
+   	   },
+	    
+	    getReportByNoCallback : function(svcId, data) {
+	    	   this.reportTitle = data.ds_master.data[0].REPORT_TITLE;
+	    	   this.reportRmk = data.ds_master.data[0].REPORT_RMK;
+	    	   this.paySumAmt = data.ds_master.data[0].PAY_SUM_AMT;	
+// 	    	   this.$refs[this.refHeader].setAmt(this.paySumAmt);
+// 	    	   this.cnt = data.ds_master.data[0].CNT;	
+// 	    	   this.$refs[this.refHeader].setCount(this.cnt);
+	    },
+	    
+        getExpListByReportNoCallback : function(svcId, data) {
+            this.expenseList = [];
+            this.expenseList = data["ds_master"]['data'];
+            this.reportMngList = [];
+            this.reportMngList = data["ds_mng"]['data'];
+            
+//          관리항목 값 조회
+            if (this.reportMngList.length > 0){
+                var ref = this;
+                
+              this.$nextTick( function () {
+            	  ref.reportMngList.forEach(item => {  
+                    if (item.INPUT_FORMAT_CD == '01') { 
+                        ref.$refs['popupreportmng'+item.MNG_CD][0].setData(item.MNGVAL_CD, item.MNGVAL_NM);
+                    }else if (item.INPUT_FORMAT_CD == '05' || item.INPUT_FORMAT_CD == '02' ){ // date , number
+                   	 ref.$refs['popupreportmng'+item.MNG_CD][0].setData(item.MNGVAL_NM);
+                    }else{
+                        $('#'+ref.pgmid+'popupreportmng'+item.MNG_CD).val(item.MNGVAL_NM); 
+                    }
+                 });
+              
+              })  // nextTick 
+            }
+        }, 
+        fileClick : function(item, index) {
+          	 this.$refs.imgmodal.setUrl('/ec/common/syscommon/fileupload/downloadFile/'+ item.FILE_NO, item.FILE_TYPE);
+          	 this.$refs.imgmodal.showModal();
+        },
+        tmapClick : function(url) {
+          	 this.$refs.imgmodal.setUrl(url, 'PNG');
+          	 this.$refs.imgmodal.showModal();
+        },	
+   },//method
+
+   mounted: function() {
+	   var ref = this;
+       this.$nextTick(function () {
+	  });
+
+    },
+}); // test
+
+
+//// 호텔패키지 교통비 정산서(상신)
+Vue.component('report-apprv-hoteltrip-exp-list', { // ==================================================================
+    data: function () { 
+    return {
+              //필수 변수
+    	      id : objId(),
+              refHeader : objId(),
+          	  refMng : objId(),
+              refFile: objId(),
+          	  
+              //
+              reportFiles : [],
+              reportNo : '',
+              reportTp : '',
+              reportTpNm : '',
+              
+              expFiles : [],
+              expenseList : [],
+              reportMngList : [],
+              expListHoteltrip : [],
+              
+              reportTitle : '',
+              reportRmk : '',
+              paySumAmt : '',
+              imgid: objId(),
+              hotelPkgDropdown : [],
+              hotelPkgMrgDropdown : [],
+              hotelPkg : {},
+              hotelPkgMrg : {},
+              limitAmt : 0,
+              useAmtSum : 0,
+              payAmtSum : 0,
+              
+      }
+    },
+
+    props: {pgmid : String ,subname:String, ismobile : String  }, 
+    template: 
+    '<div class=""  > \
+    \
+    \
+	    <div v-if="ismobile == \'true\'" > \
+	    \
+	     	       <report-header-comp :ref="refHeader" v-show="false"  title="true" ismobile="true"></report-header-comp> \
+	      	       <report-mng-comp :ref="refMng" v-show="false" ismobile="true" ></report-mng-comp> \
+	      		   \
+	      		 <div class=""  > \
+			 		    <div class="bg-white d-flex flex-column h-100"> \
+			 					<div class="d-flex mb-1"> \
+			 						<span class="col-4 pl-2 label-required">호텔패키지명</span> \
+			 						   <div class="col-8 pl-0 ec-mobile-input border-0"> \
+				 						  <div  class="d-flex"> \
+					 	    	              <select class="col  form-control ec-mobile-input select-ios ec-scrollbar"  :id="id+\'EX_HOTEL_PKG\'"  name="EX_HOTEL_PKG"  @change="setHotelPkgLimitAmt"> \
+					 	    	                  <option v-if="this.all == \'YES\'" value=""">선택</option> \
+					 	    	                  <option v-for="lang in hotelPkgDropdown" :value="lang.CODE" :value2="lang.NUM_REF1" :value3="lang.NAME">{{ lang.NAME }}</option> \
+					 	    	              </select> \
+					 	    	          </div> \
+			 						   </div> \
+			 					</div> \
+			 					<div class="d-flex mb-1"> \
+			 						  <span class="col-4 pl-2 label-required">구분</span> \
+			 						   <div class="col-8 pl-0 ec-mobile-input border-0"> \
+				 						  <div  class="d-flex"> \
+					 	    	              <select class="col  form-control ec-mobile-input select-ios ec-scrollbar"  :id="id+\'EX_HOTEL_PKG_MRG\'"  name="EX_HOTEL_PKG_MRG"  @change="setHotelPkgLimitAmt"> \
+					 	    	                  <option v-if="this.all == \'YES\'" value=""">선택</option> \
+					 	    	                  <option v-for="lang in hotelPkgMrgDropdown" :value="lang.CODE" :value2="lang.NUM_REF1" :value3="lang.NAME">{{ lang.NAME }}</option> \
+					 	    	              </select> \
+					 	    	          </div> \
+			 						   </div> \
+			 					</div>  \
+			 					<div class="d-flex mb-1"> \
+			 						  <span class="col-4 pl-2 label-required">한도액</span> \
+			 						   <div class="col-8 pl-0 ec-mobile-input border-0"> \
+			 						       <input type="text" class="w-100 ec-mobile-input form-control-sm required" NAME="LIMIT_AMT" :id="id+\'LIMIT_AMT\'" :value="limitAmt | numberformat(\'0,000\')" readonly></input> \
+			 						   </div> \
+			 					</div>  \
+			 					<div class="d-flex mb-1"> \
+			 						  <span class="col-4 pl-2 label-required">총사용액</span> \
+			 						   <div class="col-8 pl-0 ec-mobile-input border-0"> \
+			 						       <input type="text" class="w-100 ec-mobile-input form-control-sm required" NAME="HOTELTRIP_TOTAL" :id="id+\'HOTELTRIP_TOTAL\'" :value="useAmtSum | numberformat(\'0,000\')" readonly></input> \
+			 						   </div> \
+			 					</div>  \
+			 					<div class="d-flex mb-1"> \
+			 						  <span class="col-4 pl-2 label-required">회사지원금</span> \
+			 						   <div class="col-8 pl-0 ec-mobile-input border-0"> \
+			 						       <input type="text" class="w-100 ec-mobile-input form-control-sm required" NAME="HOTELTRIP_SUP" :id="id+\'HOTELTRIP_SUP\'" :value="payAmtSum | numberformat(\'0,000\')" readonly></input> \
+			 						   </div> \
+			 					</div>  \
+			 			</div> \
+			 		</div> \
+				   \
+                   <div class=" form-horizontal p-0 flex-column w-100  f-s-13 " :id="\'accordionexpDetail\'+pgmid" >  \
+		                   <div v-if="expListHoteltrip.length > 0">   \
+			                      <div class="d-flex justify-content-between mb-1">  \
+			                          <div class="text-maintheme"><i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expListHoteltrip[0].SOURCE_TP_NM}}</div>  \
+			                          <div class="collapsed" data-toggle="collapse" :data-target="\'#expDetailReceipt\'+pgmid" ><i class="icon-arrow-down mr-2"></i></div>  \
+			                      </div>  \
+		                          <div v-for="(item, index) in expListHoteltrip" class="rounded-0 card  row border-right-0 border-left-0 border-bottom-0    m-0 p-0"  >  \
+				                          <div class="bg-black-transparent-1 d-flex align-content-center flex-wrap p-0 p-t-5 border-0 collapsed" data-toggle="collapse" :data-target="\'#expDetailReceipt\'+pgmid+index">    \
+				                                 <div class="d-inline-flex w-100">  \
+				                                    <span class="col-6 mb-1 text-nowrap">비용항목&nbsp</span>  \
+				                                    <span class="col-6 mb-1 text-right"><strong>{{item.EXPENSE_NM}}</strong></span>  \
+				                                 </div>   \
+				                                 <div class="d-inline-flex w-100">  \
+				                                 	<span class="col-6 mb-1 text-nowrap">사용금액&nbsp</span>  \
+				                                    <span class="col-6 mb-1 text-right"><strong>{{item.USE_AMT | numberformat(\'0,000\')}}원</strong></span>  \
+				                                 </div>   \
+				                                 <div class="d-inline-flex w-100">  \
+				                                   	<span class="col-6 mb-1 text-nowrap">사용일시</span>  \
+				                                   	<span class="col-6 mb-1 text-right"><strong>{{item.RECEIPT_DT | dateformat(\'card-week\')}}&nbsp{{item.RECEIPT_DT | dateformat(\'card-time\')}}</strong></span>  \
+				                                 </div>  \
+				                                 <div class="d-inline-flex w-100">  \
+				                                 	<span class="col-6 mb-1 text-nowrap">회사지원금 \</span> \
+				                                   	<inputnumber-m-component ref="PAY_AMT" class="col-6 mb-1 text-right" :pgmid="id+index"  :subname="\'PAY_AMT\'+index" required="true" @inputchange="payAmtChange(index)"></inputnumber-m-component> \
+				                                 </div>  \
+				                          </div>  \
+				                          <div :id="\'expDetailReceipt\'+pgmid" class="collapse bg-light" :data-parent="\'#accordionexpDetail\'+pgmid"  >   \
+				                                   <div  class="d-flex flex-wrap justify-content-around">  \
+				                                     <div v-for="(i, idx) in item.FILE_LISTS" class="m-2" >  \
+				                                        <img  v-if="i.FILE_NO != null" @click.stop="fileClick(i, idx)" :src="\'/ec/common/syscommon/fileupload/downloadFile/\'+i.FILE_NO" height="150" >  \
+				                                     </div>  \
+				                                  </div>  	  \
+				                          </div>  \
+		                           </div>    \
+		                   </div>  \
+                   </div>  \
+                   <img-modal ref="imgmodal" :pgmid="imgid" subname="imgmodal" ></img-modal> \
+                   <report-file-comp v-show="false" :ref="refFile"></report-file-comp> \
+                   \
+        </div>    \
+         \
+    \
+    \
+      <div v-if="ismobile != \'true\'" > \
+        \
+        <report-header-comp :ref="refHeader" v-show="false"  title="true" ></report-header-comp> \
+        <report-mng-comp :ref="refMng" v-show="false"  ></report-mng-comp> \
+          \
+          <div class=""  > \
+		    <div class="d-flex flex-column h-100"> \
+					<div class="ec-grid-row m-0 d-flex"> \
+						<div class="d-flex col-4"> \
+						   <label class="col-4 d-flex justify-content-end ec-col-label-0 bg-white">호텔패키지명</label> \
+						   <div class="col-8  ec-col-input border-0"> \
+						   <div  class="w-100"> \
+			                  <select class="col form-control form-control-sm select-ios ec-scrollbar" :id="id+\'EX_HOTEL_PKG\'"  name="EX_HOTEL_PKG"  @change="setHotelPkgLimitAmt"> \
+			                    <option v-for="lang in hotelPkgDropdown" :value="lang.CODE" :value2="lang.NUM_REF1" :value3="lang.NAME">{{ lang.NAME }}</option> \
+			                  </select> \
+			              </div> \
+						   </div> \
+						</div> \
+						<div class="d-flex col-4"> \
+						   <label class="col-4 d-flex justify-content-end ec-col-label-0 bg-white">구분</label> \
+						   <div class="col-8  ec-col-input border-0"> \
+							   <div  class="w-100"> \
+				                  <select class="col form-control form-control-sm select-ios ec-scrollbar" :id="id+\'EX_HOTEL_PKG_MRG\'"  name="EX_HOTEL_PKG_MRG"  @change="setHotelPkgLimitAmt"> \
+				                    <option v-for="lang in hotelPkgMrgDropdown" :value="lang.CODE" :value2="lang.NUM_REF1" :value3="lang.NAME">{{ lang.NAME }}</option> \
+				                  </select> \
+				              </div> \
+						   </div> \
+					    </div> \
+					    <div class="d-flex col-4"> \
+						   <label class="col-4 d-flex justify-content-end ec-col-label-0 bg-white">한도액</label> \
+						   <div class="col-8  ec-col-input border-0"> \
+						   		<input type="text" name="LIMIT_AMT" :id="id+\'LIMIT_AMT\'" :value="limitAmt | numberformat(\'0,000\')" class="form-control form-control-sm text-right required" readonly/>  \
+						   </div> \
+					    </div> \
+					</div> \
+					\
+					<div class="ec-grid-row m-0 d-flex"> \
+						<div class="d-flex col-4"> \
+						   <label class="col-4 d-flex justify-content-end ec-col-label-0 bg-white">총사용액</label> \
+						   <div class="col-8  ec-col-input border-0"> \
+						   		<input type="text" name="HOTELTRIP_TOTAL" :id="id+\'HOTELTRIP_TOTAL\'" :value="useAmtSum | numberformat(\'0,000\')" class="form-control form-control-sm text-right required" readonly/>  \
+						   </div> \
+					    </div> \
+					    <div class="d-flex col-4"> \
+						   <label class="col-4 d-flex justify-content-end ec-col-label-0 bg-white">회사지원금</label> \
+						   <div class="col-8  ec-col-input border-0"> \
+						   		<input type="text" name="HOTELTRIP_SUP" :id="id+\'HOTELTRIP_SUP\'" :value="payAmtSum | numberformat(\'0,000\')" class="form-control form-control-sm text-right required" readonly/>  \
+						   </div> \
+					    </div> \
+					    <div class="d-flex col-4"> \
+					    </div> \
+					</div> \
+					\
+			</div> \
+		</div> \
+		\
+		<div class="d-flex flex-wrap bg-light border mt-3">\
+				   <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+				       <div class="col-1 py-2 px-0 text-center ">순번</div>\
+				       <div class="col-3 py-2 px-0 text-center border-left">코스트센터</div>\
+				       <div class="col-2 py-2 px-0 text-center border-left">사원명</div>\
+				       <div class="col-4 py-2 px-0 text-right border-left pr-4">사용일</div>\
+				   </div> \
+				   <div class="col-12 col-xl-6 p-0 d-flex"> \
+				   	   <div class="col-2 py-2 px-0 text-center border-left">출발지</div>\
+				       <div class="col-2 py-2 px-0 text-center border-left">도착지</div>\
+				       <div class="col-2 py-2 px-0 text-center border-left">교통수단</div>\
+				       <div class="col-3 py-2 px-0 text-center border-left">사용금액</div>\
+				       <div class="col-3 py-2 px-0 text-center border-left">회사지원금</div>\
+				   </div> \
+		</div>\
+			<div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in expListHoteltrip" >\
+					 <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+				         <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+				         <div class="col-3 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+				         <div class="col-2 py-2 px-0 text-center border-left">{{item.EMP_NM}}</div>\
+				         <div class="col-4 py-2 px-0 text-right border-left pl-5">{{item.RECEIPT_DT | dateformat("card-week")}}&nbsp{{item.RECEIPT_DT | dateformat("card-time")}}</div>\
+					 </div> \
+		       <div class="col-12 col-xl-6 p-0 d-flex"> \
+		       			 <div class="col-2 py-2 px-0 text-center border-left">{{item.START_PLACE}}</div>\
+				         <div class="col-2 py-2 px-0 text-center border-left">{{item.END_PLACE}}</div>\
+				         <div class="col-2 py-2 px-0 text-center border-left">{{item.TRANSPORT}}</div>\
+				         <div class="col-3 py-2 px-0 text-center border-left">{{item.USE_AMT | numberformat("0,000")}}원</div>\
+				         <inputnumber-component  class="col-3 py-2 px-0 text-center border-left p-0 h-100" ref="PAY_AMT" :value="item.PAY_AMT" required="true"  @inputchange="payAmtChange(index)" ></inputnumber-component> \
+				     </div> \
+		</div> \
+          <report-file-comp :ref="refFile" v-show="true"  >   </report-file-comp> \
+       </div> \
+     </div> \
+    \
+    \
+    \
+	</div>',
+	created () { 
+          
+        },
+   methods : {
+	   initData: function() {  // 필수함수
+		   
+		   hotelPkgDropdown : [];
+           hotelPkgMrgDropdown = [];
+           hotelPkg = {};
+           hotelPkgMrg = {};
+           limitAmt = 0;
+           useAmtSum = 0;
+           payAmtSum = 0;
+           
+           $("#"+this.id+"EX_HOTEL_PKG option:eq(0)").prop('selected', true);
+           $("#"+this.id+"EX_HOTEL_PKG_MRG option:eq(0)").prop('selected', true);
+		   
+		   this.$refs[this.refHeader].initData();
+		   this.$refs[this.refMng].initData();
+		   this.$refs[this.refFile].initData();
+		   
+		   this.setHotelPkgLimitAmt();
+			
+	   },
+	   sendObj: function( o ) {  // 필수함수
+		   
+		    if(this.payAmtSum > this.limitAmt) {
+		    	customAlert('', '', '회사지원금이 한도액을 초과합니다')
+		    	return null;
+		    }
+	   		
+	   	    var items = {}
+	   	    items.HOTEL_PKG = this.hotelPkg.CODE;
+	        items.HOTEL_PKG_NM = this.hotelPkg.NAME;
+	   		items.MARRIED_TP = this.hotelPkgMrg.CODE;
+	   		items.MARRIED_TP_NM = this.hotelPkgMrg.NAME;
+	   		items.LIMIT_AMT = this.limitAmt;
+	   		
+		   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+			return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+			                     , ds_report : this.$refs[this.refHeader].getObj() 
+			                     , ds_etcList : { data : this.expenseList, CHG_MSG : "비용항목에 변경된 데이터가 있습니다. 조회 후 다시 처리하세요.",
+			                    	 			  item : items}
+			                     , ds_files : this.reportFiles
+			                     }, this.$refs[this.refMng].getObj()   );
+			 
+		   },	   
+	   setObj : function( o ) { // 필수함수
+		   this.expenseList = o;
+		   
+           // 비용item 첨부파일
+		   var arr = []
+		   this.expenseList.forEach( function (item) {
+			  arr.push({EXPENSE_NO : item.EXPENSE_NO});
+		   } );
+	       this.$refs[this.refFile].getFiles(arr);
+	       
+	       var param = {
+                   svcId:"gethoteltripExpense",
+                   strUrl:"/report-hoteltrip-exp-list/getHotelTripExpense", 
+                   inDs :  "" ,  
+                   param : {EXPENSE_NOS: arr}, 
+                   pCall : this.getHotelTripExpenseCallback, 
+                   pLoad : true          
+               };
+           ajaxReadJsonData(param);  
+	   
+	   },
+	   
+	   getHotelTripExpenseCallback : function(svcId, data) {
+		   var items = data.ds_master.data
+		   this.expListHoteltrip = items.filter( function (item) { item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '2'  });
+			   
+		   var ref = this;
+	       this.$nextTick(function () {
+		   	   var exp_amt = 0, pay_amt = 0;
+
+			   for(var i=0;i<this.expListHoteltrip.length;i++) {
+				   var item = this.expListHoteltrip[i]
+				   var pa = item.PAY_AMT
+				   this.$refs.PAY_AMT[i].setData(pa);
+				   exp_amt = to_number(item.USE_AMT) + exp_amt;
+				   pay_amt = pa + pay_amt;
+			   } 
+	
+			   this.useAmtSum = Math.round(exp_amt);
+			   this.payAmtSum = Math.round(pay_amt);
+	       });
+	   },
+	   
+	   setReportTp : function( reporttp, reporttitle  ) { // 필수함수
+		   this.$refs[this.refMng].searchMng(reporttp);
+		   this.reportTp = reporttp;
+		   this.reportTitle = reporttitle;
+		   
+		   this.$refs[this.refHeader].setTitle(this.reportTitle);
+	   },
+       fileClick : function(item, index) {
+       	 this.$refs.imgmodal.setUrl('/ec/common/syscommon/fileupload/downloadFile/'+ item.FILE_NO, item.FILE_TYPE);
+       	 this.$refs.imgmodal.showModal();
+       },
+       tmapClick : function(url) {
+       	 this.$refs.imgmodal.setUrl(url, 'PNG');
+       	 this.$refs.imgmodal.showModal();
+       },	
+	    search : function( reportno ) { //필수함수
+	        // 컴포넌트 1개당 컨트롤러(서비스), mapper, xml 각 한개씩
+	        // url은 /컴포넌트명/함수명         
+	    }, 
+	    
+	    setHotelPkgLimitAmt : function() {
+	    	this.hotelPkg.CODE = $("#"+this.id+"EX_HOTEL_PKG").val()
+	    	this.hotelPkg.REF1 = $("#"+this.id+"EX_HOTEL_PKG > option:selected").attr("value2");
+	    	this.hotelPkg.NAME = $("#"+this.id+"EX_HOTEL_PKG > option:selected").attr("value3");
+	        this.hotelPkgMrg.CODE = $("#"+this.id+"EX_HOTEL_PKG_MRG").val()
+	    	this.hotelPkgMrg.REF1 = $("#"+this.id+"EX_HOTEL_PKG_MRG > option:selected").attr("value2");
+	        this.hotelPkgMrg.NAME = $("#"+this.id+"EX_HOTEL_PKG_MRG > option:selected").attr("value3");
+	        
+	        this.limitAmt = to_number(this.hotelPkg.REF1 * this.hotelPkgMrg.REF1);
+// 	        $("#"+this.id+"LIMIT_AMT").val(this.$options.filters.numberformat( Math.round(to_number(this.hotelPkg.REF1 * this.hotelPkgMrg.REF1)), '0,000'));
+	        
+	    },
+	    
+	    payAmtChange : function(index) {
+	    	this.expListHoteltrip[index].PAY_AMT = this.$refs.PAY_AMT[index].getData();
+
+	    	var pay_amt = 0;
+	    	this.expListHoteltrip.forEach(item => {
+				   pay_amt = to_number(item.PAY_AMT) + pay_amt;
+		   	 });
+	    	this.payAmtSum = Math.round(pay_amt);
+	    },
+	    
+   },//method
+
+   mounted: async function() {
+	   await initDropDownBox("EX_HOTEL_PKG", "/report-hoteltrip-exp-list/selectToCommonDropBox" , dropDownCallBack,{ COMM_CL_CD: "EX_HOTEL_PKG" });
+       this.hotelPkgDropdown = dropdownRenderer["EX_HOTEL_PKG"];
+       
+	   await initDropDownBox("EX_HOTEL_PKG_MRG", "/report-hoteltrip-exp-list/selectToCommonDropBox" , dropDownCallBack,{ COMM_CL_CD: "EX_HOTEL_PKG_MRG" });
+       this.hotelPkgMrgDropdown = dropdownRenderer["EX_HOTEL_PKG_MRG"];
+       
+	   var ref = this;
+       this.$nextTick(function () {
+    	   this.setHotelPkgLimitAmt();
+       });
+
+    },
+}); // test
+
+</script>
+   
+</body>
+</html>
+
+

@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="utf-8" />
+</head>
+<body>
+   
+<script th:fragment="js">
+
+
+// 조회용 비용리스트(결재화면)
+
+Vue.component('report-expense-list', { // ==================================================================
+    data: function () { 
+    return {
+              id : objId(),
+              refHeader :objId(),
+              refMng :objId(),
+              refFile : objId(),
+              
+              imgid : objId(),
+              reportFileList : [],
+              reportFiles : [],
+              reportNo : '',
+              expFiles : [],
+              expenseList : [],
+              reportMngList : [],
+              expListCard : [],
+              expListTravel : [],
+              expListGas : [],
+              expListToll : [],
+              expListReceipt : [],
+              expListEtax : [],
+              expListPtax : [],
+              expListEtc : [],
+              
+              reportTitle : '',
+              reportRmk : '',
+              paySumAmt : '',
+              
+              
+
+      }
+    },
+
+    props: {pgmid : String ,subname:String, ismobile : String  }, 
+    template: 
+    '<div class=""  > \
+    \
+    \
+	    <div v-if="ismobile == \'true\'" > \
+	                \
+			        <report-header-read-comp :ref="refHeader" v-show="true"  title="false"  ismobile="true"></report-header-read-comp> \
+			        <report-mng-read-comp :ref="refMng" v-show="true"   ismobile="true" ></report-mng-read-comp> \
+			        \
+				   \
+				   \
+				   \
+				   \
+				   \
+                   <div class=" form-horizontal p-0 flex-column w-100  f-s-13 " :id="\'accordionexpDetail\'+pgmid" >  \
+                   <div v-if="expListCard.length > 0">   \
+                      <div class="d-flex justify-content-between mb-1">  \
+                          <div class="text-maintheme"><i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expListCard[0].SOURCE_TP_NM}}</div>  \
+                          <div class="collapsed" data-toggle="collapse" :data-target="\'#expDetailCard\'+pgmid" ><i class="icon-arrow-down mr-2"></i></div>  \
+                      </div>  \
+                      <div v-for="(item, index) in expListCard" class="rounded-0 card  row border-right-0 border-left-0 border-bottom-0    m-0 p-0"  >  \
+                          <div class="bg-black-transparent-1 d-flex align-content-center flex-wrap p-0 p-t-5 border-0 collapsed" data-toggle="collapse" :data-target="\'#expDetailCard\'+pgmid+index">    \
+                                 <div class="d-inline-flex w-100">  \
+                                   <span class="col-6 mb-1 text-nowrap">비용항목&nbsp<strong>{{item.EXPENSE_NM}}</strong></span>  \
+                                   <span class="col-6 mb-1 text-right">금액&nbsp<strong>{{item.PAY_AMT | numberformat(\'0,000\')}}원</strong></span>  \
+                                 </div>   \
+                                 <div class="d-inline-flex w-100">  \
+                                   <p class="col-12 mb-1">사용일시&nbsp<strong>{{item.RECEIPT_DH | dateformat(\'card-week\')}}&nbsp{{item.RECEIPT_DH | dateformat(\'card-time\')}}</strong></p>  \
+                                 </div>  \
+                          </div>  \
+                          <div :id="\'expDetailCard\'+pgmid" class="collapse bg-light " :class="\'expDetailCard\'+pgmid" :data-parent="\'#accordionexpDetail\'+pgmid"  >  \
+                                  <div class="w-100">  \
+                                     <div class="d-flex justify-content-between col" ><span class="f-plane-bold">상호</span><span>{{item.BIZ_NM}}</span></div>  \
+                                     <div class="d-flex justify-content-between col" ><span class="f-plane-bold">업종</span><span>{{item.BIZ_CATEGORY}}</span></div>  \
+                                     <div class="d-flex justify-content-between col" ><span class="f-plane-bold text-nowrap mr-2">주소</span><span>{{item.BIZ_ADDR}}</span></div>  \
+                                     <div class="d-flex justify-content-between col" ><span class="f-plane-bold">비고</span><span>{{item.RMK}}</span></div>  \
+                                     \
+                                     <div  class="d-flex flex-wrap justify-content-around">  \
+                                          <div v-for="(i, idx) in item.FILE_LISTS" class="m-2" >  \
+                                             <img  v-if="i.FILE_NO != null" @click.stop="fileClick(i, idx)" :src="\'/ec/common/syscommon/fileupload/downloadFile/\'+i.FILE_NO" height="150" >  \
+                                         </div>  \
+                                     </div>   \
+                                  </div>  \
+                          </div>  \
+                    </div>    \
+                  </div>  \
+                   <div v-if="expListTravel.length > 0">   \
+                      <div class="d-flex justify-content-between mb-1">  \
+                          <div class="text-maintheme"><i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expListTravel[0].SOURCE_TP_NM}}</div>  \
+                          <div class="collapsed" data-toggle="collapse" :data-target="\'#expDetailTravel\'+pgmid" ><i class="icon-arrow-down mr-2"></i></div>  \
+                      </div>  \
+                      <div v-for="(item, index) in expListTravel"  class="rounded-0 card  row border-right-0 border-left-0 border-bottom-0    m-0 p-0"  >  \
+                          <div class="d-flex align-content-center flex-wrap p-0 p-t-5 border-0 bg-black-transparent-1" data-toggle="collapse" :data-target="\'#expDetailTravel\'+pgmid+index">   \
+                                 <div class="d-inline-flex w-100">  \
+                                   <span class="col-6 mb-1 text-nowrap"><strong>비용항목</strong>&nbsp{{item.EXPENSE_NM}}</span>  \
+                                   <span class="col-6 mb-1 text-right"><strong>금액</strong>&nbsp{{item.PAY_AMT | numberformat(\'0,000\')}}원</span>  \
+                                 </div>   \
+                                 <div class="d-inline-flex w-100">  \
+                                   <p class="col-12 mb-1"><strong>사용일시</strong>&nbsp{{item.RECEIPT_DH | dateformat(\'card-week\')}}&nbsp{{item.RECEIPT_DH | dateformat(\'card-time\') }}</p>  \
+                                 </div>     \
+                                 </div>  \
+                          <div :id="\'expDetailTravel\'+pgmid" class="collapse bg-light" :data-parent="\'#accordionexpDetail\'+pgmid"  >    \
+                                  <div class="w-100">  \
+                                     <div class="d-flex justify-content-between col" ><span class="f-plane-bold">기간</span><span>{{item.BIZTRIP_START | dateformat(\'card-week\')}}&nbsp~&nbsp{{item.BIZTRIP_END | dateformat(\'card-week\')}}</span><span>{{item.BIZTRIP_DAYS}}일</span></div>  \
+                                     <div  class="d-flex flex-wrap justify-content-around">  \
+                                          <div v-for="(i, idx) in item.FILE_LISTS" class="m-2" >  \
+                                             <img  v-if="i.FILE_NO != null" @click.stop="fileClick(i, idx)" :src="\'/ec/common/syscommon/fileupload/downloadFile/\'+i.FILE_NO" height="150" >  \
+                                         </div>  \
+                                     </div>   \
+                                  </div>   \
+                          </div>  \
+                          </div>  \
+                    </div>   \
+                   <div v-if="expListGas.length > 0">   \
+                      <div class="d-flex justify-content-between mb-1">  \
+                          <div class="text-maintheme"><i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expListGas[0].SOURCE_TP_NM}}</div>  \
+                          <div class="collapsed" data-toggle="collapse" :data-target="\'#expDetailGas\'+pgmid" ><i class="icon-arrow-down mr-2"></i></div>  \
+                      </div>  \
+                      <div v-for="(item, index) in expListGas"  class="rounded-0 card  row border-right-0 border-left-0 border-bottom-0    m-0 p-0"  >  \
+                          <div class="bg-black-transparent-1 d-flex align-content-center flex-wrap p-0 p-t-5 border-0" data-toggle="collapse" :data-target="\'#expDetailGas\'+pgmid+index">   \
+                                 <div class="d-inline-flex w-100">  \
+                                   <span class="col-6 mb-1 text-nowrap"><strong>비용항목</strong>&nbsp{{item.EXPENSE_NM}}</span>  \
+                                   <span class="col-6 mb-1 text-right"><strong>금액</strong>&nbsp{{item.PAY_AMT | numberformat(\'0,000\')}}원</span>  \
+                                 </div>   \
+                                 <div class="d-inline-flex w-100">  \
+                                   <p class="col-12 mb-1"><strong>사용일시</strong>&nbsp{{item.RECEIPT_DH | dateformat(\'card-week\')}}&nbsp{{item.RECEIPT_DH | dateformat(\'card-time\')}}</p>  \
+                                 </div>  \
+                          </div>  \
+                          <div :id="\'expDetailGas\'+pgmid" class="collapse bg-light" :data-parent="\'#accordionexpDetail\'+pgmid"  >   \
+                                  <div v-if="item.SOURCE_TP == \'4\'" class="w-100">  \
+                                       <div class="col">코스트센터:  {{item.CCTR_NM}}</div>  \
+                                       <div class="col">거리:{{item.DISTANCE}}km </div>  \
+                                        <div  class="d-flex flex-wrap justify-content-around">  \
+                                          <div class="m-2"><img v-if="item.URL != \'\' "  @click.stop="tmapClick(item.URL)" :src="item.URL" height="150" >  \
+                                          <div v-for="(i, idx) in item.FILE_LISTS" class="m-2" >  \
+                                             <img  v-if="i.FILE_NO != null" @click.stop="fileClick(i, idx)" :src="\'/ec/common/syscommon/fileupload/downloadFile/\'+i.FILE_NO" height="150" >  \
+                                          </div>  \
+                                       </div>      \
+                                       </div>  \
+                                  </div>  \
+                          </div>  \
+                    </div>    \
+                  </div>     \
+                   <div v-if="expListToll.length > 0">   \
+                      <div class="d-flex justify-content-between mb-1">  \
+                          <div class="text-maintheme"><i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expListToll[0].SOURCE_TP_NM}}</div>  \
+                          <div class="collapsed" data-toggle="collapse" :data-target="\'#expDetailToll\'+pgmid" ><i class="icon-arrow-down mr-2"></i></div>  \
+                      </div>  \
+                      <div v-for="(item, index) in expListToll"  class="rounded-0 card  row border-right-0 border-left-0 border-bottom-0    m-0 p-0"  >  \
+                          <div class="bg-black-transparent-1 d-flex align-content-center flex-wrap p-0 p-t-5 border-0" data-toggle="collapse" :data-target="\'#expDetailToll\'+pgmid+index">    \
+                                 <div class="d-inline-flex w-100">  \
+                                   <span class="col-6 mb-1 text-nowrap"><strong>비용항목</strong>&nbsp{{item.EXPENSE_NM}}</span>  \
+                                   <span class="col-6 mb-1 text-right"><strong>금액</strong>&nbsp{{item.PAY_AMT | numberformat(\'0,000\')}}원</span>  \
+                                 </div>   \
+                                 <div class="d-inline-flex w-100">  \
+                                   <p class="col-12 mb-1"><strong>사용일시</strong>&nbsp{{item.RECEIPT_DH | dateformat(\'card-week\')}}&nbsp{{item.RECEIPT_DH | dateformat(\'card-time\')}}</p>  \
+                                 </div>   \
+                          </div>  \
+                          <div :id="\'expDetailToll\'+pgmid" class="collapse bg-light" :data-parent="\'#accordionexpDetail\'+pgmid"  >    \
+	                                <div class="document-file  d-flex align-items-center justify-content-center" @click="fileClick(item, index)">  \
+	                                    <a v-show="item.FILE_TYPE == \'PDF\'" >  \
+	                                        <i class="fa fa-file-pdf f-s-20 mr-2"></i>{{item.FILE_NM}}  \
+	                                    </a>  \
+	                                    <a v-show="item.FILE_TYPE != \'PDF\'" >  \
+	                                        <img v-if="item.FILE_NO != \'\' "  @click.stop="fileClick(item, index)" :src="\'/ec/common/syscommon/fileupload/downloadFile/\'+item.FILE_NO" height="65" >  \
+	                                    </a>  \
+	                                </div>  \
+                                   <div  class="d-flex flex-wrap justify-content-around">  \
+                                     <div v-for="(i, idx) in item.FILE_LISTS" class="m-2" >  \
+                                        <img  v-if="i.FILE_NO != null" @click.stop="fileClick(i, idx)" :src="\'/ec/common/syscommon/fileupload/downloadFile/\'+i.FILE_NO" height="150" >  \
+                                     </div>  \
+                                  </div>   \
+                          </div>  \
+                    </div>    \
+                  </div>    \
+                   <div v-if="expListReceipt.length > 0">   \
+                      <div class="d-flex justify-content-between mb-1">  \
+                          <div class="text-maintheme"><i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expListReceipt[0].SOURCE_TP_NM}}</div>  \
+                          <div class="collapsed" data-toggle="collapse" :data-target="\'#expDetailReceipt\'+pgmid" ><i class="icon-arrow-down mr-2"></i></div>  \
+                      </div>   \
+                      <div v-for="(item, index) in expListReceipt"  class="rounded-0 card  row border-right-0 border-left-0 border-bottom-0    m-0 p-0"  >  \
+                          <div class="bg-black-transparent-1 d-flex align-content-center flex-wrap p-0 p-t-5 border-0" data-toggle="collapse" :data-target="\'#expDetailReceipt\'+pgmid+index">    \
+                                 <div class="d-inline-flex w-100">  \
+                                   <span class="col-6 mb-1 text-nowrap"><strong>비용항목</strong>&nbsp{{item.EXPENSE_NM}}</span>  \
+                                   <span class="col-6 mb-1 text-right"><strong>금액</strong>&nbsp{{item.PAY_AMT | numberformat(\'0,000\')}}원</span>  \
+                                 </div>   \
+                                 <div class="d-inline-flex w-100">  \
+                                   <p class="col-12 mb-1"><strong>사용일시</strong>&nbsp{{item.RECEIPT_DH | dateformat(\'card-week\')}}&nbsp{{item.RECEIPT_DH | dateformat(\'card-time\')}}</p>  \
+                                 </div>      \
+                          </div>  \
+                          <div :id="\'expDetailReceipt\'+pgmid" class="collapse bg-light" :data-parent="\'#accordionexpDetail\'+pgmid"  >   \
+                                   <div  class="d-flex flex-wrap justify-content-around">  \
+                                     <div v-for="(i, idx) in item.FILE_LISTS" class="m-2" >  \
+                                        <img  v-if="i.FILE_NO != null" @click.stop="fileClick(i, idx)" :src="\'/ec/common/syscommon/fileupload/downloadFile/\'+i.FILE_NO" height="150" >  \
+                                     </div>  \
+                                  </div>  	  \
+                          </div>  \
+                    </div>    \
+                  </div>    \
+                   <div v-if="expListEtax.length > 0">   \
+                      <div class="d-flex justify-content-between mb-1">  \
+                          <div class="text-maintheme"><i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expListEtax[0].SOURCE_TP_NM}}</div>  \
+                          <div class="collapsed" data-toggle="collapse" :data-target="\'#expDetailEtax\'+pgmid" ><i class="icon-arrow-down mr-2"></i></div>  \
+                      </div> \
+                      <div v-for="(item, index) in expListEtax"  class="rounded-0 card  row border-right-0 border-left-0 border-bottom-0    m-0 p-0"  >  \
+                          <div class="bg-black-transparent-1 d-flex align-content-center flex-wrap p-0 p-t-5 border-0" data-toggle="collapse" :data-target="\'#expDetailEtax\'+pgmid+index">    \
+                                 <div class="d-inline-flex w-100">  \
+                                   <span class="col-6 mb-1 text-nowrap"><strong>비용항목</strong>&nbsp{{item.EXPENSE_NM}}</span>  \
+                                   <span class="col-6 mb-1 text-right"><strong>금액</strong>&nbsp{{item.PAY_AMT | numberformat(\'0,000\')}}원</span>  \
+                                 </div>   \
+                                 <div class="d-inline-flex w-100">  \
+                                   <span class="col-6 mb-1 text-nowrap"><strong>사용일시</strong></span>  \
+                                   <span class="col-6 mb-1 text-right">&nbsp{{item.RECEIPT_DH | dateformat(\'card-week\')}}&nbsp{{item.RECEIPT_DH | dateformat(\'card-time\')}}</span>  \
+                                 </div> \
+                          </div>  \
+                          <div :id="\'expDetailEtax\'+pgmid" class="collapse bg-light" :data-parent="\'#accordionexpDetail\'+pgmid"  >   \
+                                  <div class="w-100">  \
+                                     <div class="d-flex justify-content-between col" ><span class="f-plane-bold">상호</span><span>{{item.BIZ_NM}}</span></div>  \
+                                     <div class="d-flex justify-content-between col" ><span class="f-plane-bold">업종</span><span>{{item.BIZ_CATEGORY}}</span></div>  \
+                                     <div class="d-flex justify-content-between col" ><span class="text-nowrap pr-2 f-plane-bold">주소</span><span>{{item.BIZ_ADDR}}</span></div>  \
+                                     <div class="d-flex justify-content-between col" ><span class="f-plane-bold">비고</span><span>{{item.RMK}}</span></div>  \
+                                     <div  class="d-flex flex-wrap justify-content-around">  \
+                                      <div v-for="(i, idx) in item.FILE_LISTS" class="m-2" >  \
+                                        <img  v-if="i.FILE_NO != null" @click.stop="fileClick(i, idx)" :src="\'/ec/common/syscommon/fileupload/downloadFile/\'+i.FILE_NO" height="150" >  \
+                                      </div>  \
+                                   </div> \
+                                  </div> \
+                          </div>  \
+                    </div>    \
+                  </div>       \
+                   <div v-if="expListPtax.length > 0">   \
+                      <div class="d-flex justify-content-between mb-1">  \
+                          <div class="text-maintheme"><i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expListPtax[0].SOURCE_TP_NM}}</div>  \
+                          <div class="collapsed" data-toggle="collapse" :data-target="\'#expDetailPtax\'+pgmid" ><i class="icon-arrow-down mr-2"></i></div>  \
+                      </div> \
+                      <div v-for="(item, index) in expListPtax"  class="rounded-0 card  row border-right-0 border-left-0 border-bottom-0    m-0 p-0"  >  \
+                          <div class="bg-black-transparent-1 d-flex align-content-center flex-wrap p-0 p-t-5 border-0" data-toggle="collapse" :data-target="\'#expDetailPtax\'+pgmid+index">    \
+                                 <div class="d-inline-flex w-100">  \
+                                   <span class="col-6 mb-1 text-nowrap"><strong>비용항목</strong>&nbsp{{item.EXPENSE_NM}}</span>  \
+                                   <span class="col-6 mb-1 text-right"><strong>금액</strong>&nbsp{{item.PAY_AMT | numberformat(\'0,000\')}}원</span>  \
+                                 </div>   \
+                                 <div class="d-inline-flex w-100">  \
+                                   <p class="col-12 mb-1"><strong>사용일시</strong>&nbsp{{item.RECEIPT_DH | dateformat(\'card-week\')}}&nbsp{{item.RECEIPT_DH | dateformat(\'card-time\')}}</p>  \
+                                 </div>    \
+                          </div>  \
+                          <div :id="\'expDetailPtax\'+pgmid" class="collapse bg-light" :data-parent="\'#accordionexpDetail\'+pgmid"  >    \
+                                   <div  class="d-flex flex-wrap justify-content-around">  \
+                                     <div v-for="(i, idx) in item.FILE_LISTS" class="m-2" >  \
+                                        <img  v-if="i.FILE_NO != null" @click.stop="fileClick(i, idx)" :src="\'/ec/common/syscommon/fileupload/downloadFile/\'+i.FILE_NO" height="150" >  \
+                                     </div>  \
+                                  </div>   \
+                          </div>  \
+                    </div>    \
+                  </div> \
+                   <div v-if="expListEtc.length > 0">   \
+                      <div class="d-flex justify-content-between mb-1">  \
+                          <div class="text-maintheme"><i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expListEtc[0].SOURCE_TP_NM}}</div>  \
+                          <div class="collapsed" data-toggle="collapse" :data-target="\'#expDetailEtc\'+pgmid" ><i class="icon-arrow-down mr-2"></i></div>  \
+                      </div>  \
+                      <div v-for="(item, index) in expListEtc"  class="rounded-0 card  row border-right-0 border-left-0 border-bottom-0    m-0 p-0"  >  \
+                          <div class="bg-black-transparent-1 d-flex align-content-center flex-wrap p-0 p-t-5 border-0" data-toggle="collapse" :data-target="\'#expDetailEtc\'+pgmid+index">    \
+                                 <div class="d-inline-flex w-100">  \
+                                   <span class="col-6 mb-1 text-nowrap"><strong>비용항목</strong>&nbsp{{item.EXPENSE_NM}}</span>  \
+                                   <span class="col-6 mb-1 text-right"><strong>금액</strong>&nbsp{{item.PAY_AMT | numberformat(\'0,000\')}}원</span>  \
+                                 </div>   \
+                                 <div class="d-inline-flex w-100">  \
+                                   <p class="col-12 mb-1"><strong>사용일시</strong>&nbsp{{item.RECEIPT_DH | dateformat(\'card-week\')}}&nbsp{{item.RECEIPT_DH | dateformat(\'card-time\')}}</p>  \
+                                 </div>   \
+                          </div>  \
+                          <div :id="\'expDetailEtc\'+pgmid" class="collapse bg-light" :data-parent="\'#accordionexpDetail\'+pgmid"  >    \
+                                   <div  class="d-flex flex-wrap justify-content-around">  \
+                                     <div v-for="(i, idx) in item.FILE_LISTS" class="m-2" >  \
+                                        <img  v-if="i.FILE_NO != null" @click.stop="fileClick(i, idx)" :src="\'/ec/common/syscommon/fileupload/downloadFile/\'+i.FILE_NO" height="150" >  \
+                                     </div>  \
+                                  </div>    \
+                          </div>  \
+                    </div>    \
+                  </div>    \
+         </div>    \
+         \
+         \
+         <img-modal ref="imgmodal" :pgmid="imgid" subname="imgmodal" ></img-modal> \
+         <report-file-comp :ref="refFile" v-show="false"  >   </report-file-comp> \
+				   \
+	    </div> \
+    \
+    \
+      <div v-if="ismobile != \'true\'" > \
+        \
+         <report-header-read-comp :ref="refHeader" v-show="true"  title="false" ></report-header-read-comp> \
+         <report-mng-read-comp :ref="refMng" v-show="true"   ></report-mng-read-comp> \
+    \
+    \
+       \
+       <div  class="table-responsive">  \
+	       <div class="d-flex f-plane-bold border-black border-bottom p-10">  \
+	           <div class="col-3 text-left" >비용항목</div> \
+	           <div class="col-3 text-center">증빙일</div> \
+	           <div class="col-2 text-center">코스트센터</div> \
+	           <div class="col-2 text-right">지급액</div> \
+	           <div class="col-2 text-right">사원명</div> \
+	       </div> \
+           <div v-if="expListCard.length > 0" class="d-flex flex-column  m-t-10" >  \
+               <div> <i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expListCard[0].SOURCE_TP_NM}} </div> \
+	           <div v-for="(item, index) in expListCard" class="d-flex border-top"> \
+		               <div class="w-100 d-flex flex-column"> \
+				                   <div class="d-flex "> \
+					                    <div class="col-3 text-left">{{item.EXPENSE_NM}}</div> \
+					                    <div class="col-3 text-right">{{item.RECEIPT_DH | dateformat("card-week")}}&nbsp{{item.RECEIPT_DH | dateformat("card-time")}}</div> \
+					                    <div class="col-2 text-left">{{item.CCTR_NM}}</div> \
+					                    <div class="col-2 text-right">{{item.PAY_AMT | numberformat("0,000")}}원</div> \
+					                    <div class="col-2 text-right">{{item.EMP_NM}} </div> \
+				                   </div> \
+				                   <div class="d-flex col "> \
+				                       <div class="mr-1">(상호){{item.BIZ_NM}}</div> \
+				                       <div class="mr-1">(업종){{item.BIZ_CATEGORY}}</div> \
+				                       <div class="mr-1">(공급가){{item.SUPPLY_AMT | numberformat("0,000")}}원</div> \
+				                       <div class="mr-1">(부가세){{item.EXPENSE_VAT_AMT | numberformat("0,000")}}원</div> \
+				                   </div> \
+		               </div> \
+	           </div> \
+           </div> \
+           \
+           <div v-if="expListReceipt.length > 0" class="d-flex flex-column  m-t-10" > \
+           <div> <i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expListReceipt[0].SOURCE_TP_NM}} </div> \
+           <div v-for="(item, index) in expListReceipt" class="d-flex  border-top"> \
+               <div class="w-100 d-flex flex-column">   \
+                   <div class="d-flex "> \
+                       <div class="col-3 text-left">{{item.EXPENSE_NM}}</div> \
+                       <div class="col-3 text-right">{{item.RECEIPT_DH | dateformat("card-week")}}&nbsp{{item.RECEIPT_DH | dateformat("card-time")}}</div>  \
+                       <div class="col-2 text-left">{{item.CCTR_NM}}</div> \
+                       <div class="col-2 text-right">{{item.PAY_AMT | numberformat("0,000")}}원</div> \
+                       <div class="col-2 text-right">{{item.EMP_NM}} </div> \
+                   </div> \
+               </div> \
+           </div> \
+         </div>   \
+           \
+           <div v-if="expListTravel.length > 0" class="d-flex flex-column  m-t-10" >     \
+           <div> <i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expListTravel[0].SOURCE_TP_NM}} </div> \
+           <div v-for="(item, index) in expListTravel" class="d-flex  border-top"> \
+               <div class="w-100 d-flex flex-column">             \
+                       <div class="d-flex "> \
+                           <div class="col-3 text-left">{{item.EXPENSE_NM}}</div> \
+                           <div class="col-3 text-right">{{item.RECEIPT_DH | dateformat("card-week")}}&nbsp{{item.RECEIPT_DH | dateformat("card-time")}}</div> \
+                           <div class="col-2 text-left">{{item.CCTR_NM}}</div> \
+                           <div class="col-2 text-right">{{item.PAY_AMT | numberformat("0,000")}}원</div> \
+                           <div class="col-2 text-right">{{item.EMP_NM}} </div> \
+                       </div> \
+                       <div class="d-flex col "> \
+                           <div class="mr-1"><span>[기간]{{item.BIZTRIP_START | dateformat("card-week")}}&nbsp~&nbsp{{item.BIZTRIP_END | dateformat("card-week")}}</span><span class="f-plane-bold">&nbsp{{item.BIZTRIP_DAYS}}일</span></div> \
+                       </div> \
+               </div> \
+             </div> \
+          </div>  \
+           \
+           \
+           <div v-if="expListGas.length > 0" class="d-flex flex-column  m-t-10" > \
+           <div> <i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expListGas[0].SOURCE_TP_NM}} </div> \
+           <div v-for="(item, index) in expListGas" class="d-flex border-top flex-column"> \
+               <div class="d-flex "> \
+                   <div class="col-3 text-left">{{item.EXPENSE_NM}}</div> \
+                   <div class="col-3 text-right">{{item.RECEIPT_DH | dateformat("card-week")}}&nbsp{{item.RECEIPT_DH | dateformat("card-time")}}</div> \
+                   <div class="col-2 text-left">{{item.CCTR_NM}}</div> \
+                   <div class="col-2 text-right">{{item.PAY_AMT | numberformat("0,000")}}원</div> \
+                   <div class="col-2 text-right">{{item.EMP_NM}} </div> \
+               </div> \
+               <div class="d-flex "> \
+                   <div class="mr-1">(거리){{item.DISTANCE}}km</div> \
+                   <div class="mr-1">(출발){{item.START_ADDR}}<span v-show="$options.filters.isNotEmpty(item.START_DH)">/{{item.START_DH | dateformat("card-week")}}&nbsp{{item.START_DH | dateformat("card-time")}}</span></div> \
+                   <div class="mr-1">(도착){{item.END_ADDR}}<span v-show="$options.filters.isNotEmpty(item.END_DH)">/{{item.END_DH | dateformat("card-week")}}&nbsp{{item.END_DH | dateformat("card-time")}}</span></div> \
+               </div> \
+           </div> \
+          </div>   \
+           \
+           \
+           <div v-if="expListToll.length > 0" class="d-flex flex-column  m-t-10" >  \
+           <div> <i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expListToll[0].SOURCE_TP_NM}} </div> \
+           <div v-for="(item, index) in expListToll" class="d-flex  border-top"> \
+               <div class="d-flex "> \
+                   <div class="col-3 text-left">{{item.EXPENSE_NM}}</div> \
+                   <div class="col-3 text-right">{{item.RECEIPT_DH | dateformat("card-week")}}&nbsp{{item.RECEIPT_DH | dateformat("card-time")}}</div> \
+                   <div class="col-2 text-left">{{item.CCTR_NM}}</div> \
+                   <div class="col-2 text-right">{{item.PAY_AMT | numberformat("0,000")}}원</div> \
+                   <div class="col-2 text-right">{{item.EMP_NM}} </div> \
+               </div> \
+               <div class="d-flex col "> \
+                   <div class="mr-1">(영업소){{item.DISTANCE}}km</div> \
+                   <div class="mr-1">(사용일시){{item.START_ADDR}}/{{item.START_DH | dateformat("card-week")}}&nbsp{{item.START_DH | dateformat("card-time")}} </div> \
+                   <div class="mr-1">(금액){{item.END_ADDR}}/{{item.END_DH | dateformat("card-week")}}&nbsp{{item.END_DH | dateformat("card-time")}}</div> \
+               </div> \
+           </div> \
+           </div>  \
+           \
+           \
+           <div v-if="expListEtc.length > 0" class="d-flex flex-column  m-t-10" >     \
+           <div> <i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expListEtc[0].SOURCE_TP_NM}} </div> \
+           <div v-for="(item, index) in expListEtc" class="d-flex  border-top"> \
+               <div class="d-flex "> \
+                   <div class="col-3 text-left">{{item.EXPENSE_NM}}</div> \
+                   <div class="col-3 text-right">{{item.RECEIPT_DH | dateformat("card-week")}}&nbsp{{item.RECEIPT_DH | dateformat("card-time")}}</div> \
+                   <div class="col-2 text-left">{{item.CCTR_NM}}</div> \
+                   <div class="col-2 text-right">{{item.PAY_AMT | numberformat("0,000")}}원</div> \
+                   <div class="col-2 text-right">{{item.EMP_NM}} </div> \
+               </div> \
+           </div> \
+           </div>     \
+           \
+           \
+       </div> \
+       <div> \
+           <report-file-comp :ref="refFile" v-show="true"  >   </report-file-comp> \
+           \
+           \
+           \
+	      \
+	      \
+       </div> \
+       </div> \
+     </div> \
+    \
+    \
+	</div>',
+				created () { 
+	                  
+	          },
+   methods : {
+	   sendObj: function( o ) { 
+		 return { COMPONENT_ID : this.$options.name} ; // 컴포넌트, detail, report header, files, mng
+	   },
+	   setObj : function( o ) { 
+		   this.expenseList = o;
+	   },
+	    search : function( reportno ) { 
+	        // 컴포넌트 1개당 컨트롤러(서비스), mapper, xml 각 한개씩
+	        // url은 /컴포넌트명/함수명
+	          this.reportNo = reportno;
+	        
+	          // header : title, 내용, 첨부파일
+	          this.$refs[this.refHeader].search(this.reportNo);
+	          this.$refs[this.refMng].search(this.reportNo);
+	          
+	          //비용 파일 (리포포 파일X)
+	          this.$refs[this.refFile].search(this.reportNo);
+	        
+	           var param = {
+	                   svcId:"getReportedList",
+	                   strUrl:"/ex/expense/approve/getReportByNo",
+	                   param : {REPORT_NO : this.reportNo}, //조회조건 부분만(전체는 에러 : 관리항목 input존재)
+	                   pCall : this.getReportByNoCallback, 
+	                   pLoad : true         
+	               };            
+	           ajaxReadJsonData(param);       
+	        
+	          var param = {
+                      svcId:"",
+                      strUrl:"/ex/expense/expensemst/getExpListByReportNo",    //전송 url    
+                      inDs :  "" ,  
+                      param : { REPORT_NO : this.reportNo },  
+                      pCall : this.getExpListByReportNoCallback, 
+                      pLoad : true,          
+                      };
+                      ajaxReadJsonData(param);  
+
+	    },
+	    
+	    getReportByNoCallback : function(svcId, data) {
+	    	   this.reportTitle = data.ds_master.data[0].REPORT_TITLE;
+	    	   this.reportRmk = data.ds_master.data[0].REPORT_RMK;
+	    	   this.paySumAmt = data.ds_master.data[0].PAY_SUM_AMT;	
+	    	   this.$refs[this.refHeader].setAmt(this.paySumAmt);
+	    	   this.cnt = data.ds_master.data[0].CNT;	
+	    	   this.$refs[this.refHeader].setCount(this.cnt);
+	    },
+//         getExpFileListByReportNoCallback : function(svcId, data) {
+//        	 this.expFiles = data["ds_master"]['data'];
+//         },
+        getExpListByReportNoCallback : function(svcId, data) {
+            this.expenseList = [];
+            this.expenseList = data["ds_master"]['data'];
+            this.reportMngList = [];
+            this.reportMngList = data["ds_mng"]['data'];
+            
+            this.expListCard = this.expenseList.filter( function (item) { item.FILE_LISTS = JSON.parse( item.FILE_LIST );  return item.SOURCE_TP == '1'  });
+            
+            
+            this.expListTravel = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '3'  });
+            this.expListGas = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '4'  });
+            this.expListToll = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '6'  });
+            this.expListReceipt = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '2'  });
+            this.expListEtax = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == 'A'  });
+            this.expListPtax = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == 'B'  });
+            this.expListEtc = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP != '1' 
+                                                                       &&  item.SOURCE_TP != '2'
+                                                                       &&  item.SOURCE_TP != '3'
+                                                                       &&  item.SOURCE_TP != '4'
+                                                                       &&  item.SOURCE_TP != '6'
+                                                                       &&  item.SOURCE_TP != 'A'
+                                                                       &&  item.SOURCE_TP != 'B'                                                                              
+            });
+            
+            
+//          관리항목 값 조회
+            if (this.reportMngList.length > 0){
+                var ref = this;
+                
+              this.$nextTick( function () {
+            	  ref.reportMngList.forEach(item => {  
+                    if (item.INPUT_FORMAT_CD == '01') { 
+                        ref.$refs['popupreportmng'+item.MNG_CD][0].setData(item.MNGVAL_CD, item.MNGVAL_NM);
+                    }else if (item.INPUT_FORMAT_CD == '05' || item.INPUT_FORMAT_CD == '02' ){ // date , number
+                   	 ref.$refs['popupreportmng'+item.MNG_CD][0].setData(item.MNGVAL_NM);
+                    }else{
+                        $('#'+ref.pgmid+'popupreportmng'+item.MNG_CD).val(item.MNGVAL_NM); 
+                    }
+                 });
+              
+              })  // nextTick 
+            }
+        }, 
+        fileClick : function(item, index) {
+          	 this.$refs.imgmodal.setUrl('/ec/common/syscommon/fileupload/downloadFile/'+ item.FILE_NO, item.FILE_TYPE);
+          	 this.$refs.imgmodal.showModal();
+          },
+          tmapClick : function(url) {
+          	 this.$refs.imgmodal.setUrl(url, 'PNG');
+          	 this.$refs.imgmodal.showModal();
+          },	  
+   },//method
+
+   mounted: function() {
+	   
+
+    },
+}); // test
+
+</script>
+   
+</body>
+</html>
+
+

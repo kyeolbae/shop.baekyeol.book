@@ -1,0 +1,534 @@
+package com.ec.eframework.ex.report;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.ec.eframework.lib.GridDataMap;
+import com.ec.eframework.lib.P;
+import com.ec.eframework.lib.SimpleResultMap;
+import com.ec.eframework.lib.Util;
+import com.ec.eframework.common.CommonService;
+import com.ec.eframework.common.fileupload.FileStorageService;
+import com.ec.eframework.common.fileupload.FileUploadController;
+import com.ec.eframework.config.AppProperty;
+import com.ec.eframework.lib.MapSession;
+import com.ec.eframework.mapper.basic.GridDataMultiSave;
+import com.ec.eframework.mapper.basic.MyDuplicateKeyException;
+import com.ec.eframework.mapper.common.FileServiceMapper;
+import com.ec.eframework.mapper.ex.approve.CommonApproveServiceMapper;
+import com.ec.eframework.mapper.ex.expense.ApproveServiceMapper;
+import com.ec.eframework.mapper.ex.expense.ExpMyOfficeServiceMapper;
+import com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper;
+import com.ec.eframework.mapper.ex.expense.ReportServiceMapper;
+
+@Service
+public class ExpenseMstService {
+	
+	@Autowired
+	ApproveServiceMapper approveServiceMapper;
+	@Autowired
+	private ReportServiceMapper reportServiceMapper;
+	@Autowired
+	private ExpenseMstServiceMapper expenseMstServiceMapper;
+    @Autowired
+    FileServiceMapper fileServiceMapper;
+    @Autowired
+    FileUploadController fileUploadController;
+    @Autowired
+    FileStorageService fileStorageService;
+	@Autowired 
+	CommonService commonService;
+	@Autowired 
+	CommonApproveServiceMapper commonApproveServiceMapper;
+	
+	@Autowired
+	AppProperty appProperty;
+	@Autowired 
+	ExpMyOfficeServiceMapper expMyOfficeServiceMapper;
+	
+	@Transactional
+	public Map  saveExpenseItem(Map paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+		
+		 paramMap.putAll((Map)new MapSession(session));
+		 paramMap.put("ENC_KEY", appProperty.getEncKey());
+		 
+		 String type = paramMap.get("TYPE").toString();
+		 String expense_no = paramMap.get("EXPENSE_NO").toString();
+		 
+		 // 서버에서 데이터 수정 체크 ===========================================================================
+		 Map m = new HashMap();
+		 if (!expense_no.equals("")) { // 신규 데이터는 제외
+			 
+			 m.put("g_comCd", paramMap.get("g_comCd").toString());
+			 m.put("TBL_NAME", "EXPENSE_MST");
+			 m.put("PK_COL1", "EXPENSE_NO");
+//			 m.put("PK_COL2", "EXPENSE_NO");
+//			 m.put("PK_COL3", "EXPENSE_NO");
+//			 m.put("PK_COL4", "EXPENSE_NO");
+//			 m.put("PK_COL5", "EXPENSE_NO");
+			 m.put("PK1", paramMap.get("EXPENSE_NO").toString());
+//			 m.put("PK2", paramMap.get("EXPENSE_NO").toString());
+//			 m.put("PK3", paramMap.get("EXPENSE_NO").toString());
+//			 m.put("PK4", paramMap.get("EXPENSE_NO").toString());
+//			 m.put("PK5", paramMap.get("EXPENSE_NO").toString());
+			 m.put("MOD_DH", paramMap.get("MOD_DH").toString());
+			 Map map = commonService.checkChanged(m);
+			 if (map.get("RESULT").toString().equals("ERROR")) {
+                   return map;
+			 }
+		 }
+		 List<Map<String, String>> list= ( List<Map<String, String>>) paramMap.get("FILE_LIST");
+		// md =  paramMap.get("FILE_LIST") != null
+		 if (list != null) { // 신규 데이터는 제외	 
+		       //detail 부분 체크, loop // FILE_LIST
+			   Map md = new HashMap();
+			   md.put("g_comCd", paramMap.get("g_comCd").toString());
+			   md.put("TBL_NAME", "ADMIN_FILE");
+			   md.put("PK_COL1", "FILE_NO");
+			   
+			   for (Map item : list) {   
+	        	   md.put("PK1", ((Map) item).get("FILE_NO").toString());
+	        	   
+	        	   if (item.get("MOD_DH") == null) {
+	        		   md.put("MOD_DH", "");
+	        	   }else {
+	        	       md.put("MOD_DH", ((Map) item).get("MOD_DH").toString());
+	        	   }
+	        	   
+	        	   Map map = commonService.checkChanged(md);
+				   if (map.get("RESULT").toString().equals("ERROR")) {
+		                   return map;
+				   }
+	           };
+	     }
+		 
+		 paramMap.put("MOD_DH", Util.sysdate()); // 체크 통과 시 mod_dh로 클라이언트 데이터 refresh
+		 // end 서버에서 데이터 수정 체크 =========================================================================
+		 
+		 if (paramMap.get("TYPE").equals("CARD")) {
+			 if (expense_no.equals("")) {
+			         if (expenseMstServiceMapper.insertExpenseItemCard(paramMap) > 0 )  {
+							paramMap.put("RESULT" , "OK");
+							return paramMap;
+			         }else {
+							paramMap.put("RESULT" , "ERROR");
+							return paramMap;
+				     }
+			 }else {
+		         if (   expenseMstServiceMapper.updateExpenseItemCard(paramMap) > 0 )  {
+						paramMap.put("RESULT" , "OK");
+						return paramMap;
+		         }else {
+						paramMap.put("RESULT" , "ERROR");
+						return paramMap;
+			     }				 
+			 }
+		 }else if  (paramMap.get("TYPE").equals("ETAX")) { //전자세금계산서
+			 if (expense_no.equals("")) {
+		         if (   expenseMstServiceMapper.insertExpenseItemEtax(paramMap) > 0 )  {
+						paramMap.put("RESULT" , "OK");
+						return paramMap;
+		         }else {
+						paramMap.put("RESULT" , "ERROR");
+						return paramMap;
+			     }
+				 }else {
+			         if (   expenseMstServiceMapper.updateExpenseItemEtax(paramMap) > 0 )  {
+							paramMap.put("RESULT" , "OK");
+							return paramMap;
+			         }else {
+							paramMap.put("RESULT" , "ERROR");
+							return paramMap;
+				     }				 
+				 }	
+		 }else if  (paramMap.get("TYPE").equals("PTAX")) { //종이세금계산서
+			 
+				if (expense_no.equals("")) {
+					if (expenseMstServiceMapper
+							.insertExpenseItemPtax(paramMap) > 0) {
+						paramMap.put("RESULT" , "OK");
+						return paramMap;
+					} else {
+						paramMap.put("RESULT" , "ERROR");
+						return paramMap;
+					}
+				} else {
+					if (expenseMstServiceMapper
+							.updateExpenseItemPtax(paramMap) > 0) {
+						paramMap.put("RESULT" , "OK");
+						return paramMap;
+					} else {
+						paramMap.put("RESULT" , "ERROR");
+						return paramMap;
+					}
+				}			 
+		 }else if  (paramMap.get("TYPE").equals("ETC")) { //기타계산서
+			 
+				if (expense_no.equals("")) {
+					if (expenseMstServiceMapper
+							.insertExpenseItemEtc(paramMap) > 0) {
+						paramMap.put("RESULT" , "OK");
+						return paramMap;
+					} else {
+						paramMap.put("RESULT" , "ERROR");
+						return paramMap;
+					}
+				} else {
+					if (expenseMstServiceMapper
+							.updateExpenseItemEtc(paramMap) > 0) {
+						paramMap.put("RESULT" , "OK");
+						return paramMap;
+					} else {
+						paramMap.put("RESULT" , "ERROR");
+						return paramMap;
+					}
+				}	
+		 }else if  (paramMap.get("TYPE").equals("PREPAID")) { //선급금
+			 
+				if (expense_no.equals("")) {
+					if (expenseMstServiceMapper
+							.insertExpenseItemPrepaid(paramMap) > 0) {
+						paramMap.put("RESULT" , "OK");
+						return paramMap;
+					} else {
+						paramMap.put("RESULT" , "ERROR");
+						return paramMap;
+					}
+				} else {
+					if (expenseMstServiceMapper
+							.updateExpenseItemPrepaid(paramMap) > 0) {
+						paramMap.put("RESULT" , "OK");
+						return paramMap;
+					} else {
+						paramMap.put("RESULT" , "ERROR");
+						return paramMap;
+					}
+				}					
+		 }else if  (paramMap.get("TYPE").equals("RECEIPT")) { //영수증 스캔
+			 
+				if (expense_no.equals("")) {
+					if (expenseMstServiceMapper
+							.insertExpenseItemReceipt(paramMap) > 0) {
+						paramMap.put("RESULT" , "OK");
+						return paramMap;
+					} else {
+						paramMap.put("RESULT" , "ERROR");
+						return paramMap;
+					}
+				} else {
+					if (expenseMstServiceMapper
+							.updateExpenseItemReceipt(paramMap) > 0) {
+						paramMap.put("RESULT" , "OK");
+						return paramMap;
+					} else {
+						paramMap.put("RESULT" , "ERROR");
+						return paramMap;
+					}
+				}
+		 }else if  (paramMap.get("TYPE").equals("TOLL")) { //TOLL 스캔
+			 
+				if (expense_no.equals("")) {
+					if (expenseMstServiceMapper
+							.insertExpenseItemToll(paramMap) > 0) {
+						paramMap.put("RESULT" , "OK");
+						return paramMap;
+					} else {
+						paramMap.put("RESULT" , "ERROR");
+						return paramMap;
+					}
+				} else {
+					if (expenseMstServiceMapper
+							.updateExpenseItemToll(paramMap) > 0) {
+						paramMap.put("RESULT" , "OK");
+						return paramMap;
+					} else {
+						paramMap.put("RESULT" , "ERROR");
+						return paramMap;
+					}
+				}				
+		 }else if  (paramMap.get("TYPE").equals("PREPAY") 
+				 ||  paramMap.get("TYPE").equals("ATM") 
+				 ||  paramMap.get("TYPE").equals("CON") 
+				 ||  paramMap.get("TYPE").equals("GEN") 
+				   ) { //가지급금
+			 
+				if (expense_no.equals("")) {
+					if (expenseMstServiceMapper
+							.insertExpenseItemPrepay(paramMap) > 0) {
+						paramMap.put("RESULT" , "OK");
+						return paramMap;
+					} else {
+						paramMap.put("RESULT" , "ERROR");
+						return paramMap;
+					}
+				} else {
+					if (expenseMstServiceMapper
+							.updateExpenseItemPrepay(paramMap) > 0) {
+						paramMap.put("RESULT" , "OK");
+						return paramMap;
+					} else {
+						paramMap.put("RESULT" , "ERROR");
+						return paramMap;
+					}
+				}				
+		 }else if  (paramMap.get("TYPE").equals("TRAVEL")) { //일당
+
+			    GridDataMultiSave gs = new GridDataMultiSave();
+			    GridDataMap gd = new GridDataMap(); 
+		        gs.addParamMap((Map)new MapSession(session));
+
+			 
+			 m = this.checkTravel(paramMap);
+			    if (m.get("RESULT").toString().equals("ERROR")){
+			    	return m;
+			    }
+				if (expense_no.equals("")) {
+					paramMap.put("EXPENSE_NO", expenseMstServiceMapper.expenseItemTravelNextVal());
+					if (expenseMstServiceMapper.insertExpenseItemTravel(paramMap) > 0) {
+						paramMap.put("RESULT" , "OK");
+					} else {
+						paramMap.put("RESULT" , "ERROR");
+					}
+				} else {
+					if (expenseMstServiceMapper.updateExpenseItemTravel(paramMap) > 0) {
+						paramMap.put("RESULT" , "OK");
+					} else {
+						paramMap.put("RESULT" , "ERROR");
+						
+					}
+				}
+
+				if(paramMap.get("RESULT").equals("OK") && paramMap.get("BIZTRIP_CAL_MTHD").toString().equals("20")) {
+					gs.addkeyValue("EXPENSE_NO",paramMap.get("EXPENSE_NO").toString());
+					try {
+						if (   gs.invokeMethod(expMyOfficeServiceMapper, gd.getDeleteMaps(paramMap,"ds_master"), "deleteExpBizTrip") *
+								gs.invokeMethod(expMyOfficeServiceMapper, gd.getInsertMaps(paramMap,"ds_master"), "insertExpBizTrip") * 
+								gs.invokeMethod(expMyOfficeServiceMapper, gd.getUpdateMaps(paramMap,"ds_master"), "updateExpBizTrip")  
+								> 0) {
+							
+							paramMap.put("RESULT" , "OK");
+						}else{
+							paramMap.put("RESULT" , "ERROR");
+						}
+					} catch (MyDuplicateKeyException e)  {
+						e.printStackTrace();
+						paramMap.put("RESULT" , "ERROR");
+					} catch (Exception e) {
+						e.printStackTrace();
+						paramMap.put("RESULT" , "ERROR");
+						throw new RuntimeException("Exception for rollback");
+					}
+				}
+				
+				return paramMap;				
+				
+				
+				
+		 }else if  (paramMap.get("TYPE").equals("GAS")) {
+
+			 if (expense_no.equals("")) {
+					if (expenseMstServiceMapper
+							.insertExpenseItemGas(paramMap) > 0) {
+						paramMap.put("RESULT" , "OK");
+						return paramMap;
+					} else {
+						paramMap.put("RESULT" , "ERROR");
+						return paramMap;
+					}
+				} else {
+					if (expenseMstServiceMapper
+							.updateExpenseItemGas(paramMap) > 0) {
+						paramMap.put("RESULT" , "OK");
+						return paramMap;
+					} else {
+						paramMap.put("RESULT" , "ERROR");
+						return paramMap;
+					}
+				}		 
+			 
+//			 try {
+//				fileStorageService.storeImgFileFromUrl();
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+		 }
+		 
+		 return null;
+	} // saveReport
+	
+	
+	
+	@Autowired
+	ExpenseMstReportService expenseMstReportService;
+	
+	//상신
+	@Transactional
+	public Map  saveApprove(Map paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+//		// 0.상신 전 동시성 제어
+		 // 서버에서 데이터 수정 체크 ===========================================================================
+//		if (paramMap.get("REPORT_NO") != null  &&  !paramMap.get("REPORT_NO").toString().equals("")  ) { // update건
+		
+		if ( !((Map)paramMap.get("ds_report")).getOrDefault("REPORT_NO","").equals("")   ) { // update건
+
+			 Map m = new HashMap();
+			 m.put("g_comCd", paramMap.get("g_comCd").toString());
+			 m.put("TBL_NAME", "EXPENSE_REPORT");
+			 m.put("PK_COL1", "REPORT_NO");
+			 m.put("PK1", paramMap.get("REPORT_NO").toString());
+			 m.put("MOD_DH", paramMap.get("MOD_DH").toString());
+			 Map map = commonService.checkChanged(m);
+			 if (map.get("RESULT").toString().equals("ERROR")) {
+                  return map;
+			 } 
+		}
+		
+		// 1. 리포트 insert
+		Map map = (Map)(paramMap.get("ds_report"));
+		map.putAll(new MapSession(session));
+		
+		if   (map.get("REPORT_NO") == null ||  map.get("REPORT_NO").toString().equals("")) {
+		    reportServiceMapper.saveReport(map);
+		}else {
+			reportServiceMapper.updateReport(map);
+		}
+		
+		// 2.관리항목
+		if (paramMap.get("ds_reportmngs") != null) {
+			map.put("mngs",(List)paramMap.get("ds_reportmngs")); 
+			reportServiceMapper.saveReportMngs(map);
+		}
+		// ====================================
+	     GridDataMultiSave gs = new GridDataMultiSave();
+         GridDataMap gd = new GridDataMap();          
+         gs.addParamMap(map);
+         
+		// 1-1. 리포트 added file 
+        if ( gs.invokeMethod(reportServiceMapper, gd.getInsertMaps(paramMap,"ds_reportfiles"), "saveReportFiles" ) > 0) {
+		   //  return true;
+        }			
+        
+        // 업무별 별도 처리 데이터 , 테이블명으로 함 ****************************************************************
+        // {COMPONENT_ID=report-apprv-expense-list, ds_report={REPORT_TITLE=1, REPORT_RMK=1, URGENCY_YN=0, REPORT_TP=1010, REPORT_NO=}, 
+        // ds_expenselist=[{RECEIPT_DT=20211029, BIZTRIP_START=, CURRENCY_CD=KRW, MILEAGE_RATE_NM=, REGR_ID=, START_ADDR=, FILE_KIND=IMG, ID=3, 
+        // ETC_AMT=, BIZ_ADDR=, TYPE=RECEIPT, BASE_CURRENCY_CD=KRW, LIMIT_AMT=0, DISTANCE=, DISTANCE_TP=, BIZ_CATEGORY=, BIZTRIP_END=, 
+        // IFNULL(B={LIMIT_AMT_YN,'0')=0}, OVERSEAS_YN=, RECEIVE_BIZ_ADDR=, CURRENCY_DT=20210101, RN=1, CCTR_CD=2000001, OCR_FILE_NO=, 
+        // EXPENSE_CD=57110105, BIZ_NO=, START_LAT=, BIZ_NM=, REPORT_TITLE=, EXPENSE_EMP_NM=이정현, EXPENSE_EMP_NO=201902, EVID_YN=0, SOURCE_TP_NM=영수증, //
+        //CURRENCY_AMT=0.0000, PRIVATE_YN=, MILEAGE_RATE_CD=, REPORT_TP=1010, ODOMETER_END=, RMK=, BIZTRIP_DAYS=, APPROVE_STATUS=1, GROUP_NO=35057, FILE_TYPE=JPG, VAT_AMT=0, OVERSEAS_CUR_CD=, PRIVATE_RMK=, CARD_NO=, CCENTER_TP=3, START_DH=, TOT_AMT=0, ODOMETER_START_FILE=, REGR_DH=20211029011938, CHECKED=1, RECEIVE_BIZ_TYPE=, PS_CD=, EXPENSE_AMT=0.0000, RECEIVE_BIZ_CATEGORY=, OCR_CNT=0, CCTR_NM=대표이사, PAY_AMT=0, END_DH=, EXPENSE_NO=72405, TAX_TP=, EVID_NO=, EXPENSE_VAT_AMT=0.0000, EXPENSE_NM=시내교통비, BIZ_TYPE=, FILE_NO=453mqzpT4hV7k3vq8IlH3H3d145HgF, CURRENCY_DEC_NUM=0, SENDER_EMAIL=, OVERSEAS_DH=, BIZTRIP_TP=, START_LONG=, DEFAULT_COSTCENTER=, REPORT_TP_NM=시내교통비 신청서, END_LONG=, TOLL_CNT=0, SUPPLY_AMT=0, RECEIVE_EMAIL=, BELONGING_TYPE=3, BELONGING_TP=1, ODOMETER_END_FILE=, END_ADDR=, REGR_NM=, ODOMETER_START=, OVERSEAS_CUR_RATE=, DEFAULT_AMT=0.0000, CURRENCY_RATE=1.0000, ORG_FILE_NAME=20210704_012053.jpg, OVERSEAS_AMT=, RECEIVE_BIZ_NO=, CARD_BILL_NO=, RECEIVE_BIZ_NM=, DEFAULT_AMT_YN=0, MOD_DH=20211117140513, DEFAULT_CCTR_YN=0, APPROVE_LINE_TP=LINE10, FILE_CNT=0, END_LAT=, PS_NM=, SOURCE_TP=2, PROCESS_APPRV_GRP=10}],
+        // ds_files=[],
+        // ds_reportmngs=[{ORD=0, INPUT_FORMAT_CD=03, MNG_CD=38, MNG_NM=도착지, REPORT_TP=1010, MUST_YN=1, MNGVAL_NM=1}],
+        // ds_appvline={data=[{APPROVE_LINE_TP=LINE10, APPROVE_ID=2, DEPT_CD=D000293, DEPT_NM=정보전략팀, APPROVE_NAME=이정현, APPROVE_TP=1, APPROVE_TP_NM=기안, APPROVE_ORDER=0, EMAIL=jhlee@e-accounting.co.kr, APPROVE_STEP=1, PROCESS_APPRV_GRP=10, __rowStatus=I}, {APPROVE_LINE_TP=LINE10, APPROVE_ID=2, DEPT_CD=D000293, DEPT_NM=정보전략팀, APPROVE_NAME=이정현, APPROVE_TP=3, APPROVE_TP_NM=결재, APPROVE_ORDER=1, EMAIL=jhlee@e-accounting.co.kr, APPROVE_STEP=2, PROCESS_APPRV_GRP=10, __rowStatus=I}]}, ds_reportfiles={data=[]}}
+
+        if (paramMap.get("ds_etcList") != null) {
+        	
+        	    paramMap.put("REPORT_NO", map.get("REPORT_NO").toString());
+        	    if (!expenseMstReportService.updateExpenseReportCheck(paramMap, request, response, session)) {
+        	    	paramMap.put("RESULT" , "ERROR");
+        	    	paramMap.put("MSG" , ((Map)paramMap.get("ds_etcList")).getOrDefault("CHG_MSG", "변경된 데이터가 있습니다."));
+        	    	return paramMap;
+        	    }
+        		expenseMstReportService.updateExpenseReport(paramMap, request, response, session);
+        }
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        
+		// 3. approve insert
+         if ( gs.invokeMethod(approveServiceMapper, gd.getInsertMaps(paramMap,"ds_appvline"), "insertApprove" ) > 0) {
+     		paramMap.put("RESULT" , "OK");
+     		return paramMap;
+         }		
+ 		paramMap.put("RESULT" , "ERROR");
+ 		return paramMap;
+	} // saveApprove	
+	
+	
+	@Transactional
+	public Map  deleteExpenseItem(Map paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+        
+		paramMap.putAll((Map)new MapSession(session));
+		
+		if (   expenseMstServiceMapper.deleteExpenseItem(paramMap) >= 0 )  {
+		       	 return paramMap;
+         }else {
+        	return null;
+	     }
+	}
+	
+	
+	private void  deleteReceiptFile(Map m) {
+		
+		// 파일 삭제
+	    fileUploadController.deleteFile(m.get("FILE_NO").toString(), null, null);
+	    
+	    // 파일 "테이블" 데이터 삭제
+	    if (fileServiceMapper.deleteFile(m) == 1) {
+	    };
+	    
+		
+	} // deleteExpenseItem	
+	
+	public Map checkTravel(Map paramMap) {
+		
+		// 금액,기간,중복
+		//1.
+		String d1 = paramMap.get("BIZTRIP_START").toString();
+		String d2 = paramMap.get("BIZTRIP_END").toString();;
+		Long d = Long.parseLong(paramMap.get("BIZTRIP_DAYS").toString());
+		Long amt = Long.parseLong(paramMap.get("EXPENSE_AMT").toString()); 
+		Float rate = Float.parseFloat(paramMap.get("CURRENCY_RATE").toString());
+		P.ln(paramMap.toString());
+		P.ln(paramMap.get("TRAVEL_RATE").toString());
+		
+		String emp_no = paramMap.get("EXPENSE_EMP_NO").toString();
+		//1.기간계산 오류
+		if (Util.date_between(d2, d1)+1 != d) {
+			return new SimpleResultMap(false, "일수 오류");
+		}
+        //2. 금액		
+//		P.ln(paramMap.get("EXPENSE_AMT").toString());
+//		P.ln(paramMap.get("CURRENCY_RATE").toString());
+//		P.ln(paramMap.get("TRAVEL_RATE").toString());
+		
+		String cal_mthd = paramMap.get("BIZTRIP_CAL_MTHD").toString();
+		
+		// 기간별/ 일자별 계산에 따른 금액 계산 
+		if(cal_mthd.equals("10") ) {
+			Double travelrate = Double.parseDouble(paramMap.get("TRAVEL_RATE").toString());
+			if (Math.round(rate * d * travelrate) != amt) {
+				return new SimpleResultMap(false, "금액 오류");
+			}
+		} else if (cal_mthd.equals("20")) {
+			Map<String, Object> ds_master = (Map) paramMap.get("ds_master");
+			List<Map<String, Object>> gridList = (List) ds_master.get("data");
+			if(gridList.size() > 0) {
+				long sum = 0;
+				for(int i=0;i<gridList.size();i++) {
+					if(gridList.get(i).get("__rowStatus").equals("I")) {
+						sum += Double.parseDouble(gridList.get(i).get("TRAVEL_RATE").toString()) * rate;
+					}
+				}
+				P.ln("sum : " + sum);
+				P.ln("amt : " + amt);
+				if (Math.round(sum) != amt) {
+					return new SimpleResultMap(false, "금액 오류");
+				}
+			}
+		}
+		
+        //3. 기간 중복		
+		if (expenseMstServiceMapper.getExpTravelDupPeriod(paramMap) > 0 ) {
+			return new SimpleResultMap(false, "기간 중복");
+		}		
+		return new SimpleResultMap(true, "OK");
+	}
+	
+}

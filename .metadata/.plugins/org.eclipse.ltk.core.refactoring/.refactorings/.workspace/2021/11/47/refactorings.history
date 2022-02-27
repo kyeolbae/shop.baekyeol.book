@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Copy 0 elements to &apos;ec_eaccountingv1/src/main/java/com.ec.eframework.mapper.ex.sap.config&apos;&#x0D;&#x0A;- Destination element: &apos;ec_eaccountingv1/src/main/java/com.ec.eframework.mapper.ex.sap.config&apos;" description="Copy compilation units" destination="=ec_eaccountingv1/src\/main\/java=/optional=/true=/=/maven.pomderived=/true=/&lt;com.ec.eframework.mapper.ex.sap.config" files="0" flags="589830" folders="0" id="org.eclipse.jdt.ui.copy" policy="org.eclipse.jdt.ui.copyResources" stamp="1637137365664" units="0" version="1.0"/>
+</session>

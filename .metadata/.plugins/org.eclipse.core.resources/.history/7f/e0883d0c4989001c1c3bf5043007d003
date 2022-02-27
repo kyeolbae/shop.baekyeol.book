@@ -1,0 +1,113 @@
+<!-- 
+	-- 프로그램명 : 예산관리 / 결재상태 전송 [관리자용]
+	-- 날짜 : 2021.10.19 by hshwang
+	-- 수정 : 
+-->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8" />
+</head>
+<body>
+	<div th:fragment="js">
+		<script type="text/javascript">
+	  var [[${param.pgm_id}]] = new Vue({
+		  el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************		  
+		  data: {	pgmid : "[[${param.pgm_id}]]",
+			  	 	searchtypename : objId(),
+		  },//data
+		  created()  {},
+		  methods : {  // ======================================================================================
+			
+			searchButtonOnclick : function() {
+			  	customAlert("",  "" , "조회 불가")
+		 	 },
+			  
+			bdtToSapOnclick : function(type) {
+				
+				if (checkRequiredInput(this.pgmid+type) == false){
+           		   customAlert("","","필수항목을 확인하세요.");
+                    return false;
+			      } 
+				
+				var o = {};
+				
+				switch(type) {
+					case "REQ" :
+						o.svcId = 'bdtReq'
+						o.BDGT_TYPE = 'BDGT_REQ'
+						o.REPORT_NO = $('#'+this.pgmid+'REQ_RPT_NO').val();
+						o.BDGT_STAT = $('#'+this.pgmid+'REQ_STAT').val();
+						o.TEST = $('#'+this.pgmid+'REQ_TEST').val();
+						break;
+					case "TRS" :
+						o.svcId = 'bdtTrs'
+						o.BDGT_TYPE = 'BDGT_TRS'
+						o.REPORT_NO = $('#'+this.pgmid+'TRS_RPT_NO').val();
+						o.BDGT_STAT = $('#'+this.pgmid+'TRS_STAT').val();
+						o.TEST = $('#'+this.pgmid+'TRS_TEST').val();
+						break;
+					case "FWD" :
+						o.svcId = 'bdtFwd'
+						o.BDGT_TYPE = 'BDGT_FWD'
+						o.REPORT_NO = $('#'+this.pgmid+'FWD_RPT_NO').val();
+						o.BDGT_STAT = $('#'+this.pgmid+'FWD_STAT').val();
+						o.TEST = $('#'+this.pgmid+'FWD_TEST').val();
+						break;
+					case "APR" :
+						o.svcId = 'bdtApprv'
+						o.BDGT_TYPE = 'BDGT_APPRV'
+						o.REPORT_NO = $('#'+this.pgmid+'APPRV_RPT_NO').val();
+						o.BDGT_STAT = $('#'+this.pgmid+'APPRV_STAT').val();
+						o.TEST = $('#'+this.pgmid+'APPRV_TEST').val();
+						break;
+					case "CHIT" :
+						o.svcId = 'bdtChit'
+						o.BDGT_TYPE = 'BDGT_SIGN'
+						o.REPORT_NO = $('#'+this.pgmid+'CHIT_NO').val();
+						o.BDGT_STAT = $('#'+this.pgmid+'CHIT_STAT').val();
+						o.ZZAPPRV_DATE = $('#'+this.pgmid+'ZZAPPRV_DATE').val();
+						o.ZZAPPRV_TIME = $('#'+this.pgmid+'ZZAPPRV_TIME').val();
+						break;
+				};
+				this.saveSap(o);
+			},
+			
+			
+			// SAP 저장
+			saveSap : function(o) {
+				var param = {
+                        svcId: o.svcId,
+                        strUrl:"/ex/bgt/stat/saveSap",   
+                        param : o, 
+                        pCall : this.saveSapOnclickCallBack, 
+                        pLoad : true         
+                    };
+                    //트랜젝션 실행
+                ajaxReadJsonData(param);
+			},
+			
+			saveSapOnclickCallBack : function(svcId, data) {
+				log(data)
+				customAlert('','', data["data_result"].data.MSG);
+				if(svcId == "bdtApprv") {
+					log(data["data_result"].data.ES_ITEM);
+				}
+			},
+			
+		  }, // end of methods
+			mounted: function() {
+				var ref = this;
+				this.$nextTick(function () {
+				}); // nextTick
+	//**********************************************************************************************	
+			vueArr.push(this);
+			},
+
+	  }) // end of new Vue
+		</script>
+	</div>
+
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<!--     <meta charset="utf-8" /> -->
+</head>
+  <body>
+   
+   <div :class="{'d-flex': curItem.TYPE =='ATM' }" class="d-none w-100 flex-column flex-sm-row" th:fragment="html">
+   
+       <!-- begin modal 이미지,  삭제금지-->
+                         <div class="d-flex flex-column p-0 receipt-m-box-modal" :id="pgmid+'bizcard-clon-receipt'">
+                                <ec-img ref="atmimg"  ismobile="true" v-show="$options.filters.isNotEmpty(curItem.FILE_NO)  &&  curItem.TYPE =='ATM' " 
+							         source="PP" @edited="receiptimgedited" @clickmainfile="receiptClickMainFile"
+							         autoprocess="false"    @successupload="saveServer"   addfile="true"> 
+							    </ec-img>   
+                         </div>
+                         <div class="" :id="pgmid+'atmmodalbody'">
+                         
+                         <div class="my-3">
+                             <div class="d-flex flex-column  mb-2">
+                                    <div class="w-100 m-0 label-required">청구자</div>
+                                    <popup-m-code  ref="popupatmemp" :pgmid="pgmid"  pgmnm="청구자" subname="popupatmemp"  name="EMP_NO_ATM" searchname="청구자"  required="true" columnlayout="popupemp"   tablename="EMP"  readonly="readonly"   @codechanged="empNoChange"  ></popup-m-code>
+                             </div>      
+                                             
+                             <div class="d-flex flex-column  mb-2">
+                                     <label class="w-100 m-0">전기일<span class="text-danger">*</span></label>
+                                     <date-new-component-v1  ismobile="true"  ref="RECEIPT_DT_ATM" th:pgmid="${param.pgm_id}" subname="RECEIPT_DT_ATM"  required="true" ></date-new-component-v1>
+                             </div>
+                             <div class="d-flex flex-column  mb-2">
+                                  <label class="w-100 m-0">금액<span class="text-danger">*</span></label>
+                                  <div class='d-flex flex-nowrap'>
+                                        <dropdown-tablecommon  ref="ATM_CURRENCY" class="col-3 p-0 "  :pgmid="pgmid"  
+                                                                     dropdownlabel=""  selectid="ATM_CURRENCY" selectname="ATM_CURRENCY" 
+                                                                     tableid="getCurrency"
+                                                                     @dropdownchanged="curCdChange" mobile="true"></dropdown-tablecommon>
+	                                    <div class="col-9   p-0">
+<!-- 	                                        <input type="text" name="CURRENCY_AMT_ATM" :id="pgmid+'CURRENCY_AMT_ATM'" class="form-control ec-mobile-input text-right required"   /> -->
+<!-- 	                                        <inputnumber-m-component-v1 ref="CURRENCY_AMT_ATM" required="true"  @inputchange="curAmtChg" ></inputnumber-m-component-v1> -->
+	                                        <inputnumber-m-component ref="CURRENCY_AMT_ATM" required="true"  @inputchange="curAmtChg" ></inputnumber-m-component>
+	                                    </div>
+                                    </div>
+                             </div>
+                             
+                             <div :class="{'d-none': currencyCd == curItem.BASE_CURRENCY_CD }" class="w-100 text-right" >
+                                    <div><span>환율일자:</span><strong><span>{{currencyDt | dateformat('card-week')  }}</span></strong></div>   
+                                    <div><span>1{{currencyCd}}=</span><span>{{currencyRate  }}{{curItem.BASE_CURRENCY_CD}}</span></div>   
+                                    <div><span></span><strong><h4 class="text-red">{{expenseAmt | numberformat('0,000')}}{{curItem.BASE_CURRENCY_CD}}</h4></strong></div>  
+                            </div>                             
+                             
+                             
+                                  
+                             <div class="d-flex flex-column  mb-2">
+                                    <label class="w-100 m-0">항목<span class="text-danger">*</span></label>
+                                    <popup-m-code ref="popupexpatm" :pgmid="pgmid"  pgmnm="항목" subname="popupexpatm"  name="EXPENSE_CD_ATM" searchname="항목"  columnlayout="popupexpcard"   tablename="EXATM" required="true" readonly="readonly"  @codechanged="receiptExpCdChange"  ></popup-m-code>
+                             </div> 
+                             
+                             <span v-show="receiptbelongtype != '0'">
+                                <div class="d-flex flex-column  mb-2">
+                                <label class="w-100 m-0">귀속<span class="text-danger">*</span></label>
+                                  <div class='d-flex flex-column'>
+                                    <div class=" p-0 d-flex">
+                                               <dropdown-m-syscommon  ref="ATM_CCENTER_TP" class="w-100 p-0 flex-shrink-0"  :pgmid="pgmid"  
+                                                       dropdownlabel=""  selectid="ATM_CCENTER_TP" selectname="ATM_CCENTER_TP" 
+                                                       clcd="EX_CCENTER_TP"   @changed="ccenterTpChange"></dropdown-m-syscommon>
+                                   </div>
+                                   <div class="d-flex flex-row  flex-column w-100">
+                                    <span v-show="receiptcosttype=='1'" ><popup-m-code  ref="popupcostcenteratm" :pgmid="pgmid"  pgmnm="코스트센터" subname="popupcostcenter-atm"   name="CCTR_CD_ATM" searchname="코스트센터"   columnlayout="popupcostcenter"  readonly="readonly" tablename="CCTR" @codechanged="costCenterCdChange"  ></popup-m-code></span>
+                                    <span v-show="receiptcosttype=='2'" ><popup-m-code  ref="popupprojectatm" :pgmid="pgmid"  pgmnm="프로젝트" subname="popupproject-atm"   name="PROJECT_ATM" searchname="프로젝트"  columnlayout="popupproj"   tablename="PROJ" readonly="readonly"   @codechanged="projectCdChange" ></popup-m-code></span>
+                                   </div>
+                                   </div>
+                             </div> 
+                             </span>                            
+                             
+                             
+                             <div v-for="item in receiptMngList " class="d-flex flex-column  mb-2">
+                                 <label class="w-100 m-0">{{item.MNG_NM}}<span v-show="item.MUST_YN=='1'" class="text-danger">*</span></label>  
+                                 <div v-if="item.INPUT_FORMAT_CD !='01' &&  item.INPUT_FORMAT_CD !='05'  &&  item.INPUT_FORMAT_CD !='02'" class="w-100">
+                                     <input type="text"  :id="pgmid+'popupatmmng'+item.MNG_CD" 
+                                     :class="{required : item.MUST_YN=='1'}" class="form-control ec-mobile-input"  /> 
+                                 </div>                                                                                              
+                                 <div v-if="item.INPUT_FORMAT_CD=='01'" class="w-100">
+                                     <popup-m-code  :ref="'popupatmmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-atm"   name="CCTR_CD_ATM" 
+                                     :searchname="item.MNG_NM"  :required="item.MUST_YN=='1' ?  'true' : '' "  :columnlayout="item.COLUMN_LAYOUT"   :tablename="item.TABLE_CD" :codecl="item.COMM_CL_CD" readonly="readonly" 
+                                      ></popup-m-code>
+                                 </div>
+                                 <div v-if="item.INPUT_FORMAT_CD=='02'" class="w-100">
+                                      <inputnumber-m-component  :ref="'popupatmmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-atm" :required="item.MUST_YN=='1' ?  'true' : '' "  ></inputnumber-m-component>
+                                 </div>                                  
+                                 <div v-if="item.INPUT_FORMAT_CD=='05'" class="w-100">
+                                     <date-new-component-v1  ismobile="true"  :ref="'popupatmmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-atm"   name="CCTR_CD_RECEIPT" 
+                                     :searchname="item.MNG_NM"  :required="item.MUST_YN=='1' ?  'true' : '' "  readonly="readonly" 
+                                      ></date-new-component-v1>
+                                 </div>                                    
+                            </div>                            
+                             
+                                                                                                                       
+                             <div class="d-flex flex-column  mb-2">
+                                    <label class="w-100 m-0">적요</label>
+                                    <div class="w-100">
+                                        <input type="text" name="RMK_ATM" :id="pgmid+'RMK_ATM'" class="form-control ec-mobile-input " :value="curItem.RMK "   />
+                                    </div>
+                             </div>                              
+                        </div>                          
+                         
+                   </div>
+          <!-- end of popup 영수증-->            
+   
+   </div> 
+   
+  </body>
+</html>

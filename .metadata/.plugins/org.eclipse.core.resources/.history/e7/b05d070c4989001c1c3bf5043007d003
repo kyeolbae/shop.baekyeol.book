@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+  <meta charset="utf-8" />
+</head>
+
+<body>
+  <section layout:fragment="content">
+
+   <form class="d-flex  flex-column h-100" th:id=${param.pgm_id}  >
+                           <!-- 에이유아이 그리드가 이곳에 생성됩니다. -->
+                    <div class="flex-shrink-1 flex-grow-1 h-100">
+                        <grid-crud ref="gridmaster" :columnlayout="columnlayout" :pgmid="pgmid" subname="gridmaster"  :newitem="newgriditem" buttons=""></grid-crud> 
+                    </div>
+                       <!-- 관리자                     -->
+                    <popup-gridcode ref="codepopupuser" :pgmid="pgmid"  pgmnm="관리자" subname="codepopupowner"  name="USER" searchname="관리자"  columnlayout="popupuser"   tablename="USER"  :parentgrid="gridView" codecol="OWNER_ID" namecol="USER_NM"></popup-gridcode>
+                 
+                    <popup-gridcode ref="codepopupemp" :pgmid="pgmid"  pgmnm="관리자명" subname="codepopupdriver"  name="EMP" searchname="사원"  columnlayout="popupemp"    tablename="EMP"  :parentgrid="gridView" codecol="EMP_NO" namecol="EMP_NM"></popup-gridcode>
+   </form>
+           
+	  	<!-- ================== BEGIN THIS PAGE JS ================== -->
+ 	<div th:insert="contents/ex/config/expcard-js :: js"></div>  
+   </section>
+
+</body>
+</html>

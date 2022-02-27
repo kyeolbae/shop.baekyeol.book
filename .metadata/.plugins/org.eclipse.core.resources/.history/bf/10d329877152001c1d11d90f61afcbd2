@@ -1,0 +1,13 @@
+package org.opentutorials.javatutorials.method;
+
+public class CarExample {
+
+	public static void main(String[] args) {
+		
+		Car car = new Car();
+		
+		System.out.println(car.color);
+
+	}
+
+}

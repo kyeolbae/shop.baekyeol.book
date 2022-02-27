@@ -1,0 +1,24 @@
+package com.ec.eframework.mapper.ex.expense;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+//@Component
+import org.apache.ibatis.annotations.Mapper;
+
+import com.ec.eframework.config.db.FirstMapper;
+import com.ec.eframework.mapper.basic.GridServiceMapper;
+@FirstMapper
+public interface ReportServiceMapper extends GridServiceMapper  {
+	List<HashMap<String , Object >> reportApprvTransportationList(Map map); //getReport           
+	List<HashMap<String , String >> getReportList(Map map);
+	List<HashMap<String , String >> getReportFileByReportNo(Map map); // 
+	List<HashMap<String , String >> getApproveStatus(Map map); // getApproveStatus
+	List<HashMap<String , String >> getApproveLine(Map map); // 결재선 조회
+	
+	int saveReport(Map<String, Object> map);
+	int updateReport(Map<String, Object> map);
+	int saveReportMngs(Map<String, Object> map);
+	int saveReportFiles(Map<String, Object> map);
+}

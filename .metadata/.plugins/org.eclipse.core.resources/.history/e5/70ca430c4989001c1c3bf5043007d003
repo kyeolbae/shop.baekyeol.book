@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper
+	namespace="com.ec.eframework.mapper.ex.kwichub.KwichubServiceMapper3">
+
+	<select id="getBiz_no" resultType="HashMap"> 
+		SELECT DISTINCT biz_no AS CORP_NO FROM expense_inbox_card 
+		WHERE (biz_no IS NOT NULL AND biz_no != '')
+		AND receipt_dt BETWEEN '2021001' AND '20210430';
+	</select>
+	
+	<select id="getBizStatusHubIfKey" resultType="int"> 
+		SELECT HUB_IF_KEY
+		FROM kh_bizstatus_bulk
+		WHERE REGR_ID = #{g_userId} 
+		AND DOC_NO = #{DOC_NO};
+	</select>
+
+	<insert id="insertCorpState">
+		<selectKey resultType="int" keyProperty="HUB_IF_KEY"
+			order="BEFORE">
+			SELECT NEXTVAL(HUB_IF_SEQ);
+		</selectKey>
+		INSERT INTO kh_bizstatus
+		(HUB_IF_KEY,
+		CORP_BIZ_NO,
+		CORP_NO,
+		TAX_TYPE,
+		TAX_TYPE_NM,
+		CLO_DATE,
+		NTS_DATE,
+		ERR_CODE,
+		ERR_MSG,
+		REGR_DH,
+		REGR_ID,
+		REGR_NM
+		)
+		VALUES(
+		#{HUB_IF_KEY},
+		#{CORP_BIZ_NO},
+		#{CORP_NO},
+		#{TAX_TYPE},
+		#{TAX_TYPE_NM},
+		#{CLO_DATE},
+		#{NTS_DATE},
+		#{ERR_CODE},
+		#{ERR_MSG},
+		REGR_DH(),
+		#{g_userId},
+		#{g_userNm}
+		);
+	</insert>
+	
+	<insert id="insertBulkCorpStateRequest">
+		INSERT INTO kh_bizstatus_bulk
+		(HUB_IF_KEY,
+		CORP_BIZ_NO,
+		REG_DD,
+		DOC_NO,
+		TOTAL_CNT,
+		STATE,
+		STATE_NM,
+		SUCC_CNT,
+		FAIL_CNT,
+		WAIT_CNT,
+		REGR_DH,
+		REGR_ID,
+		REGR_NM
+		)
+		VALUES(
+		#{HUB_IF_KEY},
+		#{CORP_BIZ_NO},
+		#{REG_DD},
+		#{DOC_NO},
+		#{TOTAL_CNT},
+		#{STATE},
+		#{STATE_NM},
+		#{SUCC_CNT},
+		#{FAIL_CNT},
+		#{WAIT_CNT},
+		REGR_DH(),
+		#{g_userId},
+		#{g_userNm}
+		);
+	</insert>
+	
+	<insert id="insertBulkCorpStateResult">
+		INSERT INTO kh_bizstatus_bulk_dtl
+		(HUB_IF_KEY,
+		CORP_NO,
+		REGR_ID,
+		REGR_NM
+		)
+		VALUES(
+		#{HUB_IF_KEY},
+		#{CORP_NO},
+		#{g_userId},
+		#{g_userNm}
+		);
+	</insert>
+	
+	<insert id="callKhCardAcquire2CardCategory">
+	/* com.ec.eframework.mapper.ex.kwichub.KwichubServiceMapper3.callKhCardAcquire2CardCategory 2021.08.17 by hshwang */
+		call khCardAcquire2CardCategory(#{g_comCd}, #{HUB_IF_KEY});
+		
+	</insert>
+	
+	<update id="updateBulkCorpStateResult">
+		UPDATE kh_bizstatus_bulk_dtl
+		SET TAX_TYPE = #{TAX_TYPE}, 
+			TAX_TYPE_NM = #{TAX_TYPE_NM},
+			CLO_DATE = #{CLO_DATE},
+			NTS_DATE = #{NTS_DATE},
+			STATE = #{STATE},
+			STATE_NM = #{STATE_NM},
+			ERR_CODE = #{NTS_DATE},
+			ERR_MSG = #{ERR_MSG},
+			REGR_DH = REGR_DH()
+		WHERE REGR_ID = #{g_userId} AND CORP_NO = #{CORP_NO} AND HUB_IF_KEY = #{HUB_IF_KEY};
+	</update>
+	
+	<update id="updateBulkCorpState">
+		UPDATE kh_bizstatus_bulk
+		SET TOTAL_CNT = #{TOTAL_CNT},
+			STATE = #{STATE}, 
+			STATE_NM = #{STATE_NM},
+			SUCC_CNT = #{SUCC_CNT},
+			FAIL_CNT = #{FAIL_CNT},
+			WAIT_CNT = #{WAIT_CNT},
+			REGR_DH = REGR_DH()
+		WHERE REGR_ID = #{g_userId} AND DOC_NO = #{DOC_NO};
+	</update>
+</mapper>

@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+  <meta charset="utf-8" />
+<!--   영수증 비용처리 -->
+</head>
+<body> 
+    
+  <section layout:fragment="content">
+   
+            <form class="d-flex  flex-column h-100 bg-light" th:id=${param.pgm_id}  >
+             
+             <div class="d-flex flex-column justify-content-between p-5 w-100" style="position: fixed; z-index:2">
+                     <div class="btn-group d-flex justify-content-center w-100">
+                           <div  class="btn border p-0  w-100 bg-white" >
+                             <a class="btn text-nowrap py-1" @click="searchButtonOnClick()"><i class="icon-refresh"></i><br>새로고침</br></a>
+                           </div> 
+<!--                            <div class="col-3 btn border  dropdown w-100 "> -->
+<!--                                <a  class="dropdown-toggle w-100" data-toggle="dropdown"> -->
+<!--                                                                    <i class="icon-sort-alpha-asc"></i><br>정렬</br> -->
+<!--                                </a> -->
+<!--                                <div class="dropdown-menu" role="menu"> -->
+<!--                                    <a href="javascript:;" @click="orderby='DATE'; searchButtonOnClick();"   class="dropdown-item">증빙일자(최신순)</a> -->
+<!--                                    <a href="javascript:;" @click="orderby='REJECT'; searchButtonOnClick();"   class="dropdown-item">반려건</a> -->
+<!--                                    <a href="javascript:;" @click="orderby='APPROVING'; searchButtonOnClick();"   class="dropdown-item">결재진행중</a> -->
+<!--                                </div> -->
+<!--                            </div> -->
+                           <div  class="btn border p-0 text-nowrap w-100 bg-white"   >
+                                 <a class="btn text-nowrap py-1 "  data-toggle="modal" :data-target="'#'+pgmid+'expFilter'" ><i class="icon-filter4"></i><br> 필터</br></a>
+                           </div>
+		                   <div class="btn border p-0 dropdown w-100 bg-white">
+
+<!-- 		                      <a class="btn text-nowrap py-1 " data-toggle="dropdown"  ><i class="icon-menu7 "></i> -->
+<!-- 		                         <br>등록 </br> -->
+<!-- 		                      </a> -->
+		                      <a class="btn text-nowrap py-1 "  data-toggle="modal" :data-target="'#'+pgmid+'expNew'"  ><i class="icon-menu7 "></i>
+		                         <br>등록 </br>
+		                      </a>		                      
+		                      <div class="dropdown-menu" role="menu">
+		                          <a href="javascript:;" class="dropdown-item f-s-14" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openReceipt()"><i class="fa fa-won-sign f-s-14 fa-fw mr-2 text-red"></i> 영수증</a>
+		                          <a href="javascript:;" class="dropdown-item f-s-14" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openGas()"><i class="fa icon-gas f-s-14 fa-fw mr-2 text-warning"></i> 유류비</a>
+		                          <a href="javascript:;" class="dropdown-item f-s-14" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openToll()" ><i class="fa fa-road f-s-14 fa-fw mr-2 text-lime"></i> 통행료</a>
+		                          <a href="javascript:;" class="dropdown-item f-s-14" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openTravel()"><i class="fa icon-user-follow f-s-14 fa-fw mr-2 text-blue"></i> 출장일당</a>
+		                          <a href="javascript:;" class="dropdown-item f-s-14" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openPrepay()"><i class="fa icon-wallet f-s-14 fa-fw mr-2 text-indigo"></i> 가지급금</a>
+<!--  		                          <a href="javascript:;" class="dropdown-item f-s-14"><i class="fa fa-circle f-s-14 fa-fw mr-2 text-success"></i> 카드</a>  -->
+		                      </div>
+		                  </div> 
+<!--                           <div  class="btn border p-0 w-100 bg-white"> -->
+<!--                              <a class="btn text-nowrap py-1"  @click="user2ButtonOnClick()"><i class="icon-file-upload"></i><br>결재요청</br></a> -->
+<!--                           </div> 		                                        -->
+                </div>
+				<div class=" d-flex align-items-center">
+					<div class="custom-control custom-checkbox p-10 ml-4">
+						<input class="custom-control-input" type="checkbox" :id="pgmid+'selectAll'"
+							@change="clickSelectAll" /> <label class="custom-control-label" :for="pgmid+'selectAll'"><span v-if="selectedReportTypes.length==0">전체선택</span></label>
+					</div>
+
+				    <div class="d-flex flex-nowrap overflow-auto" >
+							<a class="ec-btn btn-maintheme btn btn-sm   mr-1 text-nowrap"
+									v-for="item in selectedReportTypes"
+									@click="user2ButtonOnClick(item)"> {{item.REPORT_TP_NM }}
+									({{item.COUNT }}건) </a>
+					</div>
+				</div>
+				
+				<div v-show="false">
+					 <dropdown-tablecommon  ref="selectReportType" :addedlist="addedreportType"  @dropdownchanged="changeReportType"   th:pgmid=${param.pgm_id} alllabel="전체" all="YES" selectid="getExReportTp" selectname="getExReportTp" tableid="getExReportTp" url="/ex/common/commonSelect/search" ></dropdown-tablecommon>
+				</div>
+                
+             </div>
+								 <div class="modal ec-modal fade" :id="pgmid+'expNew'"  tabindex="-1" role="dialog" aria-hidden="true">
+								  <div class="modal-dialog modal-dialog-centered" role="document">
+								    <div class="modal-content rounded-0">
+								      <div class="modal-body d-flex flex-column">
+					                          <a  class=" text-center border rounded-0 f-title-plane py-3"      data-toggle="modal" data-dismiss="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openReceipt()"><i class="fa icon-picture f-s-20 fa-fw mr-2 text-maintheme"></i>영수증</a>
+					                          <a  class=" text-center border rounded-0 f-title-plane py-3 mt-1" data-toggle="modal" data-dismiss="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openGas()"><i class="fa icon-gas f-s-20 fa-fw mr-2 text-maintheme"></i>유류비</a>
+					                          <a  class=" text-center border rounded-0 f-title-plane py-3 mt-1" data-toggle="modal" data-dismiss="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openToll()" ><i class="fa fa-road f-s-20 fa-fw mr-2 text-maintheme"></i>통행료</a>
+					                          <a  class=" text-center border rounded-0 f-title-plane py-3 mt-1" data-toggle="modal" data-dismiss="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openTravel()"><i class="fa icon-user-follow f-s-20 fa-fw mr-2 text-maintheme"></i>출장일당</a>
+					                          <a  class=" text-center border rounded-0 f-title-plane py-3 mt-1" data-toggle="modal" data-dismiss="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openCon()"><i class="far fa-lg fa-fw f-s-20 icon-heart text-maintheme"></i>부서경조금</a>
+					                          <a  class=" text-center border rounded-0 f-title-plane py-3 mt-1" data-toggle="modal" data-dismiss="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openAtm()"><i class="fa icon-share-alt f-s-20 fa-fw mr-2 text-maintheme"></i>전도금</a>
+					                          <a  class=" text-center border rounded-0 f-title-plane py-3 mt-1" data-toggle="modal" data-dismiss="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openGen()"><i class="fa icon-share-alt f-s-20 fa-fw mr-2 text-maintheme"></i>일반비용</a>
+					                          
+					                          
+								      </div>
+								    </div>
+								  </div>
+								</div> 
+								 <div class="modal ec-modal fade" :id="pgmid+'expFilter'"  tabindex="-1" role="dialog" aria-hidden="true">
+								  <div class="modal-dialog modal-dialog-centered" role="document">
+								    <div class="modal-content rounded-0">
+								      <div class="modal-body p-0">
+								      
+	                                      <div class="ec-grid-row">
+	                                          <label class="col-lg-2 col-3 ec-col-label-search  d-flex justify-content-end">일자</label>
+	                                          <div class="col-lg-10 col-9 ec-col-input">
+	                                              <daterange-m-component-v1  border="false" ref="daterange"  th:pgmid="${param.pgm_id}" subname1="SEARCH_FR_DT" subname2="SEARCH_TO_DT" th:lang="ko" required="true"  initval1="firstday-1m" initval2="lastday"  loc="center"></daterange-m-component-v1>
+	                                          </div>
+	                                      </div>
+	                                      
+                                      <div class="ec-grid-row">
+                                          <label class="col-lg-2 col-3 ec-col-label-search d-flex justify-content-end">진행상태</label>
+                                          <div class="col-lg-10 col-9 ec-col-input ">
+                                              <checkbox-syscommon ref="EX_APPROVE_STATUS" th:pgmid=${param.pgm_id}  all='true'  :selectid="pgmid+'EX_APPROVE_STATUS'" selectname="EX_APPROVE_STATUS" clcd="EX_APPROVE_STATUS" @complete="completeApprStatus"> </checkbox-syscommon> 
+                                          </div>      
+                                      </div>		
+                                      
+                                      <div class="ec-grid-row">
+                                          <label class="col-lg-2 col-3 ec-col-label-search d-flex justify-content-end">유형</label>
+                                          <div class="col-lg-10 col-9 ec-col-input ">
+                                              <checkbox-syscommon ref="EX_SOURCE_TP" all='true' th:pgmid=${param.pgm_id} :selectid="pgmid+'EX_SOURCE_TP'" selectname="EX_SOURCE_TP" clcd="EX_SOURCE_TP" @changed=""  @complete="completeSrcType"> </checkbox-syscommon>
+                                          </div>   
+                                      </div>                                                                                  
+								      </div>
+								      <div class="m-0 p-0  d-flex ">
+								        <button type="button" class="btn w-100 bg-grey-darker  rounded-0 f-subtitle text-white" data-dismiss="modal">취소</button>
+								        <button type="button" class="btn w-100 bg-maintheme rounded-0 f-subtitle text-white" data-dismiss="modal" @click="searchButtonOnClick">적용</button>
+								      </div>
+								    </div>
+								  </div>
+								</div>                        
+             
+<!-- begin 리스트형 -->
+            <div  :id="pgmid+'list'" class="d-flex flex-column result-container m-t-91 overflow-auto">
+				
+				<virtual-scroll-v1 ref="virtualscroll" :items="receiptList" benchline="10" width="3000000" height="102" mobile="true" forclass="w-100">
+	               <template slot-scope={item,index}>
+<!--                             <div v-for="(item, index) in receiptList"  class="m-5 m-t-0 m-b-4"  :class="[{'bg-submaintheme' : item.CHECKED =='1'},{'bg-white' : item.CHECKED =='0'}]"> -->
+                                <div class="rounded border m-5 m-t-4 m-b-4" :class="[{'bg-submaintheme' : item.CHECKED =='1'},{'bg-white' : item.CHECKED =='0'}]">  
+                                     <!-- 이미지형 -->
+                                      <div v-if="item.TYPE=='RECEIPT'" class="d-flex w-100 h-100 justify-content-between align-items-center my-1 p-b-3 p-t-3">
+										<div class="custom-control custom-checkbox ml-2" @click="clickReceiptBox(pgmid+'expCheckbox'+index, item, index)">
+										  <input  type="checkbox"  :id="pgmid+'expCheckbox'+index" class="custom-control-input" :class="pgmid+'boxCheckbox'" @change="changedMobileReceiptBox(pgmid+'expCheckbox'+index, item, index)"  v-model="item.CHECKED" true-value="1" false-value="0" :disabled="item.EXPENSE_NO == '' || item.APPROVE_STATUS == '2' || item.APPROVE_STATUS == '4'  ">
+										  <label class="custom-control-label" :for="pgmid+'expCheckbox'+index"></label>
+										</div>
+                                          
+                                        <div class=" h-100">                         
+	                                        <p class="f-s-14 f-w-600 m-0">{{ item.RECEIPT_DT | dateformat('card-week')}}&nbsp{{item.RECEIPT_DT | dateformat('card-time')}}</p>
+	                                        <div class="receipt-m-box-list" :id="pgmid+'expmobilebox'+index" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'"  @click="openDetail(item,index)">
+	                                            <img :id="'imgtag'+item.FILE_NO" class="w-100" :src="'/ec/common/syscommon/fileupload/downloadFile/'+item.FILE_NO" >
+	                                        </div>
+                                        </div>   
+<!--                                         $options.filters.isNotEmpty(item.APPROVE_STATUS_NM) &&  -->
+                                        <div class="d-flex flex-column justify-content-between  w-100 h-100 pb-2 pr-2" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openDetail(item,index)">
+                                            <p class="m-0 text-right">
+                                               <label  :class="{
+                                                                'label-red' : item.APPROVE_STATUS == '5' ,
+                                                                'label bg-maintheme' : (item.APPROVE_STATUS != '5' && $options.filters.isNotEmpty(item.EXPENSE_NO) ) , 
+                                                                'label-default border' : !($options.filters.isNotEmpty(item.EXPENSE_NO)),  
+                                                                     }"  
+                                                       class="label p-2 m-0">
+                                                       <strong class="f-s-11">{{item.APPROVE_STATUS_NM | nvl("미처리")}}</strong>
+                                               </label>
+                                            </p>                                             
+                                            <p class="m-0 text-nowrap text-right f-s-14">&nbsp{{item.EXPENSE_NM}}</p>
+                                            <p class="m-0 text-nowrap text-right f-s-14">&nbsp{{item.EXPENSE_AMT | numberformat('0,000')}}원</p>
+                                        </div>
+
+                                      </div>  
+                                      
+                                      <div v-if="item.TYPE=='TOLL'" class="d-flex w-100 justify-content-between align-items-center my-1">
+                                      
+                                        <div class="custom-control custom-checkbox ml-2" @click="clickReceiptBox(pgmid+'expCheckbox'+index, item, index)">
+                                          <input  type="checkbox"  :id="pgmid+'expCheckbox'+index" class="custom-control-input" :class="pgmid+'boxCheckbox'" @change="changedMobileReceiptBox(pgmid+'expCheckbox'+index, item, index)"  v-model="item.CHECKED" true-value="1" false-value="0" :disabled="item.EXPENSE_NO == '' || item.APPROVE_STATUS == '2' || item.APPROVE_STATUS == '4'  ">
+                                          <label class="custom-control-label" :for="pgmid+'expCheckbox'+index"></label>
+                                        </div>
+                                        
+                                        <div class="w-100 h-100 pr-2" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'"  @click="openDetail(item,index)">
+                                            <div class="d-flex justify-content-between">
+	                                            <p class="f-s-14 f-w-600 m-0">{{ item.RECEIPT_DT | dateformat('card-week')}}&nbsp{{item.RECEIPT_DT | dateformat('card-time')}}</p>
+	                                            <p class="m-0 text-right">
+	                                               <i class="fas fa-fw fa-road  text-aqua"></i>
+	                                               <label  :class="{
+	                                                                'label-red' : item.APPROVE_STATUS == '5' ,
+	                                                                'label bg-maintheme' : (item.APPROVE_STATUS != '5' && $options.filters.isNotEmpty(item.EXPENSE_NO) ) , 
+	                                                                'label-default border' : !($options.filters.isNotEmpty(item.EXPENSE_NO)),  
+	                                                                     }"  
+	                                                       class="label p-2 m-0">
+	                                                       <strong class="f-s-11">{{item.APPROVE_STATUS_NM | nvl("미처리")}}</strong>
+	                                               </label>
+	                                            </p>  
+                                             </div>
+                                             <div class="d-flex justify-content-between align-items-center">
+                                                <p class="m-0 text-nowrap  f-s-18 f-w-600 ">하이패스 &nbsp{{item.TOLL_CNT}} 건</p>
+                                                <p class="m-0 text-nowrap text-right f-s-14">&nbsp{{item.EXPENSE_NM}}</p>
+                                             </div>
+                                             <div class="d-flex justify-content-end">
+                                                <p class="m-0 text-nowrap text-right f-s-14">&nbsp{{item.EXPENSE_AMT | numberformat('0,000')}}원</p>
+                                             </div>
+                                        </div>
+<!--                                         <div class="exp-flatlist-bgicon" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'"  @click="openDetail(item,index)"><i class="fas fa-fw fa-road f-s-70 text-aqua-transparent-2"></i></div> -->
+
+<!--                                          <div class="d-flex align-items-center"> -->
+<!--                                                  <a  class="icon-arrow-right mr-1" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openDetail(item,index)"></a> -->
+<!--                                          </div> -->
+                                      </div>                       
+                                      
+                                      <div v-if="item.TYPE=='PREPAY' " class="d-flex w-100 justify-content-between align-items-center my-1">
+
+                                        <div class="custom-control custom-checkbox ml-2" @click="clickReceiptBox(pgmid+'expCheckbox'+index, item, index)">
+                                          <input  type="checkbox"  :id="pgmid+'expCheckbox'+index" class="custom-control-input" :class="pgmid+'boxCheckbox'" @change="changedMobileReceiptBox(pgmid+'expCheckbox'+index, item, index)"  v-model="item.CHECKED" true-value="1" false-value="0" :disabled="item.EXPENSE_NO == '' || item.APPROVE_STATUS == '2' || item.APPROVE_STATUS == '4'  ">
+                                          <label class="custom-control-label" :for="pgmid+'expCheckbox'+index"></label>
+                                        </div>
+                                        
+                                        
+                                        <div class=" h-100">     
+                                                <p class="f-s-14 f-w-600 m-0">{{ item.RECEIPT_DT | dateformat('card-week')}}&nbsp{{item.RECEIPT_DT | dateformat('card-time')}}</p>
+		                                        <div class="receipt-m-box-list" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'"  @click="openDetail(item,index)">
+		                                       <!--  클릭 모달 -->
+		                                            <img :id="'imgtag'+item.FILE_NO" class="w-100" :src="'/ec/common/syscommon/fileupload/downloadFile/'+item.FILE_NO" >
+		                                        </div>
+		                                 </div>       
+		                                        
+                                        <div class="d-flex flex-column justify-content-between  w-100 h-100 pb-2 pr-2" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openDetail(item,index)">
+                                            <p class="m-0 text-right">
+                                            <label  :class="{
+                                                             'label-red' : item.APPROVE_STATUS == '5' ,
+                                                             'label bg-maintheme' : (item.APPROVE_STATUS != '5' && $options.filters.isNotEmpty(item.EXPENSE_NO) ) , 
+                                                             'label-default border' : !($options.filters.isNotEmpty(item.EXPENSE_NO)),  
+                                                                  }"  
+                                                    class="label p-2 m-0">
+                                                    <strong class="f-s-11">{{item.APPROVE_STATUS_NM | nvl("미처리")}}</strong>
+                                            </label>
+                                            </p>                                             
+                                            <p class="m-0 text-nowrap text-right f-s-14">&nbsp{{item.EXPENSE_NM}}</p>
+                                            <p class="m-0 text-nowrap text-right f-s-14">&nbsp{{item.EXPENSE_AMT | numberformat('0,000')}}원</p>
+                                        </div>
+                                                
+<!--                                          <div class="d-flex align-items-center"> -->
+<!--                                                  <a  class="icon-arrow-right mr-1" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openDetail(item,index)"></a> -->
+<!--                                          </div> -->
+
+                                      </div>                                        
+                                      
+                                      <div v-if="item.TYPE=='CARD'" class="d-flex w-100 h-100 justify-content-between align-items-center my-1 p-b-3">
+                                        <div class="custom-control custom-checkbox ml-2" @click="clickReceiptBox(pgmid+'expCheckbox'+index, item, index)">
+                                            <input  type="checkbox"  :id="pgmid+'expCheckbox'+index" class="custom-control-input" :class="pgmid+'boxCheckbox'" @change="changedMobileReceiptBox(pgmid+'expCheckbox'+index, item, index)" v-model="item.CHECKED" true-value="1" false-value="0" :disabled="item.EXPENSE_NO == '' || item.APPROVE_STATUS == '2' || item.APPROVE_STATUS == '4'  ">
+                                            <label class="custom-control-label" :for="pgmid+'expCheckbox'+index"></label>
+                                        </div>
+                                        <div class="w-100 pr-2" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openDetail(item,index)">
+                                           <div class="d-flex justify-content-between">
+	                                            <p class="m-0 text-nowrap  f-s-11"><span class='f-s-14 f-w-600'>{{ item.RECEIPT_DT | dateformat('card-week')}}</span>&nbsp{{item.RECEIPT_DT | dateformat('card-time')}}</p>
+	                                            <p class="m-0 text-right">
+<!-- 	                                               <i v-if="item.REGR_ID != user_id" class="icon-user-follow"></i> -->
+	                                               <i v-if="item.FILE_CNT > 0 ||  (item.OCR_CNT > 0 && item.EXPENSE_NO == '') " class="icon-paper-clip"></i>
+	                                               <i class="icon-credit-card  text-orange"></i>
+	                                               <label  :class="{
+	                                                                'label-red' : item.APPROVE_STATUS == '5' ,
+	                                                                'label bg-maintheme' : (item.APPROVE_STATUS != '5' && $options.filters.isNotEmpty(item.EXPENSE_NO) ) , 
+	                                                                'label-default border' : !($options.filters.isNotEmpty(item.EXPENSE_NO)),  
+	                                                                     }"  
+	                                                       class="label p-2 m-0">
+	                                                       <strong class="f-s-11">{{item.APPROVE_STATUS_NM | nvl("미처리")}}</strong>
+	                                               </label>
+	                                            </p> 
+                                            </div>                                               
+                                            <div class="d-flex justify-content-between">
+	                                            <p class="m-0   f-s-16 f-w-600 ">{{item.BIZ_NM.substr(0,15)}}</p>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+	                                            <p class="m-0 text-nowrap  f-s-18 f-w-600">{{to_number(item.TOT_AMT)  | numberformat('0,000')}}원</p>
+	                                            <p class="m-0 text-nowrap text-right f-s-14">&nbsp{{item.EXPENSE_NM}}</p>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center">
+	                                            <p class="m-0 text-nowrap  f-s-11 ">{{item.CARD_NO | cardformat}}</p>
+	                                            <p class="m-0 text-nowrap text-right f-s-14">&nbsp{{to_number(item.EXPENSE_AMT)+to_number(item.EXPENSE_VAT_AMT)+to_number(item.EXCLUDE_AMT)  | numberformat('0,000')}}원</p>
+                                            </div>
+                                        </div>
+<!--                                         <div class="exp-flatlist-bgicon" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'"  @click="openDetail(item,index)"><i class="icon-credit-card f-s-70 text-orange-transparent-3"></i></div>    -->
+<!--                                          <div class="d-flex align-items-center"> -->
+<!--                                                  <a  class="icon-arrow-right mr-1" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openDetail(item,index)"></a> -->
+<!--                                          </div> -->
+                                      </div>   
+                                      
+                                      <!--  유류비 -->
+                                      <div v-if="item.TYPE=='GAS'" class="d-flex w-100 justify-content-between align-items-center my-1">
+                                      
+                                        <div class="custom-control custom-checkbox ml-2" @click="clickReceiptBox(pgmid+'expCheckbox'+index, item, index)" >
+	                                          <input  type="checkbox"  :id="pgmid+'expCheckbox'+index" class="custom-control-input" :class="pgmid+'boxCheckbox'" @change="changedMobileReceiptBox(pgmid+'expCheckbox'+index, item, index)" v-model="item.CHECKED" true-value="1" false-value="0" :disabled="item.EXPENSE_NO == '' || item.APPROVE_STATUS == '2' || item.APPROVE_STATUS == '4'  ">
+	                                          <label class="custom-control-label" :for="pgmid+'expCheckbox'+index"></label>
+                                        </div>
+<!--                                         <div class="m-l-15" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'"  @click="openDetail(item,index)"><i class="icon-gas f-s-70 text-red-transparent-2"></i></div>     -->
+                                        <div class="w-100 pr-2" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'"  @click="openDetail(item,index)"> 
+                                            <div class="d-flex justify-content-between">
+	                                            <p class="m-0   f-s-11"><span class='f-s-14 f-w-600'>{{ item.RECEIPT_DT | dateformat('card-week')}}</span>{{item.RECEIPT_DT | dateformat('card-time')}}</p>
+	                                            <p class="m-0">
+	                                               <i class="icon-gas text-red"></i>  
+	                                               <label  :class="{
+	                                                                'label-red' : item.APPROVE_STATUS == '5' ,
+	                                                                'label bg-maintheme' : (item.APPROVE_STATUS != '5' && $options.filters.isNotEmpty(item.EXPENSE_NO) ) , 
+	                                                                'label-default border' : !($options.filters.isNotEmpty(item.EXPENSE_NO)),  
+	                                                                     }"  
+	                                                       class="label p-2 m-0">
+	                                                       <strong class="f-s-11">{{item.APPROVE_STATUS_NM | nvl("미처리")}}</strong>
+	                                               </label>
+	                                            </p>  
+                                            </div>    
+                                            <div class="d-flex flex-column">   
+<!-- 	                                            <p v-show="item.DISTANCE_TP=='2' || item.DISTANCE_TP=='4' " class="m-0 f-s-12 ">출발: {{item.START_ADDR}}</p> -->
+	                                            <p v-show="item.DISTANCE_TP=='2' || item.DISTANCE_TP=='4' " class="m-0 f-s-12  ">{{item.END_ADDR}}</p>   
+	                                        </div>
+	                                        <div class="d-flex justify-content-between">                                                                           
+                                            	<p class="m-0 text-nowrap  f-s-18 f-w-600 ">{{item.DISTANCE | numberformat('0,000')}} km 
+<!--                                             	    <span :class="{'d-none' : !($options.filters.isNotEmpty(item.MILEAGE_RATE_NM))}"> ({{item.MILEAGE_RATE_NM}})</span> -->
+                                            	</p>
+                                            	<p class="m-0 text-nowrap text-right f-s-14">&nbsp{{item.EXPENSE_NM}}</p>
+											</div>
+											<div class="d-flex justify-content-end"> 
+                                                <p class="m-0 text-nowrap text-right f-s-14 ">&nbsp{{item.EXPENSE_AMT | numberformat('0,000')}}원</p>
+                                            </div>
+                                        </div>
+                                                                         
+<!--                                          <div class="d-flex align-items-center"> -->
+<!--                                                  <a  class="icon-arrow-right mr-1" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openDetail(item,index)"></a> -->
+<!--                                          </div> -->
+                                        </div>  
+                                    <!--  일반비용     -->
+                                      <div v-if="item.TYPE=='GEN' ||item.TYPE=='ATM' ||item.TYPE=='CON' "  class="d-flex w-100 justify-content-between align-items-center my-1">
+                                      
+                                        <div class="custom-control custom-checkbox ml-2" @click="clickReceiptBox(pgmid+'expCheckbox'+index, item, index)" >
+                                          <input  type="checkbox"  :id="pgmid+'expCheckbox'+index" class="custom-control-input" :class="pgmid+'boxCheckbox'" @change="changedMobileReceiptBox(pgmid+'expCheckbox'+index, item, index)" v-model="item.CHECKED" true-value="1" false-value="0" :disabled="item.EXPENSE_NO == '' || item.APPROVE_STATUS == '2' || item.APPROVE_STATUS == '4'  ">
+                                          <label class="custom-control-label" :for="pgmid+'expCheckbox'+index"></label>
+                                        </div>
+                                        <div class="w-100 pr-2" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'"  @click="openDetail(item,index)">
+                                        
+                                            <div class="d-flex justify-content-between">
+	                                            <p class="m-0   f-s-11"><span class='f-s-14 f-w-600'>{{ item.RECEIPT_DT | dateformat('card-week')}}</span>&nbsp{{item.RECEIPT_DT | dateformat('card-time')}}</p>
+	                                            <p class="m-0 ">
+	                                               <i class="icon-wallet text-aqua"></i>
+	                                               <label  :class="{
+	                                                                'label-red' : item.APPROVE_STATUS == '5' ,
+	                                                                'label bg-maintheme' : (item.APPROVE_STATUS != '5' && $options.filters.isNotEmpty(item.EXPENSE_NO) ) , 
+	                                                                'label-default border' : !($options.filters.isNotEmpty(item.EXPENSE_NO)),  
+	                                                                     }"  
+	                                                       class="label p-2 m-0">
+	                                                       <strong class="f-s-11">{{item.APPROVE_STATUS_NM | nvl("미처리")}}</strong>
+	                                               </label>
+	                                            </p>  
+                                            </div>          
+											<div class="d-flex justify-content-end">  
+<!-- 		                                            <p class="m-0 text-nowrap  f-s-16 f-w-600 ">{{item.BIZTRIP_DAYS }} 일</p> -->
+		                                            <p class="m-0 text-nowrap text-right f-s-14">&nbsp{{item.EXPENSE_NM}}</p>
+		<!--                                             <p class="m-0 text-nowrap  f-s-14">시작일&nbsp{{item.BIZTRIP_START | dateformat('card-week')}}</p> -->
+		<!--                                             <p class="m-0 text-nowrap  f-s-14">종료일&nbsp{{item.BIZTRIP_END   | dateformat('card-week')}}</p> -->                                     
+                                            
+                                            
+                                            </div>         
+											<div class="d-flex justify-content-end">  
+                                               <p class="m-0 text-nowrap text-right f-s-14 ">&nbsp{{item.EXPENSE_AMT | numberformat('0,000')}}원</p>
+                                            </div>                                          
+
+                                            
+                                        </div>
+<!--                                         <div class="exp-flatlist-bgicon" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'"  @click="openDetail(item,index)"><i class="icon-user f-s-70 text-aqua-transparent-2"></i></div> -->
+<!--                                          <div class="d-flex align-items-center"> -->
+<!--                                                  <a  class="icon-arrow-right mr-1" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openDetail(item,index)"></a> -->
+<!--                                          </div> -->
+                                      </div>                                        
+                                    <!--  출장일당     -->
+                                      <div v-if="item.TYPE=='TRAVEL'" class="d-flex w-100 justify-content-between align-items-center my-1">
+                                      
+                                        <div class="custom-control custom-checkbox ml-2" @click="clickReceiptBox(pgmid+'expCheckbox'+index, item, index)" >
+                                          <input  type="checkbox"  :id="pgmid+'expCheckbox'+index" class="custom-control-input" :class="pgmid+'boxCheckbox'" @change="changedMobileReceiptBox(pgmid+'expCheckbox'+index, item, index)" v-model="item.CHECKED" true-value="1" false-value="0" :disabled="item.EXPENSE_NO == '' || item.APPROVE_STATUS == '2' || item.APPROVE_STATUS == '4'  ">
+                                          <label class="custom-control-label" :for="pgmid+'expCheckbox'+index"></label>
+                                        </div>
+                                        <div class="w-100 pr-2" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'"  @click="openDetail(item,index)">
+                                        
+                                            <div class="d-flex justify-content-between">
+	                                            <p class="m-0   f-s-11"><span class='f-s-14 f-w-600'>{{ item.RECEIPT_DT | dateformat('card-week')}}</span>&nbsp{{item.RECEIPT_DT | dateformat('card-time')}}</p>
+	                                            <p class="m-0 ">
+	                                               <i class="icon-user text-aqua"></i>
+	                                               <label  :class="{
+	                                                                'label-red' : item.APPROVE_STATUS == '5' ,
+	                                                                'label bg-maintheme' : (item.APPROVE_STATUS != '5' && $options.filters.isNotEmpty(item.EXPENSE_NO) ) , 
+	                                                                'label-default border' : !($options.filters.isNotEmpty(item.EXPENSE_NO)),  
+	                                                                     }"  
+	                                                       class="label p-2 m-0">
+	                                                       <strong class="f-s-11">{{item.APPROVE_STATUS_NM | nvl("미처리")}}</strong>
+	                                               </label>
+	                                            </p>  
+                                            </div>          
+											<div class="d-flex justify-content-between">  
+		                                            <p class="m-0 text-nowrap  f-s-16 f-w-600 ">{{item.BIZTRIP_DAYS }} 일</p>
+		                                            <p class="m-0 text-nowrap text-right f-s-14">&nbsp{{item.EXPENSE_NM}}</p>
+		<!--                                             <p class="m-0 text-nowrap  f-s-14">시작일&nbsp{{item.BIZTRIP_START | dateformat('card-week')}}</p> -->
+		<!--                                             <p class="m-0 text-nowrap  f-s-14">종료일&nbsp{{item.BIZTRIP_END   | dateformat('card-week')}}</p> -->                                     
+                                            
+                                            
+                                            </div>         
+											<div class="d-flex justify-content-end">  
+                                               <p class="m-0 text-nowrap text-right f-s-14 ">&nbsp{{item.EXPENSE_AMT | numberformat('0,000')}}원</p>
+                                            </div>                                          
+
+                                            
+                                        </div>
+<!--                                         <div class="exp-flatlist-bgicon" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'"  @click="openDetail(item,index)"><i class="icon-user f-s-70 text-aqua-transparent-2"></i></div> -->
+<!--                                          <div class="d-flex align-items-center"> -->
+<!--                                                  <a  class="icon-arrow-right mr-1" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openDetail(item,index)"></a> -->
+<!--                                          </div> -->
+                                      </div>
+                            </div>
+                            </div>
+                            </template>
+                            </virtual-scroll-v1>
+                </div>                         
+<!-- end 리스트형 -->          
+ <!-- begin 그리드형, 삭제 금지 js에러남. -->                   
+         <div class="d-none">
+			      <radio-syscommon ref="EX_GRID_SOURCE_TYPE" th:pgmid=${param.pgm_id}  all="true" type="btn"  selectid="EX_GRID_SOURCE_TYPE" selectname="EX_GRID_SOURCE_TYPE" clcd="EX_SOURCE_TP" @changed="changeSourceType" @complete="completeGridSrcType"> </radio-syscommon> 
+			   </div>
+          
+          <div :class="{'d-flex':isGrid}"  :id="pgmid+'grid'" class="d-none flex-shrink-1 flex-grow-1 h-100">
+              <grid-r1 ref="gridmaster" :columnlayout="columnlayout" :pgmid="pgmid" subname="gridmaster"  buttons=""  :gridprop="girdProps"></grid-r1> 
+          </div>   
+ <!-- end 그리드형 -->  
+ 
+<!--    이미지 확대보기 -->
+   <div class="modal ec-modal height-full animated animated_ec fadeInRight" data-backdrop="false" :id="pgmid+'modal-img'"   >
+              <div class="modal-dialog modal-lg height-full  rounded-0  modal-dialog-centered m-0">
+                  <div class="modal-content height-full rounded-0">
+                      <div class="modal-body overflow-auto">
+                        <img class="w-100"  data-dismiss="modal" :src = "imgModalUrl"    >
+                      </div>
+                      
+                      <div class="modal-footer ">
+                          <button type="button" class="btn btn-lg border" data-dismiss="modal">닫기</button>
+                      </div>
+                  </div>
+              </div>
+     </div> 
+     
+<!--    개별등록화면, 자세히보기 -->
+   <div class="modal ec-modal height-full animated animated_ec fadeInRight" data-backdrop="false" :id="pgmid+'modal-detail'"  v-if="modalVisible"  >
+              <div class="modal-dialog modal-lg height-full  rounded-0  modal-dialog-centered m-0">
+                  <div class="modal-content height-full border-0 rounded-0">
+                      <div class="modal-header p-1  bg-light w-100"  style="position: fixed; top:0; z-index:3">
+                          <a class="mi-arrow-back col-2 f-s-25 my-2" data-dismiss="modal"  @click="closeModal"  ></a>
+<!--                           <div class="btn-group"> -->
+<!--                               <div class="btn btn-border bg-emart"> -->
+<!--                                       <a v-if="curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' "  @click="saveCurItem"><i class="icon-cloud-download "></i><br>저장</br></a> -->
+<!--                               </div> -->
+<!--                               <div class="btn btn-border bg-emart"> -->
+<!--                                       <a v-if="curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' "   @click="deleteMobileExpMst(curItem, curItem.INDEX)"><i class="icon-trash "></i><br>삭제</br></a> -->
+<!--                               </div> -->
+<!--                           </div>     -->
+<!--                            <div  class="col-3 btn border p-0  w-100" > -->
+<!--                              <a class=" btn  text-nowrap" @click="searchButtonOnClick()"><i class="icon-refresh "></i><br>새로고침</br></a> -->
+<!--                            </div>  -->
+                          <!-- 페이저 -->
+                          <div  class=" w-100 justify-content-center col-8 d-flex ">
+<!--                                   <ul v-show="curItem.INDEX!=undefined" class="pager m-0"> -->
+<!--                                         <li><a href="javascript:;" @click="previousItem"><i class="icon-arrow-left"></i></a></li> -->
+<!--                                   <h4 class="modal-title">&nbsp{{curItem.INDEX+1}}&nbsp of</h4> -->
+<!--                                   <h4 class="modal-title">&nbsp{{receiptList.length}}&nbsp</h4> -->
+<!--                                         <li><a href="javascript:;" @click="nextItem"><i class="icon-arrow-right"></i></a></li> -->
+<!--                                   </ul> -->
+                                  <h4 class="modal-title text-center d-flex align-items-center">{{curItem.SOURCE_TP_NM}}<span v-show="curItem.INDEX!=undefined"></span><span v-show="curItem.INDEX==undefined">신규</span></h4> 
+                                  <div class="ml-2" ><popup-help v-show="curItem.TYPE =='TRAVEL'"  th:helpkey="${param.pgm_id}+'travelhelp'" th:pgmid=${param.pgm_id} th:subname="travelhelp"  ></popup-help></div>
+                          </div>
+                            <div class="col-2 p-0">
+                                  <div v-if="curItem.INDEX!=undefined" class="d-flex justify-content-between " >
+                                        <span class="d-flex"><a class="my-2 text-black" href="javascript:;" @click="previousItem"><i class="icon-arrow-left"></i></a></span>
+<!--                                         <span class="modal-title">&nbsp{{curItem.INDEX+1}}&nbsp of</span> -->
+<!--                                         <span class="modal-title">&nbsp{{receiptList.length}}&nbsp</span> -->
+                                        <span class="d-flex"><a class="my-2 text-black mr-2" href="javascript:;" @click="nextItem"><i class="icon-arrow-right"></i></a></span>
+                                  </div>        
+                            </div>
+                          
+                      </div>
+                      <div class="modal-body overflow-y  m-t-40"  :id="modalId"  >
+                          <div th:replace="contents/fi/exp/modal/m_receipt-travel-modalbody :: html"></div>  
+                          <div th:replace="contents/fi/exp/modal/m_receipt-card-modalbody :: html"></div>  
+                          <div th:replace="contents/fi/exp/modal/m_receipt-prepay-modalbody :: html"></div>  
+                          <div th:replace="contents/fi/exp/modal/m_receipt-receipt-modalbody :: html"></div>  
+                          <div th:replace="contents/fi/exp/modal/m_receipt-gas-modalbody :: html"></div>  
+                          <div th:replace="contents/fi/exp/modal/m_receipt-toll-modalbody :: html"></div>  
+                          <div th:replace="contents/fi/exp/modal/m_receipt-atm-modalbody :: html"></div> 
+                          <div th:replace="contents/fi/exp/modal/m_receipt-con-modalbody :: html"></div> 
+                          <div th:replace="contents/fi/exp/modal/m_receipt-gen-modalbody :: html"></div> 
+                      </div>
+                      <div v-if="curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' "  class="modal-footer bg-light p-0">
+                          <div  class="btn-group m-0 w-100">
+                              <div class="d-flex justify-content-center align-items-center btn btn-border w-100  rounded-0 bg-grey-darker" @click="deleteMobileExpMst(curItem, curItem.INDEX)">
+                                      <a >
+                                          <span class="f-title text-white">삭제</span>
+                                      </a>
+                              </div>                     
+                              <div class="d-flex justify-content-center align-items-center btn btn-border w-100  rounded-0 bg-maintheme" @click="saveCurItem">
+                                      <a >
+                                          <span class="f-title text-white">저장</span>
+                                      </a>
+                              </div>
+
+                          </div>                         
+                      </div>
+                  </div>
+              </div>
+     </div> 
+     
+<!--      개별등록화면 modal end -->
+ 
+          <div  v-if="modalVisible"  th:replace="contents/fi/exp/modal/m_receipt-reportAdd-modal :: html"></div>  
+    </form>
+        <!-- ================== BEGIN THIS PAGE JS ================== -->
+    
+    <div th:replace="contents/fi/exp/receipt-js :: js"></div>  
+   </section>
+
+</body>
+</html>

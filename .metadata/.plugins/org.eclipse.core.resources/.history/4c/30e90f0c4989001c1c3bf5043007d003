@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Mon Feb 17 11:21:55 
+	KST 2014 -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.ec.eframework.mapper.ex.common.ExCommonSelectServiceMapper">
+ 
+ 
+ 
+ <select id="searchReportType" resultType="HashMap">
+
+        SELECT /* [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.searchReportype][보고서유형조회] */
+        ROW_NUMBER() OVER() AS ID
+        ,COMPANY_CODE
+        ,REPORT_TP
+        ,REPORT_TP_NM
+        ,REPORT_TITLE
+        ,APPROVE_LINE_TP
+        ,PROCESS_APPRV_GRP
+        ,SELF_APPRV_YN
+        ,CHG_APPRV_YN
+        ,REMARK
+        ,USE_YN
+        ,REGR_DH
+        ,MOD_DH
+        ,DEL_DH
+        ,REGR_ID
+        ,MOD_ID
+        ,DEL_ID
+        FROM EXPENSE_REPORT_TYPE
+        WHERE COMPANY_CODE = #{g_comCd}
+        ORDER BY REPORT_TP
+
+    </select>
+
+   <update id="updateReportType">
+        UPDATE EXPENSE_REPORT_TYPE /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.updateReportType][]
+        */
+        SET        
+         
+         REPORT_TP= #{REPORT_TP},
+         REPORT_TP_NM= #{REPORT_TP_NM},
+         REPORT_TITLE= #{REPORT_TITLE},
+         APPROVE_LINE_TP= #{APPROVE_LINE_TP},
+         PROCESS_APPRV_GRP= #{PROCESS_APPRV_GRP},
+         SELF_APPRV_YN= #{SELF_APPRV_YN},
+         CHG_APPRV_YN= #{CHG_APPRV_YN},
+         REMARK= #{REMARK},
+         USE_YN= #{USE_YN}         
+         where COMPANY_CODE = #{g_comCd} 
+         AND REPORT_TP = #{REPORT_TP};
+        
+    </update>
+    
+    <insert id="insertReportType">
+        INSERT /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.insertReportType][]
+        */
+        INTO EXPENSE_REPORT_TYPE
+        ( COMPANY_CODE,
+        REPORT_TP,
+        REPORT_TP_NM,
+        REPORT_TITLE,
+        APPROVE_LINE_TP,
+        PROCESS_APPRV_GRP,
+        SELF_APPRV_YN,
+        CHG_APPRV_YN,
+        REMARK,
+        USE_YN) VALUES
+        (
+        #{g_comCd},
+        #{REPORT_TP},
+        #{REPORT_TP_NM},
+        #{REPORT_TITLE},
+        #{APPROVE_LINE_TP},
+        #{PROCESS_APPRV_GRP},
+        #{SELF_APPRV_YN},
+        #{CHG_APPRV_YN},
+        #{REMARK},
+        #{USE_YN}
+        );
+
+    </insert> 
+
+
+
+<!-- 테이블 단위 dropdown -->
+
+    <select id="getExReportTp" resultType="HashMap">
+        SELECT /*  com.ec.eframework.mapper.ex.common.ExCommonSelectServiceMapper getExReportTp */
+        REPORT_TP as CODE
+        , REPORT_TP_NM as NAME
+        , APPROVE_LINE_TP as REF1
+        , PROCESS_APPRV_GRP as REF2
+        FROM EXPENSE_REPORT_TYPE
+        WHERE COMPANY_CODE =  #{g_comCd}
+        AND USE_YN = '1'
+        ORDER BY REPORT_TP
+    </select>
+
+    <select id="getExClosingTp" resultType="HashMap">
+        SELECT /*  com.ec.eframework.mapper.ex.common.ExCommonSelectServiceMapper getExClosingTp */
+        CLOSING_TP as CODE
+        , CLOSING_TP_NM as NAME
+        FROM EXPENSE_CLOSING_TYPE
+        WHERE COMPANY_CODE =  #{g_comCd}
+        ORDER BY CLOSING_TP
+    </select>
+
+
+    <select id="getExPopupRec" resultType="HashMap">
+    
+        SELECT
+        ROW_NUMBER() OVER() AS ID,
+        B.CODE IS NOT NULL AS F_CODE , A.CODE, NAME, REF1 , REF2, REF3, REF4, REF5, REF6,REF7,REF8,REF9,REF10,REF11,REF12,REF13, A.TABLE_NAME, A.COMM_CL_CD,
+        cast(R.RANKVAL as decimal(4,4)) * 100 AS RANKVAL
+        FROM ADMIN_RECOMAND R, VW_CODE_POPUP A LEFT OUTER JOIN ADMIN_CODE_FAVORITE B
+        ON A.COMPANY_CODE = B.COMPANY_CODE
+        AND A.TABLE_NAME = B.TABLE_NAME
+        AND A.CODE = B.CODE
+        AND A.COMM_CL_CD = NVL(B.COMM_CL_CD,'')
+        AND B.USER_ID = #{g_userId}
+        WHERE A.TABLE_NAME = #{TABLE_NAME}
+        AND A.COMPANY_CODE = R.COMPANY_CODE
+        AND R.KEY_CODE =  #{KEY_CODE}
+        AND R.TYPE = 'EXPENSE_INBOX_CARD'
+        AND R.REC_CODE = A.CODE
+        AND ( A.COMPANY_CODE = #{g_comCd} or A.COMPANY_CODE = '')
+        AND #{g_lang} like concat(LANG_CD,'%')
+        AND A.COMM_CL_CD like concat(IFNULL(#{COMM_CL_CD},''),'%')
+        ORDER BY RANKVAL DESC
+        LIMIT ${CNT}
+
+    </select>
+    
+    <select id="getExRecentItemsByBizNo" resultType="HashMap">
+  
+		  SELECT  /*  com.ec.eframework.mapper.ex.common.ExCommonSelectServiceMapper.getExRecentItemsByBizNo by hcho */
+		        ROW_NUMBER() OVER() AS ID,
+		        B.CODE IS NOT NULL AS F_CODE , A.EXPENSE_CD AS CODE, C.EXPENSE_NM AS NAME, R.RECEIPT_DT ,AC.ACC_CD AS REF1 ,AC.ACC_NM REF2,VAT_DEDUCTION_TP REF3, R.BELONGING_TP REF4,DEFAULT_AMT_YN REF5,DEFAULT_AMT REF6,DEFAULT_CCTR_YN REF7, DEFAULT_COSTCENTER REF8
+		        ,'' REF9, A.EVID_YN REF10,A.REPORT_TP REF11, T.APPROVE_LINE_TP  REF12, A.LIMIT_AMT_YN REF13, A.LIMIT_AMT REF14,T.REPORT_TP_NM REF15 ,'' TABLE_NAME, '' COMM_CL_CD
+		        FROM EXPENSE_MST R, EXPENSE_REPORT_TYPE T , SLIP_ACCT AC ,EXPENSE_CATEGORY C ,EXPENSE_SOURCE_CATEGORY A LEFT OUTER JOIN ADMIN_CODE_FAVORITE B
+		        ON A.COMPANY_CODE = B.COMPANY_CODE
+		        AND B.TABLE_NAME = "EXCARD"
+		        AND A.EXPENSE_CD = B.CODE
+<!-- 		        AND A.COMM_CL_CD = NVL(B.COMM_CL_CD,'') -->
+		        AND B.USER_ID = #{g_userId}
+		        WHERE 
+		        A.COMPANY_CODE = R.COMPANY_CODE
+		        AND A.COMPANY_CODE = C.COMPANY_CODE
+		        AND C.COMPANY_CODE = AC.COMPANY_CODE
+		        AND A.COMPANY_CODE = T.COMPANY_CODE
+		        AND A.REPORT_TP = T.REPORT_TP
+		        AND R.BIZ_NO = #{BIZ_NO}
+		        AND R.BIZ_NM = #{BIZ_NM}
+		        AND R.REGR_ID = #{g_userId}
+		        AND R.EXPENSE_CD = A.EXPENSE_CD
+		        AND A.EXPENSE_CD = C.EXPENSE_CD
+		        AND C.ACC_CD = AC.ACC_CD
+		        AND ( A.COMPANY_CODE = #{g_comCd} )
+<!-- 		        AND #{g_lang} like concat(LANG_CD,'%') -->
+<!-- 		         AND A.COMM_CL_CD like concat(IFNULL(NULL,''),'%') -->
+		        AND R.USE_YN = '1'
+		        AND C.USE_YN = '1'
+		        AND A.SOURCE_TP = '1'
+		        ORDER BY R.RECEIPT_DT DESC
+		        LIMIT 1
+ 
+ 
+ 
+<!--   SELECT 'EXCARD' COLLATE UTF8MB4_UNICODE_CI AS TABLE_NAME,  -->
+<!--   ''  COLLATE UTF8MB4_UNICODE_CI  AS  COLUMN_LAYOUT,  -->
+<!--   A.EXPENSE_CD CODE, EXPENSE_NM NAME, A.COMPANY_CODE  -->
+<!--   COLLATE UTF8MB4_UNICODE_CI AS COMPANY_CODE, B.ACC_CD COLLATE UTF8MB4_UNICODE_CI AS REF1,AC.ACC_NM REF2,VAT_DEDUCTION_TP REF3,
+ BELONGING_TP REF4,DEFAULT_AMT_YN REF5,DEFAULT_AMT REF6,DEFAULT_CCTR_YN REF7, DEFAULT_COSTCENTER REF8, 
+ IFNULL(C.CCTR_NM,'') REF9, A.EVID_YN REF10,  A.REPORT_TP  REF11, R.APPROVE_LINE_TP REF12, A.LIMIT_AMT_YN REF13, A.LIMIT_AMT REF14 ,R.REPORT_TP_NM REF15 ,''  COLLATE UTF8MB4_UNICODE_CI AS LANG_CD, ''  COLLATE UTF8MB4_UNICODE_CI AS  COMM_CL_CD FROM  -->
+<!--   EXPENSE_CATEGORY B, EXPENSE_REPORT_TYPE R, SLIP_ACCT AC, -->
+<!--   EXPENSE_SOURCE_CATEGORY A LEFT OUTER JOIN EXPENSE_COST_CENTER C ON A.COMPANY_CODE = C.COMPANY_CODE AND C.CCTR_CD = A.DEFAULT_COSTCENTER -->
+<!--   WHERE A.COMPANY_CODE = B.COMPANY_CODE -->
+<!--   AND A.COMPANY_CODE = R.COMPANY_CODE -->
+<!--   AND B.COMPANY_CODE = AC.COMPANY_CODE -->
+<!--   AND B.ACC_CD = AC.ACC_CD -->
+<!--   AND A.REPORT_TP = R.REPORT_TP -->
+<!--   AND A.EXPENSE_CD = B.EXPENSE_CD -->
+<!--   AND A.SOURCE_TP = '1' -->
+<!--   AND A.USE_YN = '1' -->
+<!--   AND B.USE_YN = '1' -->
+ 
+ 
+ 
+ 
+    </select>
+
+    <select id="getImgList" resultType="HashMap">
+  
+				select A.FILE_NO, GET_FILE_KIND(A.ORG_FILE_NAME) AS FILE_KIND from ADMIN_FILE A
+				WHERE USE_YN = '1'
+				AND COMPANY_CODE =  #{g_comCd}
+				AND (REGR_ID = #{g_userId} || SHARED_ID = #{g_userId})
+				AND REGR_DH BETWEEN #{FROM_DATE} AND CONCAT(#{TO_DATE},'999999')
+				AND  NOT EXISTS (
+					select 1 from EXPENSE_FILE B
+					WHERE COMPANY_CODE =  #{g_comCd} AND USE_YN = '1' AND REGR_ID = #{g_userId} AND A.FILE_NO = B.FILE_NO   )
+			  <if test = "exlist !=null and exlist.size > 0" >		
+			        and A.FILE_NO not in 
+			        <foreach collection="exlist" item="item"  open="(" close=")" separator=",">
+			            #{item.FILE_NO}
+			        </foreach>	
+		       </if>	
+			    ORDER BY REGR_DH
+			    
+    </select>
+
+    <select id="getMyCardList" resultType="HashMap">
+        select CARD_CD as CODE
+        , FC_CARD_NO_MASK(FC_DEC(CARD_NO,#{ENC_KEY}))  as NAME
+		 from expense_card
+		 where COMPANY_CODE = #{g_comCd}
+		 and EMP_NO = #{g_empNo}
+		 ORDER BY VALID_YM DESC
+    </select>
+    
+    <select id="getChange" resultType="HashMap">
+        select RT.PROCESS_APPRV_GRP as CODE
+        , CC.COMM_CD_NM as NAME
+		 from EXPENSE_REPORT_TYPE RT
+		 join ADMIN_CODE CC 
+		   on RT.COMPANY_CODE  = CC.COMPANY_CODE 
+		  and RT.PROCESS_APPRV_GRP = CC.COMM_CD 
+		  and CC.COMM_CL_CD = 'EX_COM_APPRV_GRP'
+		 where RT.COMPANY_CODE = #{g_comCd}
+		   and RT.APPROVE_LINE_TP = 'LINE10'
+		 group by RT.PROCESS_APPRV_GRP
+
+    </select>
+    
+</mapper>

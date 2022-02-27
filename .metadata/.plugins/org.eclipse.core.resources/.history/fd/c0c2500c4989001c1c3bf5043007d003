@@ -1,0 +1,455 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper namespace="com.ec.eframework.mapper.ex.main.MainDashboardServiceMapper">
+
+<!--dashboard / main화면 -->
+
+
+    <!--dashboard / main화면 -->
+    <select id="getInboxList" resultType="HashMap">
+    
+    SELECT * FROM (
+    
+<!--          '영수증' -->
+        SELECT 'RECEIPT' TYPE, '영수증' SOURCE_TP_NM, A.REGR_DH
+        , A.FILE_NO, SOURCE, A.ORG_FILE_NAME, UCASE(SUBSTR(A.FILE_NAME,-3,3)) FILE_TYPE /* file */
+        , '' EVID_NO, '' CANCEL_YN, '' SUPPLY_AMT, '' VAT_AMT, '' ETC_AMT, '' TOT_AMT, '' BIZ_NO, '' BIZ_NM, '' BIZ_ADDR, '' CARD_NO  /* card */
+        FROM ADMIN_FILE A
+        LEFT OUTER JOIN EXPENSE_FILE B
+        ON A.FILE_NO = B.FILE_NO
+        WHERE B.FILE_NO IS NULL
+        AND A.SOURCE IN ('02','03') 
+        AND A.COMPANY_CODE = #{g_comCd}
+        AND A.REGR_ID = #{g_userId}
+        AND A.USE_YN = '1'
+        AND ( A.REGR_DH &gt;= REPLACE_DATE(#{SEARCH_FR_DT},'') AND A.REGR_DH &lt;= CONCAT( REPLACE_DATE(#{SEARCH_TO_DT},'') , '999999' ))
+        
+<!--          '가지급' -->        
+        UNION ALL
+        SELECT 'PREPAY' TYPE, '가지급' SOURCE_TP_NM, A.REGR_DH
+        , A.FILE_NO, SOURCE, A.ORG_FILE_NAME, UCASE(SUBSTR(A.FILE_NAME,-3,3)) FILE_TYPE /* file */
+        , '' EVID_NO, '' CANCEL_YN, '' SUPPLY_AMT, '' VAT_AMT, '' ETC_AMT, '' TOT_AMT, '' BIZ_NO, '' BIZ_NM, '' BIZ_ADDR, '' CARD_NO  /* card */
+        FROM ADMIN_FILE A
+        LEFT OUTER JOIN EXPENSE_FILE B
+        ON A.FILE_NO = B.FILE_NO
+        WHERE B.FILE_NO IS NULL
+        AND A.SOURCE IN ('05') 
+        AND A.COMPANY_CODE = #{g_comCd}
+        AND A.REGR_ID = #{g_userId}
+        AND A.USE_YN = '1'    
+        AND ( A.REGR_DH &gt;= REPLACE_DATE(#{SEARCH_FR_DT},'') AND A.REGR_DH &lt;= CONCAT( REPLACE_DATE(#{SEARCH_TO_DT},'') , '999999' ))
+<!--          '통행료' -->           
+<!--         UNION ALL -->
+<!--         SELECT 'TOLL' TYPE, '통행료' SOURCE_TP_NM, A.REGR_DH -->
+<!--         , A.FILE_NO, SOURCE, A.ORG_FILE_NAME, UCASE(SUBSTR(A.FILE_NAME,-3,3)) FILE_TYPE /* file */ -->
+<!--         , '' EVID_NO, '' CANCEL_YN, '' SUPPLY_AMT, '' VAT_AMT, '' ETC_AMT, '' TOT_AMT, '' BIZ_NO, '' BIZ_NM, '' BIZ_ADDR, '' CARD_NO  /* card */ -->
+<!--         FROM ADMIN_FILE A -->
+<!--         LEFT OUTER JOIN EXPENSE_FILE B -->
+<!--         ON A.FILE_NO = B.FILE_NO -->
+<!--         WHERE B.FILE_NO IS NULL -->
+<!--         AND A.SOURCE IN ('T')  -->
+<!--         AND A.COMPANY_CODE = #{g_comCd} -->
+<!--         AND A.REGR_ID = #{g_userId} -->
+<!--         AND A.USE_YN = '1'        -->
+<!--         AND ( A.REGR_DH &gt;= REPLACE_DATE(#{SEARCH_FR_DT},'') AND A.REGR_DH &lt;= CONCAT( REPLACE_DATE(#{SEARCH_TO_DT},'') , '999999' )) -->
+<!--          '선급금' -->           
+        UNION ALL
+        SELECT 'PREPAID' TYPE, '선급금' SOURCE_TP_NM, A.REGR_DH
+        , A.FILE_NO, SOURCE, A.ORG_FILE_NAME, UCASE(SUBSTR(A.FILE_NAME,-3,3)) FILE_TYPE /* file */
+        , '' EVID_NO, '' CANCEL_YN, '' SUPPLY_AMT, '' VAT_AMT, '' ETC_AMT, '' TOT_AMT, '' BIZ_NO, '' BIZ_NM, '' BIZ_ADDR, '' CARD_NO  /* card */
+        FROM ADMIN_FILE A
+        LEFT OUTER JOIN EXPENSE_FILE B
+        ON A.FILE_NO = B.FILE_NO
+        WHERE B.FILE_NO IS NULL
+        AND A.SOURCE IN ('D') 
+        AND A.COMPANY_CODE = #{g_comCd}
+        AND A.REGR_ID = #{g_userId}
+        AND A.USE_YN = '1'   
+        AND ( A.REGR_DH &gt;= REPLACE_DATE(#{SEARCH_FR_DT},'') AND A.REGR_DH &lt;= CONCAT( REPLACE_DATE(#{SEARCH_TO_DT},'') , '999999' ))
+<!--          '기타계산서' -->           
+        UNION ALL
+        SELECT 'ETC' TYPE, '계산서(기타)' SOURCE_TP_NM, A.REGR_DH
+        , A.FILE_NO, SOURCE, A.ORG_FILE_NAME, UCASE(SUBSTR(A.FILE_NAME,-3,3)) FILE_TYPE /* file */
+        , '' EVID_NO, '' CANCEL_YN, '' SUPPLY_AMT, '' VAT_AMT, '' ETC_AMT, '' TOT_AMT, '' BIZ_NO, '' BIZ_NM, '' BIZ_ADDR, '' CARD_NO  /* card */
+        FROM ADMIN_FILE A
+        LEFT OUTER JOIN EXPENSE_FILE B
+        ON A.FILE_NO = B.FILE_NO
+        WHERE B.FILE_NO IS NULL
+        AND A.SOURCE IN ('C') 
+        AND A.COMPANY_CODE = #{g_comCd}
+        AND A.REGR_ID = #{g_userId}
+        AND A.USE_YN = '1'      
+        AND ( A.REGR_DH &gt;= REPLACE_DATE(#{SEARCH_FR_DT},'') AND A.REGR_DH &lt;= CONCAT( REPLACE_DATE(#{SEARCH_TO_DT},'') , '999999' ))
+<!--          '종이세금' -->           
+        UNION ALL
+        SELECT 'PTAX' TYPE, '계산서' SOURCE_TP_NM, A.REGR_DH
+        , A.FILE_NO, SOURCE, A.ORG_FILE_NAME, UCASE(SUBSTR(A.FILE_NAME,-3,3)) FILE_TYPE /* file */
+        , '' EVID_NO, '' CANCEL_YN, '' SUPPLY_AMT, '' VAT_AMT, '' ETC_AMT, '' TOT_AMT, '' BIZ_NO, '' BIZ_NM, '' BIZ_ADDR, '' CARD_NO  /* card */
+        FROM ADMIN_FILE A
+        LEFT OUTER JOIN EXPENSE_FILE B
+        ON A.FILE_NO = B.FILE_NO
+        WHERE B.FILE_NO IS NULL
+        AND A.SOURCE IN ('15') 
+        AND A.COMPANY_CODE = #{g_comCd}
+        AND A.REGR_ID = #{g_userId}
+        AND A.USE_YN = '1'    
+        AND ( A.REGR_DH &gt;= REPLACE_DATE(#{SEARCH_FR_DT},'') AND A.REGR_DH &lt;= CONCAT( REPLACE_DATE(#{SEARCH_TO_DT},'') , '999999' ))
+<!-- 법인카드 -->
+        UNION ALL
+		SELECT  'CARD' TYPE, '법인카드' SOURCE_TP_NM, CONCAT(A.RECEIPT_DT, A.RECEIPT_TS) REGR_DH
+		, '' FILE_NO, '' SOURCE, '' ORG_FILE_NAME, ''  FILE_TYPE  /* file */
+		, A.EVID_NO, A.CANCEL_YN, A.SUPPLY_AMT, A.VAT_AMT, A.ETC_AMT, A.TOT_AMT, A.BIZ_NO, A.BIZ_NM, A.BIZ_ADDR, FC_CARD_NO_MASK(FC_DEC(A.CARD_NO,#{ENC_KEY})) AS CARD_NO  /* card */
+		FROM EXPENSE_INBOX_CARD A, EXPENSE_CARD C
+		WHERE A.COMPANY_CODE = #{g_comCd}
+		AND A.USE_YN = '1'
+		AND A.EXPENSE_NO IS NULL
+		AND A.PRIVATE_YN = '0'
+		AND (A.DEL_DH IS NULL OR A.DEL_DH ='')
+        AND  (C.OWNER_ID =  #{g_userId} OR C.EMP_NO = #{g_empNo})
+        AND C.CARD_CD = A.CARD_CD
+        AND C.COMPANY_CODE = A.COMPANY_CODE
+        AND C.CARD_NO = A.CARD_NO   
+		AND ( A.RECEIPT_DT &gt;= REPLACE_DATE(#{SEARCH_FR_DT},'') AND A.RECEIPT_DT &lt;= CONCAT( REPLACE_DATE(#{SEARCH_TO_DT},'') , '999999' ))
+        UNION ALL
+        SELECT  'CARD' TYPE, '법인카드' SOURCE_TP_NM, CONCAT(A.RECEIPT_DT, A.RECEIPT_TS) REGR_DH
+        , '' FILE_NO, '' SOURCE, '' ORG_FILE_NAME, ''  FILE_TYPE  /* file */
+        , A.EVID_NO, A.CANCEL_YN, A.SUPPLY_AMT, A.VAT_AMT, A.ETC_AMT, A.TOT_AMT, A.BIZ_NO, A.BIZ_NM, A.BIZ_ADDR, FC_CARD_NO_MASK(FC_DEC(A.CARD_NO,#{ENC_KEY})) AS CARD_NO  /* card */
+        FROM EXPENSE_INBOX_CARD A
+        WHERE A.COMPANY_CODE = #{g_comCd}
+        AND A.USE_YN = '1'
+        AND A.EXPENSE_NO IS NULL
+        AND A.PRIVATE_YN = '0'
+        AND (A.DEL_DH IS NULL OR A.DEL_DH ='')
+        AND  A.SHARED_USER_ID = #{g_userId}
+        AND ( A.RECEIPT_DT &gt;= REPLACE_DATE(#{SEARCH_FR_DT},'') AND A.RECEIPT_DT &lt;= CONCAT( REPLACE_DATE(#{SEARCH_TO_DT},'') , '999999' ))
+<!-- 전자세금계산서 -->
+        UNION ALL
+        SELECT  'ETAX' TYPE, '계산서' SOURCE_TP_NM, A.RECEIPT_DT REGR_DH
+        , '' FILE_NO, '' SOURCE, '' ORG_FILE_NAME, ''  FILE_TYPE  /* file */
+        , A.EVID_NO, '' CANCEL_YN, A.SUPPLY_AMT, A.VAT_AMT, '' ETC_AMT, A.TOT_AMT, A.BIZ_NO, A.BIZ_NM, A.BIZ_ADDR, '' CARD_NO   /* etax */
+        FROM EXPENSE_INBOX_TAX A
+        WHERE A.COMPANY_CODE = #{g_comCd}
+        AND A.USE_YN = '1'
+        AND A.EXPENSE_NO IS NULL
+        AND (A.DEL_DH IS NULL OR A.DEL_DH ='')
+        AND A.RECEIVE_EMAIL = #{g_emailAddr}
+        AND ( A.RECEIPT_DT &gt;= REPLACE_DATE(#{SEARCH_FR_DT},'') AND A.RECEIPT_DT &lt;= CONCAT( REPLACE_DATE(#{SEARCH_TO_DT},'') , '999999' ))		
+		
+		
+		
+		
+		) AAA
+        ORDER BY REGR_DH DESC
+        ;       
+    </select>
+
+
+
+	<select id="getExpSchedule" resultType="HashMap">
+	
+		 SELECT COMPANY_CODE,
+				ACCT_DT,
+				SCHEDULE_SEQ,
+				SCHEDULE_TITLE,
+				SCHEDULE_RMK,
+				USE_YN
+		        FROM  EXPENSE_SCHEDULE A
+		        WHERE USE_YN = '1'
+		        AND ACCT_DT BETWEEN #{SEARCH_FR_DT} AND CONCAT(REPLACE_DATE(#{SEARCH_TO_DT},''),'999999')
+		        AND COMPANY_CODE =  #{g_comCd}
+		        ORDER BY ACCT_DT DESC, SCHEDULE_SEQ ASC ;
+	</select>
+
+    <select id="getApprovalList" resultType="HashMap">
+     
+      SELECT * FROM (
+          SELECT  /* com.ec.eframework.mapper.main.DashboardServiceMapper getApprovalList 내가 결재, 승인 해주어야 할 건 */ 
+              "1" AS TYPE, A.REPORT_NO, A.REPORT_TITLE, A.REPORT_RMK, A.APPROVE_STATUS
+                      ,  A.SUBMIT_ID, B.USER_NM AS SUBMIT_NM, A.SUBMIT_DH
+                      ,  FC_EXPS_GET_SYSTEM_CODE_NM('EX_APPROVE_STATUS', A.APPROVE_STATUS, #{g_lang}) AS APPROVE_STATUS_NM 
+                      ,  EX_GET_NEXT_APPROVAL_NM(A.REPORT_NO) AS APPROVE_NM 
+                      ,  EX_GET_NEXT_APPROVE_TP_NM(A.REPORT_NO, #{g_lang}) AS APPROVE_TP_NM
+                      ,  A.REPORT_TP
+                      , COUNT(*) CNT, SUM(C.PAY_AMT) AS PAY_SUM_AMT
+                FROM    EXPENSE_REPORT A , ADMIN_USER B, EXPENSE_MST C
+                WHERE A.REPORT_NO = C.REPORT_NO
+            AND A.REPORT_NO IN (
+                    SELECT REPORT_NO FROM EXPENSE_APPROVE 
+                    WHERE 1 = 1
+                    AND APPROVE_ID = #{g_userId} 
+                    AND COMPANY_CODE = #{g_comCd}
+                    AND USE_YN = '1'
+                    AND (APPROVE_YN IS NULL OR APPROVE_YN != '1')
+                    AND EX_GET_APPROVAL_YN(COMPANY_CODE , REPORT_NO, APPROVE_ORDER ) = '1'
+                     )
+                    AND A.USE_YN  = '1' AND C.USE_YN = '1'
+                    AND SUBMIT_ID = B.USER_ID
+                 --    AND APPROVE_STATUS in ('3')
+                    GROUP BY A.REPORT_NO
+        UNION ALL            
+            SELECT  /* com.ec.eframework.mapper.ex.expense.ApproveServiceMapper.getMyReportList 내가 결재, 상신한 건 , 내 문서 */ 
+                "2" AS TYPE,  A.REPORT_NO, A.REPORT_TITLE, A.REPORT_RMK, A.APPROVE_STATUS
+                 , SUBMIT_ID,  #{g_userNm} as SUBMIT_NM, A.SUBMIT_DH
+                 , FC_EXPS_GET_SYSTEM_CODE_NM('EX_APPROVE_STATUS', A.APPROVE_STATUS, #{g_lang}) AS APPROVE_STATUS_NM 
+                 , EX_GET_NEXT_APPROVAL_NM(A.REPORT_NO) AS APPROVE_NM 
+                 , EX_GET_NEXT_APPROVE_TP_NM(A.REPORT_NO, #{g_lang}) AS APPROVE_TP_NM
+                 , A.REPORT_TP
+                 , COUNT(*) CNT, SUM(B.PAY_AMT) AS PAY_SUM_AMT
+                         FROM EXPENSE_REPORT A, EXPENSE_MST B
+                         WHERE A.SUBMIT_ID = #{g_userId} 
+                         AND A.COMPANY_CODE = #{g_comCd}
+                         AND (A.APPROVE_DH IS NULL OR A.APPROVE_DH ='')
+                         AND A.APPROVE_STATUS = '2' -- 진행중
+                         AND A.USE_YN = '1'
+                         AND A.REPORT_NO = B.REPORT_NO
+                         GROUP BY A.REPORT_NO   
+                    
+            )        AAA 
+          
+           ORDER BY TYPE, SUBMIT_DH DESC
+    </select>
+
+    <select id="getMyReportList" resultType="HashMap">
+ 
+			SELECT  /* com.ec.eframework.mapper.ex.expense.DashboardServiceMapper.getMyReportList */ 
+			             A.REPORT_NO, EX_GET_NEXT_APPROVAL_NM(A.REPORT_NO) AS APPROVE_NM , EX_GET_NEXT_APPROVE_TP_NM(A.REPORT_NO, #{g_lang}) AS APPROVE_TP_NM ,A.REPORT_TITLE, A.REPORT_RMK, A.REPORT_TP, A.SUBMIT_DH
+			             , COUNT(*) CNT, SUM(B.PAY_AMT) AS PAY_SUM_AMT
+			             , A.APPROVE_STATUS, FC_EXPS_GET_SYSTEM_CODE_NM('EX_APPROVE_STATUS', A.APPROVE_STATUS, #{g_lang}) AS APPROVE_STATUS_NM
+			             FROM EXPENSE_REPORT A, EXPENSE_MST B
+			             WHERE A.SUBMIT_ID = #{g_userId} 
+			             AND A.COMPANY_CODE = #{g_comCd}
+			             AND (A.APPROVE_DH IS NULL OR A.APPROVE_DH ='')
+			            -- AND A.APPROVE_STATUS = '2' -- 진행중
+			             AND A.USE_YN = '1'
+			             AND A.REPORT_NO = B.REPORT_NO
+			             GROUP BY A.REPORT_NO
+			             ORDER BY A.SUBMIT_DH
+
+    </select>
+    
+    <select id="getMyCardList" resultType="HashMap">
+ 
+	      SELECT  /* com.ec.eframework.mapper.ex.expense.DashboardServiceMapper.getMyCardList 2021.01.22 hcho */ 
+  					(SELECT COUNT(*) FROM EXPENSE_INBOX_CARD 
+							  WHERE COMPANY_CODE =  A.COMPANY_CODE
+							  AND CARD_CD = A.CARD_CD
+							  AND EXPENSE_NO IS NULL
+							  AND RECEIPT_DT BETWEEN CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"01") AND   CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"31")
+							  AND USE_YN = '1'
+							 ) AS INBOX_CNT , /* 미처리 */
+  					(SELECT  IFNULL(sum(IFNULL(TOT_AMT,0)),0) FROM EXPENSE_INBOX_CARD 
+							  WHERE COMPANY_CODE =  A.COMPANY_CODE
+							  AND CARD_CD = A.CARD_CD
+							  AND EXPENSE_NO IS NULL
+							  AND RECEIPT_DT BETWEEN CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"01") AND   CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"31")
+							  AND USE_YN = '1'
+							 ) AS INBOX_AMT , /* 미처리 */
+  					( SELECT COUNT(*) FROM EXPENSE_MST AA
+							  WHERE AA.COMPANY_CODE = A.COMPANY_CODE
+							  AND AA.USE_YN = '1'
+				                AND AA.RECEIPT_DT BETWEEN CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"01") AND   CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"31")
+				                AND AA.CARD_CD = A.CARD_CD
+				                AND AA.REPORT_NO is NULL
+							 ) AS APPROVAL_CNT ,/* 단순저장 */
+  					( SELECT IFNULL(sum(IFNULL(AA.PAY_AMT,0)),0) FROM EXPENSE_MST AA
+							  WHERE AA.COMPANY_CODE = A.COMPANY_CODE
+							  AND AA.USE_YN = '1'
+				                AND AA.RECEIPT_DT BETWEEN CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"01") AND   CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"31")
+				                AND AA.CARD_CD = A.CARD_CD
+				                AND AA.REPORT_NO is NULL
+							 ) AS APPROVAL_AMT ,/* 단순저장 */
+                    ( SELECT COUNT(*) FROM EXPENSE_MST AA,  expense_report BB
+							  WHERE AA.COMPANY_CODE = A.COMPANY_CODE
+							  AND AA.USE_YN = '1'
+				                AND AA.RECEIPT_DT BETWEEN CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"01") AND   CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"31")
+				                AND AA.REPORT_NO = BB.REPORT_NO
+				                AND BB.APPROVE_STATUS = '5' /* 반려 */
+				                AND AA.CARD_CD = A.CARD_CD
+							 ) AS REJECT_CNT ,
+  					( SELECT IFNULL(sum(IFNULL(AA.PAY_AMT,0)),0) FROM EXPENSE_MST AA,  expense_report BB
+							  WHERE AA.COMPANY_CODE = A.COMPANY_CODE
+							  AND AA.USE_YN = '1'
+				                AND AA.RECEIPT_DT BETWEEN CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"01") AND   CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"31")
+				                AND AA.REPORT_NO = BB.REPORT_NO
+				                AND BB.APPROVE_STATUS = '5' /* 반려 */
+				                AND AA.CARD_CD = A.CARD_CD
+							 ) AS REJECT_AMT ,							 
+  					( SELECT COUNT(*) FROM EXPENSE_MST AA,  expense_report BB
+							  WHERE AA.COMPANY_CODE = A.COMPANY_CODE
+							  AND AA.USE_YN = '1'
+				                AND AA.RECEIPT_DT BETWEEN CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"01") AND   CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"31")
+				                AND AA.REPORT_NO = BB.REPORT_NO
+				                AND BB.APPROVE_STATUS = '2' /* 진행중 */
+				                AND AA.CARD_CD = A.CARD_CD
+							 ) AS APPROVING_CNT ,
+  					( SELECT IFNULL(sum(IFNULL(AA.PAY_AMT,0)),0) FROM EXPENSE_MST AA,  expense_report BB
+							  WHERE AA.COMPANY_CODE = A.COMPANY_CODE
+							  AND AA.USE_YN = '1'
+				                AND AA.RECEIPT_DT BETWEEN CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"01") AND   CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"31")
+				                AND AA.REPORT_NO = BB.REPORT_NO
+				                AND BB.APPROVE_STATUS = '2' /* 진행중 */
+				                AND AA.CARD_CD = A.CARD_CD
+							 ) AS APPROVING_AMT ,
+  					( SELECT COUNT(*) FROM EXPENSE_MST AA,  expense_report BB
+							  WHERE AA.COMPANY_CODE = A.COMPANY_CODE
+							  AND AA.USE_YN = '1'
+				                AND AA.RECEIPT_DT BETWEEN CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"01") AND   CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"31")
+				                AND AA.REPORT_NO = BB.REPORT_NO
+				                AND BB.APPROVE_STATUS = '4' /*  완료 */
+				                AND AA.CARD_CD = A.CARD_CD
+							 ) AS APPROVED_CNT ,
+  					( SELECT IFNULL(sum(IFNULL(AA.PAY_AMT,0)),0) FROM EXPENSE_MST AA,  expense_report BB
+							  WHERE AA.COMPANY_CODE = A.COMPANY_CODE
+							  AND AA.USE_YN = '1'
+				                AND AA.RECEIPT_DT BETWEEN CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"01") AND   CONCAT(SUBSTR(B.RECEIPT_DT,1,6) ,"31")
+				                AND AA.REPORT_NO = BB.REPORT_NO
+				                AND BB.APPROVE_STATUS = '4' /* 완료 */
+				                AND AA.CARD_CD = A.CARD_CD
+							 ) AS APPROVED_AMT , 
+                      'xxxx' as URL,
+				      A.CARD_CD,FC_CARD_NO_MASK(FC_DEC(A.CARD_NO,#{ENC_KEY})) AS CARD_NO,A.OWNER_TP,A.OWNER_ID,A.EMP_NO,A.OWNER_KNM,A.OWNER_ENM,A.DEPT_NM,
+				      A.BP_CD,A.CARD_NM,A.CARD_TP,A.CARD_BRAND,A.STATUS_CD,A.STATUS_NM,A.CARD_CD,A.CARD_CD,A.CARD_CD,
+							SUBSTR(B.RECEIPT_DT,1,6) AS RECEIPT_MT
+              FROM EXPENSE_CARD A, EXPENSE_INBOX_CARD B
+			             WHERE (A.OWNER_ID = #{g_userId} OR A.EMP_NO = #{g_empNo})
+			             AND A.COMPANY_CODE = #{g_comCd} 
+			             AND A.COMPANY_CODE = B.COMPANY_CODE
+			             AND B.RECEIPT_DT BETWEEN #{SEARCH_FR_DT} and #{SEARCH_TO_DT}
+			             AND A.CARD_CD = B.CARD_CD
+			             AND A.USE_YN = '1'
+			             AND B.USE_YN = '1'
+			  GROUP BY RECEIPT_MT, A.CARD_CD
+			  ORDER BY RECEIPT_MT DESC, A.CARD_CD ASC
+			            
+        </select>
+        
+    <select id="getMyNotCardList" resultType="HashMap">
+ 
+<!-- INBOX -->
+		  		
+           <!--  영수증 file만 등록 -->
+            SELECT  /* com.ec.eframework.mapper.ex.expense.DashboardServiceMapper.getMyNotCardList */ 
+            SOURCE_TP_NM,  SOURCE_TP,  
+            SUM(PAY_AMT) AS PAY_AMT, 
+            SUM(APPROVAL_CNT) AS APPROVAL_CNT, 
+            SUM(APPROVAL_AMT) AS APPROVAL_AMT, 
+            SUM(APPROVING_CNT) AS APPROVING_CNT, 
+            SUM(APPROVING_AMT) AS APPROVING_AMT, 
+            SUM(REJECTED_CNT)  AS REJECTED_CNT, 
+            SUM(REJECTED_AMT) AS REJECTED_AMT, 
+            SUM(APPROVED_CNT) AS APPROVED_CNT, 
+            SUM(APPROVED_AMT) AS APPROVED_AMT
+            FROM (
+               <!--  GPS 등록 건  -->
+				SELECT FC_EXPS_GET_SYSTEM_CODE_NM('EX_SOURCE_TP','4',#{g_lang})  SOURCE_TP_NM , '4' SOURCE_TP , COUNT(*), 0 PAY_AMT,
+				COUNT(*) APPROVAL_CNT, 0 APPROVAL_AMT, 0 APPROVING_CNT,0 APPROVING_AMT,0 REJECTED_CNT ,0 REJECTED_AMT,0 APPROVED_CNT,0 APPROVED_AMT
+				 FROM EXPENSE_INBOX_GPS  A
+				WHERE  REGR_DH BETWEEN #{SEARCH_FR_DT}  AND #{SEARCH_TO_DT}  -- 영수증
+				AND COMPANY_CODE = #{g_comCd}
+				AND REGR_ID = #{g_userId}
+				AND USE_YN = '1'
+				AND EXPENSE_NO IS NULL 
+				HAVING COUNT(*) > 0    
+	   UNION ALL     
+               <!--  영수증 파일만 등록 건  -->
+				select FC_EXPS_GET_SYSTEM_CODE_NM('EX_SOURCE_TP','2',#{g_lang})  SOURCE_TP_NM , '2' SOURCE_TP , COUNT(*), 0 PAY_AMT,
+				COUNT(*) APPROVAL_CNT, 0 APPROVAL_AMT, 0 APPROVING_CNT,0 APPROVING_AMT,0 REJECTED_CNT ,0 REJECTED_AMT,0 APPROVED_CNT,0 APPROVED_AMT
+				 from admin_file  a
+				where  SOURCE IN ('RE','02','03') 
+				AND USE_YN = '1' 
+				AND REGR_DH BETWEEN #{SEARCH_FR_DT}  and #{SEARCH_TO_DT}  -- 영수증
+				AND COMPANY_CODE = #{g_comCd}
+				AND REGR_ID = #{g_userId}
+				AND NOT EXISTS (SELECT '1' FROM expense_file b WHERE  b.file_no = a.file_no)
+				HAVING COUNT(*) > 0
+            UNION ALL
+		  		SELECT /* com.ec.eframework.mapper.ex.expense.ApproveServiceMapper.getMyNotCardList 2021.01.23 hcho 카드 외 비용 */ 
+		  		FC_EXPS_GET_SYSTEM_CODE_NM('EX_SOURCE_TP',SOURCE_TP,#{g_lang}) AS SOURCE_TP_NM , SOURCE_TP ,COUNT(*), SUM(PAY_AMT) AS PAY_AMT ,
+				SUM(CASE WHEN  A.REPORT_NO IS NULL  THEN 1 ELSE 0 END)
+					 AS APPROVAL_CNT,
+				SUM(CASE WHEN  A.REPORT_NO IS NULL  THEN PAY_AMT ELSE 0 END) AS APPROVAL_AMT,
+				SUM(CASE WHEN  B.APPROVE_STATUS = '2' OR B.APPROVE_STATUS = '3' THEN 1 ELSE 0 END) AS APPROVING_CNT, /* 진행중 */
+				SUM(CASE WHEN  B.APPROVE_STATUS = '2' OR B.APPROVE_STATUS = '3' THEN PAY_AMT ELSE 0 END) AS APPROVING_AMT,
+				SUM(CASE WHEN  B.APPROVE_STATUS = '5' THEN 1 ELSE 0 END) AS REJECTED_CNT, /* 반려 */
+				SUM(CASE WHEN  B.APPROVE_STATUS = '5' THEN PAY_AMT ELSE 0 END) AS REJECTED_AMT,
+				SUM(CASE WHEN  B.APPROVE_STATUS = '4' THEN 1 ELSE 0 END) AS APPROVED_CNT, /* 완결 */
+				SUM(CASE WHEN  B.APPROVE_STATUS = '4' THEN PAY_AMT ELSE 0 END) AS APPROVED_AMT
+				FROM EXPENSE_MST A 
+				LEFT OUTER JOIN EXPENSE_REPORT B
+				ON A.REPORT_NO = B.REPORT_NO
+				AND B.USE_YN = '1'
+				WHERE RECEIPT_DT BETWEEN #{SEARCH_FR_DT}  and #{SEARCH_TO_DT}
+				AND SOURCE_TP != '1' /* NO CARD */
+				AND SOURCE_TP IS NOT NULL
+				AND SOURCE_TP IN (SELECT COMM_CD FROM ADMIN_SYSTEM_CODE WHERE COMM_CL_CD = 'EX_SOURCE_TP' )
+				AND A.COMPANY_CODE = #{g_comCd}
+				AND ((A.EXPENSE_EMP_NO = #{g_empNo}) OR ( A.EXPENSE_EMP_NO IS NULL AND A.REGR_ID = #{g_userId}) 
+				    )
+				AND A.USE_YN = '1'
+				GROUP BY SOURCE_TP_NM
+				) ZZZ  WHERE SOURCE_TP IS NOT NULL
+				GROUP BY SOURCE_TP
+    </select>
+        
+    <select id="getMyReports" resultType="HashMap">
+ 
+      SELECT /* COM.EC.EFRAMEWORK.MAPPER.EX.EXPENSE.APPROVESERVICEMAPPER.getMyReports 2021.01.23 HCHO 상태별 리포트 리스트 */ 
+       '2' as APPROVE_STATUS, COUNT(DISTINCT A.REPORT_NO) AS CNT, /* 진행중 */
+        SUM(CASE WHEN  APPROVE_STATUS = '2' OR APPROVE_STATUS = '3' THEN PAY_AMT ELSE 0 END) AS AMT,
+        CASE WHEN  APPROVE_STATUS = '2' OR APPROVE_STATUS = '3' THEN REPORT_TITLE ELSE '' END AS TITLE /* 진행중 */
+        FROM EXPENSE_REPORT  A ,  EXPENSE_MST B
+        WHERE (APPROVE_STATUS = '2' or  APPROVE_STATUS = '3')
+        AND SUBMIT_ID = #{g_userId}
+        AND A.USE_YN = '1'
+        AND A.COMPANY_CODE = #{g_comCd}
+        AND A.REPORT_NO = B.REPORT_NO
+     union all    
+     SELECT /* COM.EC.EFRAMEWORK.MAPPER.EX.EXPENSE.APPROVESERVICEMAPPER.getMyReports 2021.01.23 HCHO 상태별 리포트 리스트 */ 
+       '5' as APPROVE_STATUS , COUNT(DISTINCT A.REPORT_NO) AS REJECTED_CNT, /* 진행중 */
+        IFNULL(SUM(CASE WHEN  APPROVE_STATUS = '5' THEN PAY_AMT ELSE 0 END),0) AS REJECTED_AMT,
+        CASE WHEN  APPROVE_STATUS = '5'  THEN REPORT_TITLE ELSE '' END AS REJECTED_TITLE /* 진행중 */
+        FROM EXPENSE_REPORT  A ,  EXPENSE_MST B
+        WHERE (APPROVE_STATUS = '5' )
+        AND SUBMIT_ID = #{g_userId}
+        AND A.USE_YN = '1'
+        AND A.COMPANY_CODE = #{g_comCd}
+        AND A.REPORT_NO = B.REPORT_NO
+        AND SUBMIT_DH BETWEEN #{SEARCH_FR_DT}  and #{SEARCH_TO_DT}
+     union all
+     SELECT /* COM.EC.EFRAMEWORK.MAPPER.EX.EXPENSE.APPROVESERVICEMAPPER.getMyReports 2021.01.23 HCHO 상태별 리포트 리스트 */ 
+      '4' as APPROVE_STATUS, COUNT(DISTINCT A.REPORT_NO) AS REJECTED_CNT, /* 진행중 */
+        IFNULL(SUM(CASE WHEN  APPROVE_STATUS = '4' THEN PAY_AMT ELSE 0 END),0) AS REJECTED_AMT,
+        CASE WHEN  APPROVE_STATUS = '4'  THEN REPORT_TITLE ELSE '' END AS REJECTED_TITLE /* 진행중 */
+        FROM EXPENSE_REPORT  A ,  EXPENSE_MST B
+        WHERE (APPROVE_STATUS = '4' )
+        AND SUBMIT_ID = #{g_userId}
+        AND A.USE_YN = '1'
+        AND A.COMPANY_CODE = #{g_comCd}
+        AND A.REPORT_NO = B.REPORT_NO
+        AND SUBMIT_DH BETWEEN #{SEARCH_FR_DT}  and #{SEARCH_TO_DT}
+ 
+    
+			            
+        </select>
+    <select id="getMyApprovalReportList" resultType="HashMap">
+
+			SELECT  /* com.ec.eframework.mapper.ex.expense.ApproveServiceMapper.getMyApprovalReportList 2021.01.23 hcho 결재해줄 리스트 */ 
+			COUNT(DISTINCT A.REPORT_NO) AS  REPORT_CNT, B.REPORT_TITLE, IFNULL(SUM(IFNULL(C.PAY_AMT,0)),0) AS PAY_AMT
+			FROM EXPENSE_APPROVE A, EXPENSE_REPORT B, EXPENSE_MST C
+			WHERE (A.APPROVE_YN IS NULL OR A.APPROVE_YN = '0'  OR A.APPROVE_YN = '2')
+			AND APPROVE_ORDER > 0
+			AND A.COMPANY_CODE = #{g_comCd}
+			AND A.APPROVE_ID = #{g_userId}
+			AND A.USE_YN = '1'
+			AND B.USE_YN = '1'
+			AND C.USE_YN = '1'
+			AND EX_GET_APPROVAL_YN(A.COMPANY_CODE, A.REPORT_NO, A.APPROVE_ORDER ) = '1'
+			AND A.REPORT_NO = B.REPORT_NO
+			AND A.REPORT_NO = C.REPORT_NO
+			AND B.APPROVE_STATUS IN ('2','3')
+			AND B.SUBMIT_DH BETWEEN #{SEARCH_FR_DT}  and #{SEARCH_TO_DT}
+			            
+        </select>     
+        
+</mapper>

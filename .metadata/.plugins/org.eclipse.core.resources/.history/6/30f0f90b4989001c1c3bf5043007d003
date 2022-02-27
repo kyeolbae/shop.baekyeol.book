@@ -1,0 +1,15 @@
+package com.ec.eframework.mapper.ex.expense;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+//@Component
+import org.apache.ibatis.annotations.Mapper;
+
+import com.ec.eframework.config.db.FirstMapper;
+import com.ec.eframework.mapper.basic.GridServiceMapper;
+@FirstMapper
+public interface ClubListServiceMapper extends GridServiceMapper  {
+	List<HashMap<String , Object >> reportApprvClubList(Map map); //getDeposit
+}

@@ -1,0 +1,39 @@
+package com.ec.eframework.mapper.ex.config;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+//@Component
+import org.apache.ibatis.annotations.Mapper;
+
+import com.ec.eframework.config.db.FirstMapper;
+import com.ec.eframework.mapper.basic.GridServiceMapper;
+@FirstMapper
+public interface ErpCodeServiceMapper extends GridServiceMapper  {
+	
+	List<HashMap<String , String >> searchExpBankCd(Map map);
+	List<HashMap<String , String >> searchExpCostCenter(Map map);
+	List<HashMap<String , String >> searchExpTaxCode(Map map);
+	List<HashMap<String , String >> searchCurrencyCode(Map map);
+	List<HashMap<String , String >> searchCurrencyRate(Map map);
+	List<HashMap<String , String >> searchPlant(Map map);
+	List<HashMap<String , String >> searchProject(Map map);
+	List<HashMap<String , String >> searchCompany(Map map);
+	List<HashMap<String , String >> searchCompanyModal(Map map);
+	int updateCompany(Map map);
+	int insertCompany(Map map);
+	int InsertCompanyModal(Map<String,Object> map);
+	/*
+	 * List<HashMap<String , Object >> selectToGridDetail(Map map);
+	 * 
+	 * 
+	 * int insertBiz(Map<String,Object> map); int updateBiz(Map<String,Object> map);
+	 * int insertBizAcc(Map<String,Object> map); int updateBizAcc(Map<String,Object>
+	 * map);
+	 */
+	 
+	
+	
+	
+}

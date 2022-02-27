@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<!--     <meta charset="utf-8" /> -->
+</head>
+  <body>
+   
+   <div  :class="{'d-flex': curItem.TYPE =='TRAVEL' }" class="d-none w-100 flex-column flex-sm-row" th:fragment="html">
+   
+       <!-- begin modal 법인카드-->
+
+                         
+                         <div class="col col-sm-7 p-0" :id="pgmid+'travelmodalbody'">
+                         
+		                 <div class="my-3">
+		                 
+                             <div class="d-flex flex-column  mb-2">
+                                    <label class="w-100 m-0">비용청구자<span class="text-danger">*</span></label>
+                                    <popup-m-code ref="popuptravelemp" :pgmid="pgmid"  pgmnm="비용청구자" subname="popuptravelemp"  name="ACC_CD" searchname="비용청구자"  columnlayout="popupemp"   tablename="EMP" @codechanged="empNoChange"  required="true"  ></popup-m-code>
+                             </div>		                 
+		                     <div class="d-flex flex-column  mb-2">
+		                            <label class="w-100 m-0">기간<span class="text-danger">*</span></label>
+		                            <daterange-m-component  ref="biztriprange" th:pgmid="${param.pgm_id}" subname1="BIZTRIP_START" subname2="BIZTRIP_END" required="true"  initval1="today" initval2="today" @changedate="setTravelDuration" disabled></daterange-m-component>
+
+		                     </div>
+                             <div class="d-flex flex-column  mb-2">
+                                    <label class="w-100 m-0">일수<span class="text-danger">*</span></label>
+                                    <div class="w-100">
+                                        <input type="text" name="BIZTRIP_DAYS" :id="pgmid+'BIZTRIP_DAYS'" class="form-control ec-mobile-input bg-white text-right"   @change="changeTripType" disabled />
+                                    </div>
+                             </div>	
+                             <div class="d-flex flex-column  mb-2">
+                                    <label class="w-100 m-0">금액계산방법<span class="text-danger">*</span></label>
+                                    <div class="w-100">
+										<div class="radio radio-css radio-inline mx-auto">
+												<input class="form-control ec-mobile-input bg-white text-right" type="radio" :name="biztripCalTypeName" th:id="${param.pgm_id}+'biztripCalType10'" value="10" checked="" @click="biztripCalTypeClick('10')">
+												<label th:for="${param.pgm_id}+'biztripCalType10'">기간<span class="text-danger">*</span>일당유형 합계</label>
+										</div>
+										<div class="radio radio-css radio-inline mx-auto">
+												<input class="form-control ec-mobile-input bg-white text-right" type="radio" :name="biztripCalTypeName" th:id="${param.pgm_id}+'biztripCalType20'" value="20" @click="biztripCalTypeClick('20')">
+												<label th:for="${param.pgm_id}+'biztripCalType20'">일자별<span class="text-danger">*</span>일당유형 합계</label>
+										</div>									
+                                    </div>
+                             </div>		                     
+                             <div class="d-flex flex-column  mb-2">
+                                    <label class="w-100 m-0">일당유형<span class="text-danger">*</span></label>
+                                    <div :id="pgmid+'bizTrip_type_A'" class="w-100">
+                                        <dropdown-tablecommon ref="BizTripType"  th:pgmid=${param.pgm_id}  all="NO" selectid="getBizTripType" selectname="TRIPTYPE" tableid="getBizTripType" @dropdownchanged="changeTripType" mobile="true"></dropdown-tablecommon>
+                                    </div>
+                                    <div :id="pgmid+'bizTrip_type_B'" class="m-5 pt-1 w-100">
+	                                     <a type="button" @click="bizTripCalOnclick" class="p-5 btn btn-default btn-block">일자별 등록</a>
+                                    </div>
+                             </div> 
+                             <div class="d-flex flex-column  mb-2">
+                                    <label class="w-100 m-0">금액<span class="text-danger">*</span></label>
+                                    <div class="w-100">
+                                        <input type="text" name="EXPENSE_AMT_TRAVEL" :id="pgmid+'EXPENSE_AMT_TRAVEL'" class="form-control ec-mobile-input text-right required  bg-white" disabled   />
+                                    </div>
+                             </div>     
+                             
+                              <div :class="{'d-none': currencyCd == curItem.BASE_CURRENCY_CD }" class="w-100 text-right" >
+                                    <div class="text-blue"><span>환율일자:</span><strong><span>{{currencyDt | dateformat('card-week')  }}</span></strong></div>   
+                                    <div class="text-blue"><span>1{{currencyCd}}=</span><span>{{currencyRate  }}{{curItem.BASE_CURRENCY_CD}}</span></div>   
+                            </div>   
+                                                        
+                             <div class="d-flex flex-column  mb-2">
+                                    <label class="w-100 m-0">비용항목<span class="text-danger">*</span></label>
+                                    <popup-m-code ref="popupexptravel" :pgmid="pgmid"  pgmnm="비용항목" subname="popupexptravel"  name="EXPENSE_CD_TRAVEL" searchname="비용항목"  columnlayout="popupexpcard"  readonly="readonly"   tablename="EXTRAVEL" required="true"  @codechanged="expCdChange"  ></popup-m-code>
+                             </div> 
+<!--                              <div class="d-flex flex-column  mb-2"> -->
+<!--                                     <popup-m-code ref="popupcostcentertravel" :pgmid="pgmid"  pgmnm="코스트센터" subname="popupcostcentertravel"  name="CCTR_CD_TRAVEL" searchname="코스트센터"  columnlayout="popupcostcenter"   tablename="CCTR" @codechanged="costCenterCdChange"  required="true"  ></popup-m-code> -->
+<!--                              </div>  -->
+                              <span v-show="receiptbelongtype != '0'">
+                                <div class="d-flex flex-column  mb-2">
+                                <label class="w-100 m-0">귀속<span class="text-danger">*</span></label>
+                                  <div class='d-flex flex-column'>
+                                    <div class=" p-0 d-flex">
+                                               <dropdown-m-syscommon  ref="TRAVEL_CCENTER_TP" class="w-100 p-0 flex-shrink-0"  :pgmid="pgmid"  
+                                                       dropdownlabel=""  selectid="TRAVEL_CCENTER_TP" selectname="TRAVEL_CCENTER_TP" 
+                                                       clcd="EX_CCENTER_TP"   @changed="ccenterTpChange"></dropdown-m-syscommon>
+                                   </div>
+                                   <div class=" p-0 d-flex">
+                                    <span v-show="receiptcosttype=='1'" class="w-100"><popup-m-code  ref="popupcostcentertravel" :pgmid="pgmid"  pgmnm="코스트센터" subname="popupcostcenter-travel"   name="CCTR_CD_TRAVEL" searchname="코스트센터"   columnlayout="popupcostcenter"  readonly="readonly" tablename="CCTR" @codechanged="costCenterCdChange"  ></popup-m-code></span>
+                                    <span v-show="receiptcosttype=='2'" class="w-100"><popup-m-code  ref="popupprojecttravel" :pgmid="pgmid"  pgmnm="프로젝트" subname="popupproject-travel"   name="PROJECT_TRAVEL" searchname="프로젝트"  columnlayout="popupproj"   tablename="PROJ" readonly="readonly"   @codechanged="projectCdChange" ></popup-m-code></span>
+                                   </div>
+                                   </div>
+                             </div> 
+                             </span>                                
+                                                                                                                      
+                             <div class="d-flex flex-column  mb-2">
+                                    <label class="w-100 m-0">적요</label>
+                                    <div class="w-100">
+                                        <input type="text" name="RMK_TRAVEL" :id="pgmid+'RMK_TRAVEL'" class="form-control ec-mobile-input "   />
+                                    </div>
+                             </div>     
+                             <div class="d-flex  mb-2">
+                                    <label class="m-0">출장거리계산</label>
+                                        <i class="icon-arrow-down mx-2 align-self-center"  @click="addMapToggle"></i>  
+<!--                                     <div class="w-100 justify-content-center d-flex"> -->
+<!--                                     </div> -->
+                             </div>
+                                                    
+		                </div>                          
+                      </div>
+                      		<div :id="pgmid+'travel_map_wrap'" class="d-none">
+                                 <div class="d-flex">
+                                     <div class="col-12 p-0 ">
+                                         <div class="d-flex mb-1">
+                                             <input type="text" name="officeLoc" :id="pgmid+'officeLoc'" placeholder="근무지" :value="curItem.START_ADDR "   class="form-control ec-mobile-input" /> 
+                                             <div class="ml-1 align-self-center btn border border-dark rounded-0 p-5" @click="setOfficeLoc"><i class="icon-magnifier  m-0 p-0 "></i></div>
+                                             <div class="ml-1 align-self-center btn border border-dark rounded-0 p-5" @click="saveOfficeLoc"><i class="icon-plus  m-0 p-0 "></i></div>
+                                         </div>
+                                         <div class="d-flex ">
+                                             <input type="text" name="travelLoc" :id="pgmid+'travelLoc'" placeholder="출장지" :value="curItem.END_ADDR "  class="form-control ec-mobile-input" /> 
+                                             <div class="ml-1 align-self-center btn border border-dark rounded-0 p-5" @click="setTravelLoc"><i class="icon-magnifier  m-0 p-0 "></i></div>
+                                         	 <button type="button" class="ml-1 align-self-center btn border border-dark rounded-0 p-5"   @click="travelSearchPath"><i class="icon-loop"></i></button>
+                                         </div>
+                                         <div class="d-flex ">
+                                             <input type="text" name="TRAVELDIST" :id="pgmid+'TRAVELDIST'" placeholder="거리(Km)" class="form-control ec-mobile-input" /> 
+                                         </div>
+                                      </div>  
+                                </div>
+                      			<div id="map_wrap'" class="map_wrap">
+<!--                       				<div :id="pgmid+'travel_map_div'"></div> -->
+                                    <div v-show="!($options.filters.isNotEmpty(tempCurItem.FILE_NO))" :id="pgmid+'travel_map_div'"></div>
+                                    <img v-show="$options.filters.isNotEmpty(tempCurItem.FILE_NO)"  class="img-fluid receipt-img-box w-100 "  :src="tempCurItem.FILE_NO" >
+                                 </div>
+                            </div> 
+								<div class="ec-grid-row d-none">
+                                            <div>office</div>
+                                             <input type="text" name="OFFICE_LONG" :id="pgmid+'OFFICE_LONG'" class="form-control "  :value="curItem.START_LONG " />
+                                             <input type="text" name="OFFICE_LAT" :id="pgmid+'OFFICE_LAT'" class="form-control "  :value="curItem.START_LAT " />
+                                             <input type="text" name="OFFICE_ADDR" :id="pgmid+'OFFICE_ADDR'" class="form-control "  :value="curItem.START_ADDR "   />
+                                             <input type="text" name="OFFICE_DH" :id="pgmid+'OFFICE_DH'" class="form-control "  :value="curItem.START_DH "   />
+                                            <div>end</div>
+                                             <input type="text" name="TravelLon" :id="pgmid+'TRAVEL_LONG'" class="form-control "  :value="curItem.END_LONG "  />
+                                             <input type="text" name="TravelLat" :id="pgmid+'TRAVEL_LAT'" class="form-control "  :value="curItem.END_LAT "  />
+                                             <input type="text" name="TravelAddr" :id="pgmid+'TRAVEL_ADDR'" class="form-control "  :value="curItem.END_ADDR " />
+                                             <input type="text" name="TravelDh" :id="pgmid+'TRAVEL_DH'" class="form-control "  :value="curItem.END_DH " />
+								  </div>
+          <!-- end of popup 일당-->      
+   								
+   
+   </div> 
+   								
+   								
+   								<!-- 				일자별 등록 modal -->
+			<div class="modal ec-modal h-100" data-backdrop="false" :id="pgmid+'modal_biztrip_cal'"   >
+                   <div class="modal-dialog modal-md modal-dialog-centered ui-draggable" >
+                       <div class="modal-content modal-content d-flex flex-column" >
+                           <div class="modal-header ec-modal-header ui-draggable-handle">
+                               <h4 class="modal-title">일자별 등록</h4>
+                               <a class="" type="button"@click="bizTripModalClose"><i class="mi-close mi-3x"></i></a>
+                           </div>
+                           <div class="modal-body  d-flex flex-column h-100 p-25">     
+               	 			<!-- grid -->
+                			<div class="col-12 p-0"  :id="pgmid+'ocrmstinputs'">
+								<div class="flex-shrink-1 flex-grow-1" style="height:300px">
+							    	<grid-crud ref="gridbiztrip" gridcaption="" :columnlayout="columnlayoutBizTripCal" :footerlayout="footerLayout" :pgmid="pgmid" subname="gridbiztrip"  :newitem="biztripnewItem" buttons="" :gridprop="gridProps"></grid-crud> 
+			                    </div>
+								<div class="d-flex flex-row btn-row ec-btn-bottom-row">
+								<a  class="btn  ec-btn-bottom w-100  btn-maintheme" @click="saveBizTripCal">확인</a>
+								</div>
+
+							</div>
+                          </div>
+                         <!--end of modal body -->
+                       </div>
+                   </div>
+               </div>
+  </body>
+</html>

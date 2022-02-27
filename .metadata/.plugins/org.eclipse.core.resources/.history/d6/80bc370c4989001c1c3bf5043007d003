@@ -1,0 +1,794 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper namespace="com.ec.eframework.mapper.fi_exp.ExpenseServiceMapper">
+
+<!-- 비용 -->
+    
+    <!--     비용 전체 조회 -->
+    <select id="getReceiptList" resultType="HashMap">
+    SELECT ROW_NUMBER() OVER() AS ID , FC_EXPS_GET_SYSTEM_CODE_NM('EX_SOURCE_TP',AAA.SOURCE_TP,#{g_lang}) AS SOURCE_TP_NM  ,AAA.*, 
+    IFNULL(EX_GET_APPROVE_STATUS(TO_NUMBER(AAA.EXPENSE_NO)),'1') AS APPROVE_STATUS,
+    EX_GET_APPROVE_STATUS_NM(TO_NUMBER(AAA.EXPENSE_NO),#{g_lang}) AS APPROVE_STATUS_NM,
+   -- ERP_SLIP_YYYY, ERP_SLIP_NO, CONCAT(ERP_COMPANY_CODE,'-',ERP_SLIP_YYYY,'-', ERP_SLIP_NO) SLIP_KEY,
+    FC_EXPS_GET_SYSTEM_CODE_NM('EX_DISTANCE_CALC_TP', AAA.DISTANCE_TP,#{g_lang}) AS DISTANCE_TP_NM
+    FROM (  SELECT * FROM (
+            SELECT A.REGR_DH,  B.MOD_DH,'0' CHECKED ,'RECEIPT' TYPE  , '2' SOURCE_TP , IFNULL(B.EXPENSE_NO,'') EXPENSE_NO,'' EVID_NO ,
+            A.FILE_NO,
+            ROW_NUMBER()  OVER(PARTITION BY  A.GROUP_NO ORDER BY B.EXPENSE_NO DESC, A.DISPLAY_ORD, A.REGR_DH) AS RN,
+            A.ORG_FILE_NAME, UCASE(SUBSTR(A.FILE_NAME,-3,3)) FILE_TYPE ,GET_FILE_KIND(A.FILE_NAME) AS FILE_KIND ,'' CARD_NO, IFNULL(B.RECEIPT_DT,SUBSTR(A.REGR_DH,1,8)) AS RECEIPT_DT,IFNULL(EXPENSE_AMT,'') EXPENSE_AMT,IFNULL(EXPENSE_VAT_AMT,'') EXPENSE_VAT_AMT ,0 SUPPLY_AMT, ''  ETC_AMT ,0 VAT_AMT, 0 TOT_AMT, 
+            IFNULL(B.REPORT_NO,null) REPORT_NO, IFNULL(B.REPORT_TITLE,'') REPORT_TITLE,
+            IFNULL(B.CCTR_CD,'') CCTR_CD,CCTR_NM, IFNULL(PS_CD,'') PS_CD, IFNULL(PS_NM,'') PS_NM,IFNULL(EXPENSE_CD,'') EXPENSE_CD, IFNULL(EXPENSE_NM,'') EXPENSE_NM, 
+            IFNULL(B.RMK,'') RMK,
+            '' BIZ_NO,  '' BIZ_NM, '' BIZ_ADDR,'' BIZ_TYPE, '' BIZ_CATEGORY,  '' CARD_BILL_NO, 
+            IFNULL(EMP_NO,'') EXPENSE_EMP_NO, IFNULL(EMP_NM,'') EXPENSE_EMP_NM,  IFNULL(BELONGING_TP,"1") BELONGING_TP,
+            "" DISTANCE_TP, "" DISTANCE, "" MILEAGE_RATE_CD, "" MILEAGE_RATE_NM ,"" ODOMETER_START, "" ODOMETER_END, '' ODOMETER_START_FILE, '' ODOMETER_END_FILE,
+            '' BIZTRIP_START, '' BIZTRIP_END, '' BIZTRIP_DAYS, '' BIZTRIP_TP,
+            '' TAX_TP, '' SENDER_EMAIL, '' RECEIVE_EMAIL, '' RECEIVE_BIZ_NO, '' RECEIVE_BIZ_NM, '' RECEIVE_BIZ_ADDR, '' RECEIVE_BIZ_TYPE, '' RECEIVE_BIZ_CATEGORY , PAY_AMT ,
+            '' START_LAT, '' START_LONG, '' START_ADDR, '' END_LAT, '' END_LONG, '' END_ADDR  , '' START_DH, '' END_DH,
+            IFNULL(CURRENCY_CD,#{g_baseCurrencyCd}) CURRENCY_CD, IFNULL(CURRENCY_AMT,0) CURRENCY_AMT, IFNULL(CURRENCY_RATE,0) CURRENCY_RATE , IFNULL(CURRENCY_DT, SUBSTR(A.REGR_DH,  1 , 8 )) CURRENCY_DT, IFNULL(BASE_CURRENCY_CD,#{g_baseCurrencyCd}) BASE_CURRENCY_CD, CURRENCY_DEC_NUM,
+            IFNULL(EVID_YN,'0') EVID_YN, IFNULL(CCENTER_TP,'') CCENTER_TP , IFNULL(DEFAULT_AMT_YN,'') DEFAULT_AMT_YN, IFNULL(DEFAULT_AMT,'') DEFAULT_AMT, IFNULL(DEFAULT_CCTR_YN,'') DEFAULT_CCTR_YN, IFNULL(DEFAULT_COSTCENTER,'') DEFAULT_COSTCENTER,
+            '' OVERSEAS_AMT, '' OVERSEAS_CUR_CD, '' OVERSEAS_CUR_RATE, '' OVERSEAS_DH, '' OVERSEAS_YN, '' PRIVATE_RMK, '' PRIVATE_YN
+            , B.REPORT_TP, B.REPORT_TP_NM, B.APPROVE_LINE_TP, B.PROCESS_APPRV_GRP  ,0 TOLL_CNT, IFNULL(B.LIMIT_AMT_YN,'0'), B.LIMIT_AMT, A.GROUP_NO
+            , '' OCR_FILE_NO
+            , IFNULL(B.BELONGING_TYPE,'3') AS  BELONGING_TYPE
+            , 0 AS FILE_CNT
+            , 0 AS OCR_CNT
+            , '' REGR_ID, '' REGR_NM
+            , '' AS BIZTRIP_CAL_MTHD
+            FROM ADMIN_FILE A
+            LEFT OUTER JOIN (
+                        SELECT A.EXPENSE_NO, B.FILE_NO , A.EXPENSE_AMT , A.EXPENSE_VAT_AMT, C.REPORT_NO, C.REPORT_TITLE, A.CCTR_CD , D.CCTR_NM, E.PS_CD, E.PS_NM,F.EXPENSE_CD, F.EXPENSE_NM,
+                        A.RMK, EMP.EMP_NO, EMP.EMP_NM, A.BELONGING_TP, A.MOD_DH, A.RECEIPT_DT, A.PAY_AMT, 
+                        A.CURRENCY_CD, A.CURRENCY_AMT, A.CURRENCY_RATE, A.CURRENCY_DT, A.BASE_CURRENCY_CD, CC.CURRENCY_DEC_NUM,
+                        G.EVID_YN, G.BELONGING_TP CCENTER_TP, G.DEFAULT_AMT_YN, G.DEFAULT_AMT, G.DEFAULT_CCTR_YN, G.DEFAULT_COSTCENTER
+                        , H.REPORT_TP , H.REPORT_TP_NM, H.APPROVE_LINE_TP, H.PROCESS_APPRV_GRP ,G.LIMIT_AMT_YN, G.LIMIT_AMT
+                        , G.BELONGING_TP AS BELONGING_TYPE
+                           FROM EXPENSE_FILE B, EXPENSE_CURRENCY CC ,EXPENSE_MST A FORCE INDEX (EXPENSE_MST_IDX01)
+                            LEFT OUTER JOIN EXPENSE_REPORT C
+                                    ON A.REPORT_NO = C.REPORT_NO
+                                    AND A.REGR_ID =  #{g_userId}
+                                    AND A.COMPANY_CODE =  #{g_comCd}
+                            LEFT OUTER JOIN ADMIN_EMP EMP
+                                    ON A.EXPENSE_EMP_NO = EMP.EMP_NO
+                                    AND A.COMPANY_CODE = EMP.COMPANY_CODE
+                            LEFT OUTER JOIN EXPENSE_COST_CENTER D
+                                    ON A.CCTR_CD = D.CCTR_CD
+                                    AND A.COMPANY_CODE = D.COMPANY_CODE
+                            LEFT OUTER JOIN EXPENSE_PROJECT E    
+                                    ON A.PS_CD = E.PS_CD
+                                    AND A.COMPANY_CODE = E.COMPANY_CODE
+                             LEFT OUTER JOIN EXPENSE_CATEGORY F       
+                                    ON A.COMPANY_CODE = F.COMPANY_CODE
+                                    AND A.EXPENSE_CD = F.EXPENSE_CD 
+                             LEFT OUTER JOIN EXPENSE_SOURCE_CATEGORY G 
+                                    ON A.COMPANY_CODE = G.COMPANY_CODE
+                                    AND A.EXPENSE_CD = G.EXPENSE_CD  
+                                    AND A.SOURCE_TP = G.SOURCE_TP
+                             LEFT OUTER JOIN EXPENSE_REPORT_TYPE H 
+                                    ON A.COMPANY_CODE = H.COMPANY_CODE
+                                    AND G.REPORT_TP = H.REPORT_TP  
+                            WHERE A.EXPENSE_NO = B.EXPENSE_NO
+                            AND A.SOURCE_TP = "2"  -- 영수증
+                            AND A.COMPANY_CODE = #{g_comCd}
+                            AND A.COMPANY_CODE = CC.COMPANY_CODE
+                            AND A.CURRENCY_CD = CC.CURRENCY_CD
+                            AND A.REGR_ID =  #{g_userId}
+                            AND A.USE_YN = '1' 
+                            AND B.REGR_ID = #{g_userId}
+                            AND A.RECEIPT_DT BETWEEN REPLACE_DATE(#{SEARCH_FR_DT},'') AND  CONCAT(REPLACE_DATE(#{SEARCH_TO_DT},''),'999999') 
+                            ) B
+                ON A.FILE_NO = B.FILE_NO
+                WHERE A.COMPANY_CODE =  #{g_comCd} 
+                AND A.USE_YN = '1'  
+                AND A.REGR_ID = #{g_userId}
+                AND A.MAINFILE_YN = '1'
+                AND A.DISPLAY_YN = '1'
+            --    AND (A.GROUP_NO IS NOT NULL and A.GROUP_NO != 0 )
+                AND (A.REGR_DH BETWEEN REPLACE_DATE(#{SEARCH_FR_DT},'') AND  CONCAT(REPLACE_DATE(#{SEARCH_TO_DT},''),'999999') 
+                or B.RECEIPT_DT BETWEEN REPLACE_DATE(#{SEARCH_FR_DT},'') AND  CONCAT(REPLACE_DATE(#{SEARCH_TO_DT},''),'999999') 
+                )
+                AND SOURCE IN ( "RE")   -- 영수증, (모바일, PC 파일 전용 업로드)
+               ) AAA WHERE RN = 1
+       UNION ALL
+          SELECT * FROM (
+            SELECT A.REGR_DH,  B.MOD_DH,'0' CHECKED ,'TOLL' TYPE  , '6' SOURCE_TP , IFNULL(B.EXPENSE_NO,'') EXPENSE_NO,'' EVID_NO ,A.FILE_NO,
+            ROW_NUMBER()  OVER(PARTITION BY  A.GROUP_NO ORDER BY B.EXPENSE_NO DESC, A.DISPLAY_ORD, A.REGR_DH) AS RN,
+            A.ORG_FILE_NAME, UCASE(SUBSTR(A.FILE_NAME,-3,3))  FILE_TYPE, GET_FILE_KIND(A.FILE_NAME) AS FILE_KIND, '' CARD_NO, IFNULL(B.RECEIPT_DT,SUBSTR(A.REGR_DH,1,8)) AS RECEIPT_DT,IFNULL(EXPENSE_AMT,'') EXPENSE_AMT,IFNULL(EXPENSE_VAT_AMT,'') EXPENSE_VAT_AMT ,0 SUPPLY_AMT, ''  ETC_AMT ,0 VAT_AMT, 0 TOT_AMT, 
+            IFNULL(B.REPORT_NO,null) REPORT_NO, IFNULL(B.REPORT_TITLE,'') REPORT_TITLE,
+            IFNULL(B.CCTR_CD,'') CCTR_CD,CCTR_NM, IFNULL(PS_CD,'') PS_CD, IFNULL(PS_NM,'') PS_NM,IFNULL(EXPENSE_CD,'') EXPENSE_CD, IFNULL(EXPENSE_NM,'') EXPENSE_NM, 
+            IFNULL(B.RMK,'') RMK,
+            '' BIZ_NO,  '' BIZ_NM, '' BIZ_ADDR, '' BIZ_TYPE, '' BIZ_CATEGORY, '' CARD_BILL_NO, 
+            IFNULL(EMP_NO,'') EXPENSE_EMP_NO, IFNULL(EMP_NM,'') EXPENSE_EMP_NM,  IFNULL(BELONGING_TP,"1") BELONGING_TP,
+            "" DISTANCE_TP, "" DISTANCE, "" MILEAGE_RATE_CD, "" MILEAGE_RATE_NM ,"" ODOMETER_START, "" ODOMETER_END, '' ODOMETER_START_FILE, '' ODOMETER_END_FILE,
+            '' BIZTRIP_START, '' BIZTRIP_END, '' BIZTRIP_DAYS, '' BIZTRIP_TP,
+            '' TAX_TP, '' SENDER_EMAIL, '' RECEIVE_EMAIL, '' RECEIVE_BIZ_NO, '' RECEIVE_BIZ_NM, '' RECEIVE_BIZ_ADDR, '' RECEIVE_BIZ_TYPE, '' RECEIVE_BIZ_CATEGORY , PAY_AMT ,
+            '' START_LAT, '' START_LONG, '' START_ADDR, '' END_LAT, '' END_LONG, '' END_ADDR  , '' START_DH, '' END_DH,
+            IFNULL(CURRENCY_CD,#{g_baseCurrencyCd}) CURRENCY_CD, IFNULL(CURRENCY_AMT,0) CURRENCY_AMT, IFNULL(CURRENCY_RATE,0) CURRENCY_RATE , IFNULL(CURRENCY_DT, SUBSTR(A.REGR_DH,  1 , 8 )) CURRENCY_DT, IFNULL(BASE_CURRENCY_CD,#{g_baseCurrencyCd}) BASE_CURRENCY_CD, '' CURRENCY_DEC_NUM,
+            IFNULL(EVID_YN,'0') EVID_YN, IFNULL(CCENTER_TP,'') CCENTER_TP , IFNULL(DEFAULT_AMT_YN,'') DEFAULT_AMT_YN, IFNULL(DEFAULT_AMT,'') DEFAULT_AMT, IFNULL(DEFAULT_CCTR_YN,'') DEFAULT_CCTR_YN, IFNULL(DEFAULT_COSTCENTER,'') DEFAULT_COSTCENTER
+            ,'' OVERSEAS_AMT, '' OVERSEAS_CUR_CD, '' OVERSEAS_CUR_RATE, '' OVERSEAS_DH, '' OVERSEAS_YN, '' PRIVATE_RMK, '' PRIVATE_YN
+            , B.REPORT_TP, B.REPORT_TP_NM, B.APPROVE_LINE_TP, B.PROCESS_APPRV_GRP, B.TOLL_CNT, IFNULL(B.LIMIT_AMT_YN,'0'), B.LIMIT_AMT, A.GROUP_NO
+            , '' OCR_FILE_NO
+            , IFNULL(B.BELONGING_TYPE,'3') AS  BELONGING_TYPE
+            , 0 AS FILE_CNT
+            , 0 AS OCR_CNT
+            , '' REGR_ID, '' REGR_NM
+            , '' AS BIZTRIP_CAL_MTHD
+            FROM ADMIN_FILE A
+            LEFT OUTER JOIN (
+                        SELECT A.EXPENSE_NO, B.FILE_NO , A.EXPENSE_AMT , A.EXPENSE_VAT_AMT, C.REPORT_NO, C.REPORT_TITLE, A.CCTR_CD , D.CCTR_NM, E.PS_CD, E.PS_NM,F.EXPENSE_CD, F.EXPENSE_NM,
+                        A.RMK, EMP.EMP_NO, EMP.EMP_NM, A.BELONGING_TP, A.MOD_DH, A.RECEIPT_DT, A.PAY_AMT, 
+                        A.CURRENCY_CD, A.CURRENCY_AMT, A.CURRENCY_RATE, A.CURRENCY_DT, A.BASE_CURRENCY_CD, 
+                        G.EVID_YN, G.BELONGING_TP CCENTER_TP, G.DEFAULT_AMT_YN, G.DEFAULT_AMT, G.DEFAULT_CCTR_YN, G.DEFAULT_COSTCENTER
+                        , H.REPORT_TP , H.REPORT_TP_NM, H.APPROVE_LINE_TP,H.PROCESS_APPRV_GRP , (SELECT COUNT(*) FROM EXPENSE_MST_TOLL WHERE EXPENSE_NO = A.EXPENSE_NO) AS TOLL_CNT
+                        , G.LIMIT_AMT_YN, G.LIMIT_AMT
+                        , G.BELONGING_TP AS BELONGING_TYPE
+                           FROM EXPENSE_FILE B, EXPENSE_MST A
+                            LEFT OUTER JOIN EXPENSE_REPORT C
+                                    ON A.REPORT_NO = C.REPORT_NO
+                                    AND A.REGR_ID =  #{g_userId}
+                                    AND A.COMPANY_CODE =  #{g_comCd}
+                            LEFT OUTER JOIN ADMIN_EMP EMP
+                                    ON A.EXPENSE_EMP_NO = EMP.EMP_NO
+                                    AND A.COMPANY_CODE = EMP.COMPANY_CODE
+                            LEFT OUTER JOIN EXPENSE_COST_CENTER D
+                                    ON A.CCTR_CD = D.CCTR_CD
+                                    AND A.COMPANY_CODE = D.COMPANY_CODE
+                            LEFT OUTER JOIN EXPENSE_PROJECT E    
+                                    ON A.PS_CD = E.PS_CD
+                                    AND A.COMPANY_CODE = E.COMPANY_CODE
+                             LEFT OUTER JOIN EXPENSE_CATEGORY F       
+                                    ON A.COMPANY_CODE = F.COMPANY_CODE
+                                    AND A.EXPENSE_CD = F.EXPENSE_CD 
+                             LEFT OUTER JOIN EXPENSE_SOURCE_CATEGORY G 
+                                    ON A.COMPANY_CODE = G.COMPANY_CODE
+                                    AND A.EXPENSE_CD = G.EXPENSE_CD  
+                                    AND A.SOURCE_TP = G.SOURCE_TP 
+                             LEFT OUTER JOIN EXPENSE_REPORT_TYPE H 
+                                    ON A.COMPANY_CODE = H.COMPANY_CODE
+                                    AND G.REPORT_TP = H.REPORT_TP                                                                          
+                            WHERE A.EXPENSE_NO = B.EXPENSE_NO
+                            AND A.SOURCE_TP = "6"  -- 영수증
+                            AND A.COMPANY_CODE = #{g_comCd}
+                            AND A.REGR_ID =  #{g_userId}
+                            AND A.USE_YN = '1'                      
+                            AND B.REGR_ID = #{g_userId}
+                            ) B
+                ON A.FILE_NO = B.FILE_NO
+                WHERE A.COMPANY_CODE =  #{g_comCd} 
+                AND A.USE_YN = '1'  
+                AND A.REGR_ID = #{g_userId}
+                AND A.MAINFILE_YN = '1'
+                AND A.DISPLAY_YN = '1'                
+                AND SOURCE IN ( "TO")    ) AAA WHERE RN = 1               
+    UNION ALL
+            /* 가지급금 */
+         SELECT * FROM (
+            SELECT A.REGR_DH,  B.MOD_DH,'0' CHECKED ,'PREPAY' TYPE  , '8' SOURCE_TP , IFNULL(B.EXPENSE_NO,'') EXPENSE_NO,'' EVID_NO ,A.FILE_NO, 
+            ROW_NUMBER()  OVER(PARTITION BY  A.GROUP_NO ORDER BY B.EXPENSE_NO DESC, A.DISPLAY_ORD, A.REGR_DH) AS RN,
+            A.ORG_FILE_NAME,UCASE(SUBSTR(A.FILE_NAME,-3,3))  FILE_TYPE , GET_FILE_KIND(A.FILE_NAME) AS FILE_KIND,'' CARD_NO, IFNULL(B.RECEIPT_DT,SUBSTR(A.REGR_DH,1,8)) AS RECEIPT_DT,IFNULL(EXPENSE_AMT,'') EXPENSE_AMT,IFNULL(EXPENSE_VAT_AMT,'') EXPENSE_VAT_AMT ,0 SUPPLY_AMT, ''  ETC_AMT ,0 VAT_AMT, 0 TOT_AMT, 
+            IFNULL(B.REPORT_NO,null) REPORT_NO, IFNULL(B.REPORT_TITLE,'') REPORT_TITLE,
+            IFNULL(B.CCTR_CD,'') CCTR_CD,CCTR_NM, IFNULL(PS_CD,'') PS_CD, IFNULL(PS_NM,'') PS_NM,IFNULL(EXPENSE_CD,'') EXPENSE_CD, IFNULL(EXPENSE_NM,'') EXPENSE_NM, 
+            IFNULL(B.RMK,'') RMK,
+            '' BIZ_NO,  '' BIZ_NM, '' BIZ_ADDR, '' BIZ_TYPE, '' BIZ_CATEGORY,'' CARD_BILL_NO, 
+            IFNULL(EMP_NO,'') EXPENSE_EMP_NO, IFNULL(EMP_NM,'') EXPENSE_EMP_NM,  IFNULL(BELONGING_TP,"1") BELONGING_TP,
+            "" DISTANCE_TP, "" DISTANCE, "" MILEAGE_RATE_CD, "" MILEAGE_RATE_NM ,"" ODOMETER_START, "" ODOMETER_END, '' ODOMETER_START_FILE, '' ODOMETER_END_FILE,
+            '' BIZTRIP_START, '' BIZTRIP_END, '' BIZTRIP_DAYS, '' BIZTRIP_TP,
+            '' TAX_TP, '' SENDER_EMAIL, '' RECEIVE_EMAIL, '' RECEIVE_BIZ_NO, '' RECEIVE_BIZ_NM, '' RECEIVE_BIZ_ADDR, '' RECEIVE_BIZ_TYPE, '' RECEIVE_BIZ_CATEGORY , PAY_AMT ,
+            '' START_LAT, '' START_LONG, '' START_ADDR, '' END_LAT, '' END_LONG, '' END_ADDR  , '' START_DH, '' END_DH,
+            IFNULL(CURRENCY_CD,#{g_baseCurrencyCd}) CURRENCY_CD, IFNULL(CURRENCY_AMT,0) CURRENCY_AMT, IFNULL(CURRENCY_RATE,0) CURRENCY_RATE , IFNULL(CURRENCY_DT, SUBSTR(A.REGR_DH,  1 , 8 )) CURRENCY_DT, IFNULL(BASE_CURRENCY_CD,#{g_baseCurrencyCd}) BASE_CURRENCY_CD, CURRENCY_DEC_NUM,
+            IFNULL(EVID_YN,'0') EVID_YN, IFNULL(CCENTER_TP,'') CCENTER_TP , IFNULL(DEFAULT_AMT_YN,'') DEFAULT_AMT_YN, IFNULL(DEFAULT_AMT,'') DEFAULT_AMT, IFNULL(DEFAULT_CCTR_YN,'') DEFAULT_CCTR_YN, IFNULL(DEFAULT_COSTCENTER,'') DEFAULT_COSTCENTER
+            ,'' OVERSEAS_AMT, '' OVERSEAS_CUR_CD, '' OVERSEAS_CUR_RATE, '' OVERSEAS_DH, '' OVERSEAS_YN, '' PRIVATE_RMK, '' PRIVATE_YN
+            , B.REPORT_TP, B.REPORT_TP_NM, B.APPROVE_LINE_TP,B.PROCESS_APPRV_GRP, 0 TOLL_CNT, IFNULL(B.LIMIT_AMT_YN,'0'), B.LIMIT_AMT, A.GROUP_NO
+            , '' OCR_FILE_NO
+            , IFNULL(B.BELONGING_TYPE,'3') AS  BELONGING_TYPE
+            , 0 AS FILE_CNT
+            , 0 AS OCR_CNT
+            , '' REGR_ID, '' REGR_NM
+            , '' AS BIZTRIP_CAL_MTHD
+            FROM ADMIN_FILE A
+            RIGHT OUTER JOIN (
+                        SELECT A.EXPENSE_NO, B.FILE_NO , A.EXPENSE_AMT , A.EXPENSE_VAT_AMT, C.REPORT_NO, C.REPORT_TITLE, A.CCTR_CD , D.CCTR_NM, E.PS_CD, E.PS_NM,F.EXPENSE_CD, F.EXPENSE_NM,
+                        A.RMK, EMP.EMP_NO, EMP.EMP_NM, A.BELONGING_TP, A.MOD_DH, A.RECEIPT_DT, A.PAY_AMT, 
+                        A.CURRENCY_CD, A.CURRENCY_AMT, A.CURRENCY_RATE, A.CURRENCY_DT, A.BASE_CURRENCY_CD, CC.CURRENCY_DEC_NUM,
+                        G.EVID_YN, G.BELONGING_TP CCENTER_TP, G.DEFAULT_AMT_YN, G.DEFAULT_AMT, G.DEFAULT_CCTR_YN, G.DEFAULT_COSTCENTER
+                        , H.REPORT_TP , H.REPORT_TP_NM, H.APPROVE_LINE_TP, H.PROCESS_APPRV_GRP ,G.LIMIT_AMT_YN, G.LIMIT_AMT
+                        , G.BELONGING_TP AS BELONGING_TYPE
+                           FROM EXPENSE_CURRENCY CC ,EXPENSE_MST A
+                            LEFT OUTER JOIN EXPENSE_FILE B
+                                    ON A.COMPANY_CODE = B.COMPANY_CODE
+                                    AND B.REGR_ID =  #{g_userId}
+                                    AND B.COMPANY_CODE =  #{g_comCd}   
+                                    AND A.EXPENSE_NO = B.EXPENSE_NO                       
+                            LEFT OUTER JOIN EXPENSE_REPORT C
+                                    ON A.REPORT_NO = C.REPORT_NO
+                                    AND A.REGR_ID =  #{g_userId}
+                                    AND A.COMPANY_CODE =  #{g_comCd}
+                            LEFT OUTER JOIN ADMIN_EMP EMP
+                                    ON A.EXPENSE_EMP_NO = EMP.EMP_NO
+                                    AND A.COMPANY_CODE = EMP.COMPANY_CODE
+                            LEFT OUTER JOIN EXPENSE_COST_CENTER D
+                                    ON A.CCTR_CD = D.CCTR_CD
+                                    AND A.COMPANY_CODE = D.COMPANY_CODE
+                            LEFT OUTER JOIN EXPENSE_PROJECT E    
+                                    ON A.PS_CD = E.PS_CD
+                                    AND A.COMPANY_CODE = E.COMPANY_CODE
+                             LEFT OUTER JOIN EXPENSE_CATEGORY F       
+                                    ON A.COMPANY_CODE = F.COMPANY_CODE
+                                    AND A.EXPENSE_CD = F.EXPENSE_CD 
+                             LEFT OUTER JOIN EXPENSE_SOURCE_CATEGORY G 
+                                    ON A.COMPANY_CODE = G.COMPANY_CODE
+                                    AND A.EXPENSE_CD = G.EXPENSE_CD  
+                                    AND A.SOURCE_TP = G.SOURCE_TP  
+                             LEFT OUTER JOIN EXPENSE_REPORT_TYPE H 
+                                    ON A.COMPANY_CODE = H.COMPANY_CODE
+                                    AND G.REPORT_TP = H.REPORT_TP                                                                        
+                            WHERE A.SOURCE_TP = "8"  -- 가지급금
+                            AND A.COMPANY_CODE = #{g_comCd}
+                            AND A.COMPANY_CODE = CC.COMPANY_CODE
+                            AND A.CURRENCY_CD = CC.CURRENCY_CD
+                            AND A.REGR_ID =  #{g_userId}
+                            AND A.USE_YN = '1'                      
+                            ) B
+                ON A.FILE_NO = B.FILE_NO
+                AND A.COMPANY_CODE =  #{g_comCd}
+                AND A.USE_YN = '1'  
+                AND A.MAINFILE_YN = '1'
+                AND A.DISPLAY_YN = '1'    
+                AND A.REGR_ID = #{g_userId}  
+                AND SOURCE IN ( "PP")          
+                   ) AAA WHERE RN = 1              
+    UNION ALL
+            /* 경조사비 atm */
+         SELECT * FROM (
+            SELECT A.REGR_DH,  B.MOD_DH,'0' CHECKED ,'ATM' TYPE  , '7' SOURCE_TP , IFNULL(B.EXPENSE_NO,'') EXPENSE_NO,'' EVID_NO ,A.FILE_NO, 
+            ROW_NUMBER()  OVER(PARTITION BY  A.GROUP_NO ORDER BY B.EXPENSE_NO DESC, A.DISPLAY_ORD, A.REGR_DH) AS RN,
+            A.ORG_FILE_NAME,UCASE(SUBSTR(A.FILE_NAME,-3,3))  FILE_TYPE , GET_FILE_KIND(A.FILE_NAME) AS FILE_KIND,'' CARD_NO, IFNULL(B.RECEIPT_DT,SUBSTR(A.REGR_DH,1,8)) AS RECEIPT_DT,IFNULL(EXPENSE_AMT,'') EXPENSE_AMT,IFNULL(EXPENSE_VAT_AMT,'') EXPENSE_VAT_AMT ,0 SUPPLY_AMT, ''  ETC_AMT ,0 VAT_AMT, 0 TOT_AMT, 
+            IFNULL(B.REPORT_NO,null) REPORT_NO, IFNULL(B.REPORT_TITLE,'') REPORT_TITLE,
+            IFNULL(B.CCTR_CD,'') CCTR_CD,CCTR_NM, IFNULL(PS_CD,'') PS_CD, IFNULL(PS_NM,'') PS_NM,IFNULL(EXPENSE_CD,'') EXPENSE_CD, IFNULL(EXPENSE_NM,'') EXPENSE_NM, 
+            IFNULL(B.RMK,'') RMK,
+            '' BIZ_NO,  '' BIZ_NM, '' BIZ_ADDR, '' BIZ_TYPE, '' BIZ_CATEGORY,'' CARD_BILL_NO, 
+            IFNULL(EMP_NO,'') EXPENSE_EMP_NO, IFNULL(EMP_NM,'') EXPENSE_EMP_NM,  IFNULL(BELONGING_TP,"1") BELONGING_TP,
+            "" DISTANCE_TP, "" DISTANCE, "" MILEAGE_RATE_CD, "" MILEAGE_RATE_NM ,"" ODOMETER_START, "" ODOMETER_END, '' ODOMETER_START_FILE, '' ODOMETER_END_FILE,
+            '' BIZTRIP_START, '' BIZTRIP_END, '' BIZTRIP_DAYS, '' BIZTRIP_TP,
+            '' TAX_TP, '' SENDER_EMAIL, '' RECEIVE_EMAIL, '' RECEIVE_BIZ_NO, '' RECEIVE_BIZ_NM, '' RECEIVE_BIZ_ADDR, '' RECEIVE_BIZ_TYPE, '' RECEIVE_BIZ_CATEGORY , PAY_AMT ,
+            '' START_LAT, '' START_LONG, '' START_ADDR, '' END_LAT, '' END_LONG, '' END_ADDR  , '' START_DH, '' END_DH,
+            IFNULL(CURRENCY_CD,#{g_baseCurrencyCd}) CURRENCY_CD, IFNULL(CURRENCY_AMT,0) CURRENCY_AMT, IFNULL(CURRENCY_RATE,0) CURRENCY_RATE , IFNULL(CURRENCY_DT, SUBSTR(A.REGR_DH,  1 , 8 )) CURRENCY_DT, IFNULL(BASE_CURRENCY_CD,#{g_baseCurrencyCd}) BASE_CURRENCY_CD, CURRENCY_DEC_NUM,
+            IFNULL(EVID_YN,'0') EVID_YN, IFNULL(CCENTER_TP,'') CCENTER_TP , IFNULL(DEFAULT_AMT_YN,'') DEFAULT_AMT_YN, IFNULL(DEFAULT_AMT,'') DEFAULT_AMT, IFNULL(DEFAULT_CCTR_YN,'') DEFAULT_CCTR_YN, IFNULL(DEFAULT_COSTCENTER,'') DEFAULT_COSTCENTER
+            ,'' OVERSEAS_AMT, '' OVERSEAS_CUR_CD, '' OVERSEAS_CUR_RATE, '' OVERSEAS_DH, '' OVERSEAS_YN, '' PRIVATE_RMK, '' PRIVATE_YN
+            , B.REPORT_TP, B.REPORT_TP_NM, B.APPROVE_LINE_TP,B.PROCESS_APPRV_GRP, 0 TOLL_CNT, IFNULL(B.LIMIT_AMT_YN,'0'), B.LIMIT_AMT, A.GROUP_NO
+            , '' OCR_FILE_NO
+            , IFNULL(B.BELONGING_TYPE,'3') AS  BELONGING_TYPE
+            , 0 AS FILE_CNT
+            , 0 AS OCR_CNT
+            , '' REGR_ID, '' REGR_NM
+            , '' AS BIZTRIP_CAL_MTHD
+            FROM ADMIN_FILE A
+            RIGHT OUTER JOIN (
+                        SELECT A.EXPENSE_NO, B.FILE_NO , A.EXPENSE_AMT , A.EXPENSE_VAT_AMT, C.REPORT_NO, C.REPORT_TITLE, A.CCTR_CD , D.CCTR_NM, E.PS_CD, E.PS_NM,F.EXPENSE_CD, F.EXPENSE_NM,
+                        A.RMK, EMP.EMP_NO, EMP.EMP_NM, A.BELONGING_TP, A.MOD_DH, A.RECEIPT_DT, A.PAY_AMT, 
+                        A.CURRENCY_CD, A.CURRENCY_AMT, A.CURRENCY_RATE, A.CURRENCY_DT, A.BASE_CURRENCY_CD, CC.CURRENCY_DEC_NUM,
+                        G.EVID_YN, G.BELONGING_TP CCENTER_TP, G.DEFAULT_AMT_YN, G.DEFAULT_AMT, G.DEFAULT_CCTR_YN, G.DEFAULT_COSTCENTER
+                        , H.REPORT_TP , H.REPORT_TP_NM, H.APPROVE_LINE_TP, H.PROCESS_APPRV_GRP ,G.LIMIT_AMT_YN, G.LIMIT_AMT
+                        , G.BELONGING_TP AS BELONGING_TYPE
+                           FROM EXPENSE_CURRENCY CC ,EXPENSE_MST A
+                            LEFT OUTER JOIN EXPENSE_FILE B
+                                    ON A.COMPANY_CODE = B.COMPANY_CODE
+                                    AND B.REGR_ID =  #{g_userId}
+                                    AND B.COMPANY_CODE =  #{g_comCd}   
+                                    AND A.EXPENSE_NO = B.EXPENSE_NO                       
+                            LEFT OUTER JOIN EXPENSE_REPORT C
+                                    ON A.REPORT_NO = C.REPORT_NO
+                                    AND A.REGR_ID =  #{g_userId}
+                                    AND A.COMPANY_CODE =  #{g_comCd}
+                            LEFT OUTER JOIN ADMIN_EMP EMP
+                                    ON A.EXPENSE_EMP_NO = EMP.EMP_NO
+                                    AND A.COMPANY_CODE = EMP.COMPANY_CODE
+                            LEFT OUTER JOIN EXPENSE_COST_CENTER D
+                                    ON A.CCTR_CD = D.CCTR_CD
+                                    AND A.COMPANY_CODE = D.COMPANY_CODE
+                            LEFT OUTER JOIN EXPENSE_PROJECT E    
+                                    ON A.PS_CD = E.PS_CD
+                                    AND A.COMPANY_CODE = E.COMPANY_CODE
+                             LEFT OUTER JOIN EXPENSE_CATEGORY F       
+                                    ON A.COMPANY_CODE = F.COMPANY_CODE
+                                    AND A.EXPENSE_CD = F.EXPENSE_CD 
+                             LEFT OUTER JOIN EXPENSE_SOURCE_CATEGORY G 
+                                    ON A.COMPANY_CODE = G.COMPANY_CODE
+                                    AND A.EXPENSE_CD = G.EXPENSE_CD  
+                                    AND A.SOURCE_TP = G.SOURCE_TP  
+                             LEFT OUTER JOIN EXPENSE_REPORT_TYPE H 
+                                    ON A.COMPANY_CODE = H.COMPANY_CODE
+                                    AND G.REPORT_TP = H.REPORT_TP                                                                        
+                            WHERE A.SOURCE_TP = "7"  -- 경조사비 ATM
+                            AND A.COMPANY_CODE = #{g_comCd}
+                            AND A.COMPANY_CODE = CC.COMPANY_CODE
+                            AND A.CURRENCY_CD = CC.CURRENCY_CD
+                            AND A.REGR_ID =  #{g_userId}
+                            AND A.USE_YN = '1'                      
+                            ) B
+                ON A.FILE_NO = B.FILE_NO
+                AND A.COMPANY_CODE =  #{g_comCd}
+                AND A.USE_YN = '1'  
+                AND A.MAINFILE_YN = '1'
+                AND A.DISPLAY_YN = '1'    
+                AND A.REGR_ID = #{g_userId}  
+                AND SOURCE IN ( "AT")          
+                   ) AAA WHERE RN = 1   
+    UNION ALL
+            /* 경조사비 현금 */
+         SELECT * FROM (
+            SELECT A.REGR_DH,  B.MOD_DH,'0' CHECKED ,'CON' TYPE  , '5' SOURCE_TP , IFNULL(B.EXPENSE_NO,'') EXPENSE_NO,'' EVID_NO ,A.FILE_NO, 
+            ROW_NUMBER()  OVER(PARTITION BY  A.GROUP_NO ORDER BY B.EXPENSE_NO DESC, A.DISPLAY_ORD, A.REGR_DH) AS RN,
+            A.ORG_FILE_NAME,UCASE(SUBSTR(A.FILE_NAME,-3,3))  FILE_TYPE , GET_FILE_KIND(A.FILE_NAME) AS FILE_KIND,'' CARD_NO, IFNULL(B.RECEIPT_DT,SUBSTR(A.REGR_DH,1,8)) AS RECEIPT_DT,IFNULL(EXPENSE_AMT,'') EXPENSE_AMT,IFNULL(EXPENSE_VAT_AMT,'') EXPENSE_VAT_AMT ,0 SUPPLY_AMT, ''  ETC_AMT ,0 VAT_AMT, 0 TOT_AMT, 
+            IFNULL(B.REPORT_NO,null) REPORT_NO, IFNULL(B.REPORT_TITLE,'') REPORT_TITLE,
+            IFNULL(B.CCTR_CD,'') CCTR_CD,CCTR_NM, IFNULL(PS_CD,'') PS_CD, IFNULL(PS_NM,'') PS_NM,IFNULL(EXPENSE_CD,'') EXPENSE_CD, IFNULL(EXPENSE_NM,'') EXPENSE_NM, 
+            IFNULL(B.RMK,'') RMK,
+            '' BIZ_NO,  '' BIZ_NM, '' BIZ_ADDR, '' BIZ_TYPE, '' BIZ_CATEGORY,'' CARD_BILL_NO, 
+            IFNULL(EMP_NO,'') EXPENSE_EMP_NO, IFNULL(EMP_NM,'') EXPENSE_EMP_NM,  IFNULL(BELONGING_TP,"1") BELONGING_TP,
+            "" DISTANCE_TP, "" DISTANCE, "" MILEAGE_RATE_CD, "" MILEAGE_RATE_NM ,"" ODOMETER_START, "" ODOMETER_END, '' ODOMETER_START_FILE, '' ODOMETER_END_FILE,
+            '' BIZTRIP_START, '' BIZTRIP_END, '' BIZTRIP_DAYS, '' BIZTRIP_TP,
+            '' TAX_TP, '' SENDER_EMAIL, '' RECEIVE_EMAIL, '' RECEIVE_BIZ_NO, '' RECEIVE_BIZ_NM, '' RECEIVE_BIZ_ADDR, '' RECEIVE_BIZ_TYPE, '' RECEIVE_BIZ_CATEGORY , PAY_AMT ,
+            '' START_LAT, '' START_LONG, '' START_ADDR, '' END_LAT, '' END_LONG, '' END_ADDR  , '' START_DH, '' END_DH,
+            IFNULL(CURRENCY_CD,#{g_baseCurrencyCd}) CURRENCY_CD, IFNULL(CURRENCY_AMT,0) CURRENCY_AMT, IFNULL(CURRENCY_RATE,0) CURRENCY_RATE , IFNULL(CURRENCY_DT, SUBSTR(A.REGR_DH,  1 , 8 )) CURRENCY_DT, IFNULL(BASE_CURRENCY_CD,#{g_baseCurrencyCd}) BASE_CURRENCY_CD, CURRENCY_DEC_NUM,
+            IFNULL(EVID_YN,'0') EVID_YN, IFNULL(CCENTER_TP,'') CCENTER_TP , IFNULL(DEFAULT_AMT_YN,'') DEFAULT_AMT_YN, IFNULL(DEFAULT_AMT,'') DEFAULT_AMT, IFNULL(DEFAULT_CCTR_YN,'') DEFAULT_CCTR_YN, IFNULL(DEFAULT_COSTCENTER,'') DEFAULT_COSTCENTER
+            ,'' OVERSEAS_AMT, '' OVERSEAS_CUR_CD, '' OVERSEAS_CUR_RATE, '' OVERSEAS_DH, '' OVERSEAS_YN, '' PRIVATE_RMK, '' PRIVATE_YN
+            , B.REPORT_TP, B.REPORT_TP_NM, B.APPROVE_LINE_TP,B.PROCESS_APPRV_GRP, 0 TOLL_CNT, IFNULL(B.LIMIT_AMT_YN,'0'), B.LIMIT_AMT, A.GROUP_NO
+            , '' OCR_FILE_NO
+            , IFNULL(B.BELONGING_TYPE,'3') AS  BELONGING_TYPE
+            , 0 AS FILE_CNT
+            , 0 AS OCR_CNT
+            , '' REGR_ID, '' REGR_NM
+            , '' AS BIZTRIP_CAL_MTHD
+            FROM ADMIN_FILE A
+            RIGHT OUTER JOIN (
+                        SELECT A.EXPENSE_NO, B.FILE_NO , A.EXPENSE_AMT , A.EXPENSE_VAT_AMT, C.REPORT_NO, C.REPORT_TITLE, A.CCTR_CD , D.CCTR_NM, E.PS_CD, E.PS_NM,F.EXPENSE_CD, F.EXPENSE_NM,
+                        A.RMK, EMP.EMP_NO, EMP.EMP_NM, A.BELONGING_TP, A.MOD_DH, A.RECEIPT_DT, A.PAY_AMT, 
+                        A.CURRENCY_CD, A.CURRENCY_AMT, A.CURRENCY_RATE, A.CURRENCY_DT, A.BASE_CURRENCY_CD, CC.CURRENCY_DEC_NUM,
+                        G.EVID_YN, G.BELONGING_TP CCENTER_TP, G.DEFAULT_AMT_YN, G.DEFAULT_AMT, G.DEFAULT_CCTR_YN, G.DEFAULT_COSTCENTER
+                        , H.REPORT_TP , H.REPORT_TP_NM, H.APPROVE_LINE_TP, H.PROCESS_APPRV_GRP ,G.LIMIT_AMT_YN, G.LIMIT_AMT
+                        , G.BELONGING_TP AS BELONGING_TYPE
+                           FROM EXPENSE_CURRENCY CC ,EXPENSE_MST A
+                            LEFT OUTER JOIN EXPENSE_FILE B
+                                    ON A.COMPANY_CODE = B.COMPANY_CODE
+                                    AND B.REGR_ID =  #{g_userId}
+                                    AND B.COMPANY_CODE =  #{g_comCd}   
+                                    AND A.EXPENSE_NO = B.EXPENSE_NO                       
+                            LEFT OUTER JOIN EXPENSE_REPORT C
+                                    ON A.REPORT_NO = C.REPORT_NO
+                                    AND A.REGR_ID =  #{g_userId}
+                                    AND A.COMPANY_CODE =  #{g_comCd}
+                            LEFT OUTER JOIN ADMIN_EMP EMP
+                                    ON A.EXPENSE_EMP_NO = EMP.EMP_NO
+                                    AND A.COMPANY_CODE = EMP.COMPANY_CODE
+                            LEFT OUTER JOIN EXPENSE_COST_CENTER D
+                                    ON A.CCTR_CD = D.CCTR_CD
+                                    AND A.COMPANY_CODE = D.COMPANY_CODE
+                            LEFT OUTER JOIN EXPENSE_PROJECT E    
+                                    ON A.PS_CD = E.PS_CD
+                                    AND A.COMPANY_CODE = E.COMPANY_CODE
+                             LEFT OUTER JOIN EXPENSE_CATEGORY F       
+                                    ON A.COMPANY_CODE = F.COMPANY_CODE
+                                    AND A.EXPENSE_CD = F.EXPENSE_CD 
+                             LEFT OUTER JOIN EXPENSE_SOURCE_CATEGORY G 
+                                    ON A.COMPANY_CODE = G.COMPANY_CODE
+                                    AND A.EXPENSE_CD = G.EXPENSE_CD  
+                                    AND A.SOURCE_TP = G.SOURCE_TP  
+                             LEFT OUTER JOIN EXPENSE_REPORT_TYPE H 
+                                    ON A.COMPANY_CODE = H.COMPANY_CODE
+                                    AND G.REPORT_TP = H.REPORT_TP                                                                        
+                            WHERE A.SOURCE_TP = "5"  -- 경조사비 현금
+                            AND A.COMPANY_CODE = #{g_comCd}
+                            AND A.COMPANY_CODE = CC.COMPANY_CODE
+                            AND A.CURRENCY_CD = CC.CURRENCY_CD
+                            AND A.REGR_ID =  #{g_userId}
+                            AND A.USE_YN = '1'                      
+                            ) B
+                ON A.FILE_NO = B.FILE_NO
+                AND A.COMPANY_CODE =  #{g_comCd}
+                AND A.USE_YN = '1'  
+                AND A.MAINFILE_YN = '1'
+                AND A.DISPLAY_YN = '1'    
+                AND A.REGR_ID = #{g_userId}  
+                AND SOURCE IN ( "CO")          
+                   ) AAA WHERE RN = 1   
+     UNION ALL
+         /* 일반비용 */
+         SELECT * FROM (
+            SELECT A.REGR_DH,  B.MOD_DH,'0' CHECKED ,'GEN' TYPE  , '9' SOURCE_TP , IFNULL(B.EXPENSE_NO,'') EXPENSE_NO,'' EVID_NO ,A.FILE_NO, 
+            ROW_NUMBER()  OVER(PARTITION BY  A.GROUP_NO ORDER BY B.EXPENSE_NO DESC, A.DISPLAY_ORD, A.REGR_DH) AS RN,
+            A.ORG_FILE_NAME,UCASE(SUBSTR(A.FILE_NAME,-3,3))  FILE_TYPE , GET_FILE_KIND(A.FILE_NAME) AS FILE_KIND,'' CARD_NO, IFNULL(B.RECEIPT_DT,SUBSTR(A.REGR_DH,1,8)) AS RECEIPT_DT,IFNULL(EXPENSE_AMT,'') EXPENSE_AMT,IFNULL(EXPENSE_VAT_AMT,'') EXPENSE_VAT_AMT ,0 SUPPLY_AMT, ''  ETC_AMT ,0 VAT_AMT, 0 TOT_AMT, 
+            IFNULL(B.REPORT_NO,null) REPORT_NO, IFNULL(B.REPORT_TITLE,'') REPORT_TITLE,
+            IFNULL(B.CCTR_CD,'') CCTR_CD,CCTR_NM, IFNULL(PS_CD,'') PS_CD, IFNULL(PS_NM,'') PS_NM,IFNULL(EXPENSE_CD,'') EXPENSE_CD, IFNULL(EXPENSE_NM,'') EXPENSE_NM, 
+            IFNULL(B.RMK,'') RMK,
+            '' BIZ_NO,  '' BIZ_NM, '' BIZ_ADDR, '' BIZ_TYPE, '' BIZ_CATEGORY,'' CARD_BILL_NO, 
+            IFNULL(EMP_NO,'') EXPENSE_EMP_NO, IFNULL(EMP_NM,'') EXPENSE_EMP_NM,  IFNULL(BELONGING_TP,"1") BELONGING_TP,
+            "" DISTANCE_TP, "" DISTANCE, "" MILEAGE_RATE_CD, "" MILEAGE_RATE_NM ,"" ODOMETER_START, "" ODOMETER_END, '' ODOMETER_START_FILE, '' ODOMETER_END_FILE,
+            '' BIZTRIP_START, '' BIZTRIP_END, '' BIZTRIP_DAYS, '' BIZTRIP_TP,
+            '' TAX_TP, '' SENDER_EMAIL, '' RECEIVE_EMAIL, '' RECEIVE_BIZ_NO, '' RECEIVE_BIZ_NM, '' RECEIVE_BIZ_ADDR, '' RECEIVE_BIZ_TYPE, '' RECEIVE_BIZ_CATEGORY , PAY_AMT ,
+            '' START_LAT, '' START_LONG, '' START_ADDR, '' END_LAT, '' END_LONG, '' END_ADDR  , '' START_DH, '' END_DH,
+            IFNULL(CURRENCY_CD,#{g_baseCurrencyCd}) CURRENCY_CD, IFNULL(CURRENCY_AMT,0) CURRENCY_AMT, IFNULL(CURRENCY_RATE,0) CURRENCY_RATE , IFNULL(CURRENCY_DT, SUBSTR(A.REGR_DH,  1 , 8 )) CURRENCY_DT, IFNULL(BASE_CURRENCY_CD,#{g_baseCurrencyCd}) BASE_CURRENCY_CD, CURRENCY_DEC_NUM,
+            IFNULL(EVID_YN,'0') EVID_YN, IFNULL(CCENTER_TP,'') CCENTER_TP , IFNULL(DEFAULT_AMT_YN,'') DEFAULT_AMT_YN, IFNULL(DEFAULT_AMT,'') DEFAULT_AMT, IFNULL(DEFAULT_CCTR_YN,'') DEFAULT_CCTR_YN, IFNULL(DEFAULT_COSTCENTER,'') DEFAULT_COSTCENTER
+            ,'' OVERSEAS_AMT, '' OVERSEAS_CUR_CD, '' OVERSEAS_CUR_RATE, '' OVERSEAS_DH, '' OVERSEAS_YN, '' PRIVATE_RMK, '' PRIVATE_YN
+            , B.REPORT_TP, B.REPORT_TP_NM, B.APPROVE_LINE_TP,B.PROCESS_APPRV_GRP, 0 TOLL_CNT, IFNULL(B.LIMIT_AMT_YN,'0'), B.LIMIT_AMT, A.GROUP_NO
+            , '' OCR_FILE_NO
+            , IFNULL(B.BELONGING_TYPE,'3') AS  BELONGING_TYPE
+            , 0 AS FILE_CNT
+            , 0 AS OCR_CNT
+            , '' REGR_ID, '' REGR_NM
+            , '' AS BIZTRIP_CAL_MTHD
+            FROM ADMIN_FILE A
+            RIGHT OUTER JOIN (
+                        SELECT A.EXPENSE_NO, B.FILE_NO , A.EXPENSE_AMT , A.EXPENSE_VAT_AMT, C.REPORT_NO, C.REPORT_TITLE, A.CCTR_CD , D.CCTR_NM, E.PS_CD, E.PS_NM,F.EXPENSE_CD, F.EXPENSE_NM,
+                        A.RMK, EMP.EMP_NO, EMP.EMP_NM, A.BELONGING_TP, A.MOD_DH, A.RECEIPT_DT, A.PAY_AMT, 
+                        A.CURRENCY_CD, A.CURRENCY_AMT, A.CURRENCY_RATE, A.CURRENCY_DT, A.BASE_CURRENCY_CD, CC.CURRENCY_DEC_NUM,
+                        G.EVID_YN, G.BELONGING_TP CCENTER_TP, G.DEFAULT_AMT_YN, G.DEFAULT_AMT, G.DEFAULT_CCTR_YN, G.DEFAULT_COSTCENTER
+                        , H.REPORT_TP , H.REPORT_TP_NM, H.APPROVE_LINE_TP, H.PROCESS_APPRV_GRP ,G.LIMIT_AMT_YN, G.LIMIT_AMT
+                        , G.BELONGING_TP AS BELONGING_TYPE
+                           FROM EXPENSE_CURRENCY CC ,EXPENSE_MST A
+                            LEFT OUTER JOIN EXPENSE_FILE B
+                                    ON A.COMPANY_CODE = B.COMPANY_CODE
+                                    AND B.REGR_ID =  #{g_userId}
+                                    AND B.COMPANY_CODE =  #{g_comCd}   
+                                    AND A.EXPENSE_NO = B.EXPENSE_NO                       
+                            LEFT OUTER JOIN EXPENSE_REPORT C
+                                    ON A.REPORT_NO = C.REPORT_NO
+                                    AND A.REGR_ID =  #{g_userId}
+                                    AND A.COMPANY_CODE =  #{g_comCd}
+                            LEFT OUTER JOIN ADMIN_EMP EMP
+                                    ON A.EXPENSE_EMP_NO = EMP.EMP_NO
+                                    AND A.COMPANY_CODE = EMP.COMPANY_CODE
+                            LEFT OUTER JOIN EXPENSE_COST_CENTER D
+                                    ON A.CCTR_CD = D.CCTR_CD
+                                    AND A.COMPANY_CODE = D.COMPANY_CODE
+                            LEFT OUTER JOIN EXPENSE_PROJECT E    
+                                    ON A.PS_CD = E.PS_CD
+                                    AND A.COMPANY_CODE = E.COMPANY_CODE
+                             LEFT OUTER JOIN EXPENSE_CATEGORY F       
+                                    ON A.COMPANY_CODE = F.COMPANY_CODE
+                                    AND A.EXPENSE_CD = F.EXPENSE_CD 
+                             LEFT OUTER JOIN EXPENSE_SOURCE_CATEGORY G 
+                                    ON A.COMPANY_CODE = G.COMPANY_CODE
+                                    AND A.EXPENSE_CD = G.EXPENSE_CD  
+                                    AND A.SOURCE_TP = G.SOURCE_TP  
+                             LEFT OUTER JOIN EXPENSE_REPORT_TYPE H 
+                                    ON A.COMPANY_CODE = H.COMPANY_CODE
+                                    AND G.REPORT_TP = H.REPORT_TP                                                                        
+                            WHERE A.SOURCE_TP = "9"  -- 일반비용
+                            AND A.COMPANY_CODE = #{g_comCd}
+                            AND A.COMPANY_CODE = CC.COMPANY_CODE
+                            AND A.CURRENCY_CD = CC.CURRENCY_CD
+                            AND A.REGR_ID =  #{g_userId}
+                            AND A.USE_YN = '1'                      
+                            ) B
+                ON A.FILE_NO = B.FILE_NO
+                AND A.COMPANY_CODE =  #{g_comCd}
+                AND A.USE_YN = '1'  
+                AND A.MAINFILE_YN = '1'
+                AND A.DISPLAY_YN = '1'    
+                AND A.REGR_ID = #{g_userId}  
+                AND SOURCE IN ( "GN")          
+                   ) AAA WHERE RN = 1                                                        
+    UNION ALL       
+            /* 법인카드 */
+            SELECT A.REGR_DH,  B.MOD_DH,'0' CHECKED ,'CARD' TYPE , '1' SOURCE_TP , IFNULL(B.EXPENSE_NO,'') EXPENSE_NO ,A.EVID_NO ,B.FILE_NO,0 as RN, B.ORG_FILE_NAME, B.FILE_TYPE, B.FILE_KIND COLLATE utf8mb4_unicode_ci,FC_CARD_NO_MASK(FC_DEC(A.CARD_NO,#{ENC_KEY})) COLLATE utf8mb4_unicode_ci AS CARD_NO , concat(RECEIPT_DT,RECEIPT_TS)  RECEIPT_DT,  IFNULL(EXPENSE_AMT,'') EXPENSE_AMT, IFNULL(EXPENSE_VAT_AMT,'') EXPENSE_VAT_AMT ,A.SUPPLY_AMT, IFNULL(A.ETC_AMT,'') ETC_AMT,A.VAT_AMT, A.TOT_AMT, 
+            IFNULL(B.REPORT_NO,null) REPORT_NO, IFNULL(B.REPORT_TITLE,'') REPORT_TITLE,
+            IFNULL(B.CCTR_CD,'') CCTR_CD, IFNULL(CCTR_NM,'') CCTR_NM, IFNULL(PS_CD,'') PS_CD, IFNULL(PS_NM,'') PS_NM, IFNULL(EXPENSE_CD,'') EXPENSE_CD, IFNULL(EXPENSE_NM,'') EXPENSE_NM, 
+            IFNULL(B.RMK,'') RMK, 
+            IFNULL(A.BIZ_NO, '') BIZ_NO,  IFNULL(A.BIZ_NM,'') BIZ_NM, IFNULL(A.BIZ_ADDR,''),  A.BIZ_TYPE, A.BIZ_CATEGORY, A.CARD_BILL_NO,
+            '' EXPENSE_EMP_NO,'' EXPENSE_EMP_NM,  IFNULL(BELONGING_TP,"1") BELONGING_TP,
+            "" DISTANCE_TP, "" DISTANCE, "" MILEAGE_RATE_CD, "" MILEAGE_RATE_NM ,"" ODOMETER_START, "" ODOMETER_END , '' ODOMETER_START_FILE, '' ODOMETER_END_FILE,
+            '' BIZTRIP_START, '' BIZTRIP_END, '' BIZTRIP_DAYS, '' BIZTRIP_TP,
+            '' TAX_TP, '' SENDER_EMAIL, '' RECEIVE_EMAIL, '' RECEIVE_BIZ_NO, '' RECEIVE_BIZ_NM, '' RECEIVE_BIZ_ADDR, '' RECEIVE_BIZ_TYPE, '' RECEIVE_BIZ_CATEGORY  , PAY_AMT ,
+            '' START_LAT, '' START_LONG, '' START_ADDR, '' END_LAT, '' END_LONG, '' END_ADDR, '' START_DH, '' END_DH,
+            '' CURRENCY_CD, '' CURRENCY_AMT, '' CURRENCY_RATE, '' CURRENCY_DT, '' BASE_CURRENCY_CD, '' CURRENCY_DEC_NUM,
+            '' EVID_YN, '' CCENTER_TP, '' DEFAULT_AMT_YN, '' DEFAULT_AMT, '' DEFAULT_CCTR_YN, '' DEFAULT_COSTCENTER,
+            A.OVERSEAS_AMT, A.OVERSEAS_CUR_CD, A.OVERSEAS_CUR_RATE,A.OVERSEAS_DH,A.OVERSEAS_YN,A.PRIVATE_RMK,A.PRIVATE_YN
+            , B.REPORT_TP, B.REPORT_TP_NM, B.APPROVE_LINE_TP, B.PROCESS_APPRV_GRP,0 TOLL_CNT, IFNULL(B.LIMIT_AMT_YN,'0'), B.LIMIT_AMT, B.GROUP_NO
+            , '' as OCR_FILE_NO
+            , IFNULL(B.BELONGING_TYPE,'3') AS  BELONGING_TYPE
+            , FILE_CNT
+            , COUNT(CARD_EVID_NO) AS OCR_CNT
+            , '' REGR_ID, '' REGR_NM
+            , '' AS BIZTRIP_CAL_MTHD
+      FROM EXPENSE_CARD C, EXPENSE_INBOX_CARD A LEFT OUTER JOIN (                    
+                 SELECT A.EXPENSE_NO, A.EVID_NO, A.COMPANY_CODE, A.EXPENSE_AMT , A.EXPENSE_VAT_AMT, B.REPORT_NO, B.REPORT_TITLE, A.CCTR_CD, C.CCTR_NM, D.PS_CD, D.PS_NM,F.EXPENSE_CD, F.EXPENSE_NM,
+                                                        A.RMK, A.BELONGING_TP , A.MOD_DH, A.PAY_AMT
+                                                        , H.REPORT_TP , H.REPORT_TP_NM, H.APPROVE_LINE_TP, H.PROCESS_APPRV_GRP 
+                                                        , IFNULL(FILE.FILE_NO,'') AS FILE_NO, IFNULL(UCASE(SUBSTR(FF.FILE_NAME,-3,3)),'') AS FILE_TYPE , GET_FILE_KIND(FF.FILE_NAME) AS FILE_KIND
+                                                        , G.LIMIT_AMT_YN, G.LIMIT_AMT, IFNULL(FF.MAINFILE_YN,'0') AS MAINFILE_YN, FF.GROUP_NO, FF.ORG_FILE_NAME
+                                                        , G.BELONGING_TP AS BELONGING_TYPE, SUM(!ISNULL(FILE.FILE_NO)) AS FILE_CNT
+                                                        , A.REGR_ID
+                                                            FROM  EXPENSE_MST A 
+                                                            LEFT OUTER JOIN EXPENSE_REPORT B
+                                                                    ON A.REPORT_NO = B.REPORT_NO
+                                                                    AND A.REGR_ID =  #{g_userId}
+                                                            LEFT OUTER JOIN EXPENSE_COST_CENTER C
+                                                                    ON A.COMPANY_CODE = C.COMPANY_CODE
+                                                                    AND A.CCTR_CD = C.CCTR_CD
+                                                            LEFT OUTER JOIN EXPENSE_PROJECT D
+                                                                    ON A.COMPANY_CODE = D.COMPANY_CODE
+                                                                    AND A.PS_CD = D.PS_CD     
+                                                            LEFT OUTER JOIN EXPENSE_CATEGORY F
+                                                                    ON A.COMPANY_CODE = F.COMPANY_CODE
+                                                                    AND A.EXPENSE_CD = F.EXPENSE_CD  
+								                             LEFT OUTER JOIN EXPENSE_SOURCE_CATEGORY G 
+								                                    ON A.COMPANY_CODE = G.COMPANY_CODE
+								                                    AND A.EXPENSE_CD = G.EXPENSE_CD  
+								                                    AND A.SOURCE_TP = G.SOURCE_TP                                                                      
+								                             LEFT OUTER JOIN EXPENSE_REPORT_TYPE H 
+								                                    ON A.COMPANY_CODE = H.COMPANY_CODE
+								                                    AND G.REPORT_TP = H.REPORT_TP   
+<!--                                                              LEFT OUTER JOIN (select FILE.EXPENSE_NO, FF.FILE_NO,FF.FILE_NAME, FF.MAINFILE_YN , FF.GROUP_NO, FF.ORG_FILE_NAME  from EXPENSE_FILE FILE , ADMIN_FILE FF where FILE.FILE_NO = FF.FILE_NO and FF.MAINFILE_YN = '1' )  as AF -->
+<!--                                                                     ON A.EXPENSE_NO = AF.EXPENSE_NO   -->
+                                                             LEFT OUTER JOIN  EXPENSE_FILE FILE INNER JOIN ADMIN_FILE FF 
+                                                                    ON FILE.FILE_NO = FF.FILE_NO and FF.MAINFILE_YN = '1'
+                                                                    ON A.EXPENSE_NO = FILE.EXPENSE_NO  
+                                                            WHERE  A.SOURCE_TP = '1'  -- 신용카드
+                                                            AND A.COMPANY_CODE =  #{g_comCd}
+                                                            AND A.USE_YN = '1'  
+                                                          --  AND A.REGR_ID = g_userId  // 공유기능 때문에 삭제
+                                                           GROUP BY A.EXPENSE_NO
+                                                            ) B
+            ON A.EVID_NO = B.EVID_NO
+            AND A.COMPANY_CODE = B.COMPANY_CODE
+          --  AND B.MAINFILE_YN = '1'
+            LEFT OUTER JOIN OCR_RECEIPT O
+            ON O.COMPANY_CODE = A.COMPANY_CODE
+            AND O.CARD_EVID_NO = A.EVID_NO
+            WHERE (C.OWNER_ID =  #{g_userId} OR C.EMP_NO = #{g_empNo}  OR A.SHARED_USER_ID = #{g_userId} )
+            AND C.CARD_CD = A.CARD_CD
+            AND C.COMPANY_CODE = A.COMPANY_CODE
+            AND C.CARD_NO = A.CARD_NO
+            AND A.USE_YN = '1'  
+            AND A.COMPANY_CODE = #{g_comCd}
+            GROUP BY A.EVID_NO
+UNION ALL
+ /* 유류비 */
+SELECT B.REGR_DH, B.MOD_DH,'0' CHECKED ,'GAS' TYPE , '4' SOURCE_TP , IFNULL(B.EXPENSE_NO,'') EXPENSE_NO ,'' EVID_NO , IFNULL(B.URL,'') FILE_NO, 0 AS RN ,'' ORG_FILE_NAME,'' FILE_TYPE, '' FILE_KIND ,'' CARD_NO, B.RECEIPT_DT,  IFNULL(EXPENSE_AMT,'') EXPENSE_AMT, IFNULL(EXPENSE_VAT_AMT,'') EXPENSE_VAT_AMT ,'' SUPPLY_AMT, '' ETC_AMT,  '' VAT_AMT, '' TOT_AMT,  
+            IFNULL(B.REPORT_NO,null) REPORT_NO, IFNULL(B.REPORT_TITLE,'') REPORT_TITLE,
+            IFNULL(B.CCTR_CD,'') CCTR_CD, IFNULL(CCTR_NM,'') CCTR_NM, IFNULL(PS_CD,'') PS_CD, IFNULL(PS_NM,'') PS_NM, IFNULL(EXPENSE_CD,'') EXPENSE_CD, IFNULL(EXPENSE_NM,'') EXPENSE_NM, 
+            IFNULL(B.RMK,'') RMK, 
+            '' BIZ_NO,  '' BIZ_NM, '' BIZ_ADDR,'' BIZ_TYPE, '' BIZ_CATEGORY,  '' CARD_BILL_NO,
+            B.EMP_NO EXPENSE_EMP_NO, B.EMP_NM EXPENSE_EMP_NM,  IFNULL(BELONGING_TP,"1") BELONGING_TP,
+            B.DISTANCE_TP, B.DISTANCE, B.MILEAGE_RATE_CD, A.MILEAGE_RATE_NM ,B.ODOMETER_START, B.ODOMETER_END, B.ODOMETER_START_FILE, B.ODOMETER_END_FILE,
+            '' BIZTRIP_START, '' BIZTRIP_END, '' BIZTRIP_DAYS, '' BIZTRIP_TP   ,
+            '' TAX_TP, '' SENDER_EMAIL, '' RECEIVE_EMAIL, '' RECEIVE_BIZ_NO, '' RECEIVE_BIZ_NM, '' RECEIVE_BIZ_ADDR, '' RECEIVE_BIZ_TYPE, '' RECEIVE_BIZ_CATEGORY   , PAY_AMT,
+            IFNULL(B.START_LAT,''), IFNULL(B.START_LONG,''), IFNULL(B.START_ADDR,''), IFNULL(B.END_LAT,''), IFNULL(B.END_LONG,''), IFNULL(B.END_ADDR,'')  , IFNULL(B.START_DH,'') , IFNULL(B.END_DH,''),
+            '' CURRENCY_CD, '' CURRENCY_AMT, '' CURRENCY_RATE, '' CURRENCY_DT, '' BASE_CURRENCY_CD    , '' CURRENCY_DEC_NUM  ,         
+            '' EVID_YN, '' CCENTER_TP, '' DEFAULT_AMT_YN, '' DEFAULT_AMT, '' DEFAULT_CCTR_YN, '' DEFAULT_COSTCENTER
+            ,'' OVERSEAS_AMT, '' OVERSEAS_CUR_CD, '' OVERSEAS_CUR_RATE, '' OVERSEAS_DH, '' OVERSEAS_YN, '' PRIVATE_RMK, '' PRIVATE_YN
+            , B.REPORT_TP, B.REPORT_TP_NM, B.APPROVE_LINE_TP, B.PROCESS_APPRV_GRP,0 TOLL_CNT, IFNULL(B.LIMIT_AMT_YN,'0'), B.LIMIT_AMT, '' GROUP_NO
+            , '' OCR_FILE_NO
+            , IFNULL(B.BELONGING_TYPE,'3') AS  BELONGING_TYPE
+            , 0 AS FILE_CNT
+            , 0 AS OCR_CNT
+            , '' REGR_ID, '' REGR_NM
+            , '' AS BIZTRIP_CAL_MTHD
+            FROM EXPENSE_MILEAGE_RATE A , (
+                            SELECT A.EXPENSE_NO, A.EVID_NO, A.COMPANY_CODE, A.EXPENSE_AMT , A.EXPENSE_VAT_AMT, B.REPORT_NO, B.REPORT_TITLE, 
+                                   A.CCTR_CD, C.CCTR_NM, D.PS_CD, D.PS_NM,F.EXPENSE_CD, F.EXPENSE_NM,
+                                   EMP.EMP_NO, EMP.EMP_NM, 
+                                                        A.RMK, A.BELONGING_TP,  A.DISTANCE_TP, A.DISTANCE, A.MILEAGE_RATE_CD, A.ODOMETER_START, A.ODOMETER_END  , 
+                                                        G.FILE_NO AS ODOMETER_START_FILE, H.FILE_NO AS ODOMETER_END_FILE, 
+                                                        A.REGR_DH, A.MOD_DH  , concat(A.RECEIPT_DT,A.RECEIPT_TS)  RECEIPT_DT, A.PAY_AMT,
+                                                        A.START_LAT, A.START_LONG, A.START_ADDR, A.END_LAT, A.END_LONG, A.END_ADDR, A.START_DH, A.END_DH 
+                                                        , I.REPORT_TP , I.REPORT_TP_NM, I.APPROVE_LINE_TP, I.PROCESS_APPRV_GRP  ,A.URL, J.LIMIT_AMT_YN, J.LIMIT_AMT
+                                                        , J.BELONGING_TP AS BELONGING_TYPE
+                                                            FROM   EXPENSE_MST A 
+						                                    LEFT OUTER JOIN ADMIN_EMP EMP
+						                                    ON A.EXPENSE_EMP_NO = EMP.EMP_NO
+						                                    AND A.COMPANY_CODE = EMP.COMPANY_CODE                                                            
+                                                            LEFT OUTER JOIN EXPENSE_REPORT B
+                                                                    ON A.REPORT_NO = B.REPORT_NO
+                                                                    AND A.REGR_ID =  #{g_userId}
+                                                            LEFT OUTER JOIN EXPENSE_COST_CENTER C
+                                                                    ON A.COMPANY_CODE = C.COMPANY_CODE
+                                                                    AND A.CCTR_CD = C.CCTR_CD
+                                                            LEFT OUTER JOIN EXPENSE_PROJECT D
+                                                                    ON A.COMPANY_CODE = D.COMPANY_CODE
+                                                                    AND A.PS_CD = D.PS_CD     
+                                                            LEFT OUTER JOIN EXPENSE_CATEGORY F
+                                                                    ON A.COMPANY_CODE = F.COMPANY_CODE
+                                                                    AND A.EXPENSE_CD = F.EXPENSE_CD
+                                                             LEFT OUTER JOIN EXPENSE_SOURCE_CATEGORY J 
+                                                                    ON A.COMPANY_CODE = J.COMPANY_CODE
+                                                                    AND A.EXPENSE_CD = J.EXPENSE_CD  
+                                                                    AND A.SOURCE_TP = J.SOURCE_TP                                                                      
+                                                             LEFT OUTER JOIN EXPENSE_REPORT_TYPE I 
+                                                                    ON A.COMPANY_CODE = I.COMPANY_CODE
+                                                                    AND J.REPORT_TP = I.REPORT_TP                                                                       
+                                                            LEFT OUTER JOIN EXPENSE_FILE G
+                                                                    ON A.COMPANY_CODE = G.COMPANY_CODE
+                                                                    AND A.EXPENSE_NO = G.EXPENSE_NO
+                                                                    AND G.REF = 'START'                                                                                                                                      
+                                                            LEFT OUTER JOIN EXPENSE_FILE H
+                                                                    ON A.COMPANY_CODE = H.COMPANY_CODE
+                                                                    AND A.EXPENSE_NO = H.EXPENSE_NO
+                                                                    AND H.REF = 'END' 
+                                                            WHERE  A.SOURCE_TP = '4'  -- 유류비
+                                                            AND A.COMPANY_CODE =  #{g_comCd}
+                                                            AND A.REGR_ID =  #{g_userId}
+                                                            AND A.DISTANCE_TP != '4'
+                                                            AND A.USE_YN = '1'   
+                                                            ) B
+            WHERE A.COMPANY_CODE = B.COMPANY_CODE
+            AND A.MILEAGE_RATE_CD = B.MILEAGE_RATE_CD
+            AND A.COMPANY_CODE = #{g_comCd}    
+UNION ALL
+ /* 유류비(gps모바일) */
+SELECT A1.REGR_DH, B.MOD_DH,'0' CHECKED ,'GAS' TYPE , '4' SOURCE_TP , IFNULL(B.EXPENSE_NO,'') EXPENSE_NO , GPS_LOG_NO AS EVID_NO ,URL AS FILE_NO, 0 AS RN ,'' ORG_FILE_NAME, '' FILE_TYPE ,'' FILE_KIND ,'' CARD_NO, IFNULL(B.RECEIPT_DT,SUBSTRING(A1.REGR_DH,1,8)) AS RECEIPT_DT,  IFNULL(EXPENSE_AMT,'') EXPENSE_AMT, IFNULL(EXPENSE_VAT_AMT,'') EXPENSE_VAT_AMT ,'' SUPPLY_AMT, '' ETC_AMT,  '' VAT_AMT, '' TOT_AMT,  
+            IFNULL(B.REPORT_NO,null) REPORT_NO, IFNULL(B.REPORT_TITLE,'') REPORT_TITLE,
+            IFNULL(B.CCTR_CD,'') CCTR_CD, IFNULL(CCTR_NM,'') CCTR_NM, IFNULL(PS_CD,'') PS_CD, IFNULL(PS_NM,'') PS_NM, IFNULL(EXPENSE_CD,'') EXPENSE_CD, IFNULL(EXPENSE_NM,'') EXPENSE_NM, 
+            IFNULL(B.RMK,'') RMK, 
+            '' BIZ_NO,  '' BIZ_NM, '' BIZ_ADDR, '' BIZ_TYPE, '' BIZ_CATEGORY,'' CARD_BILL_NO,
+            B.EMP_NO EXPENSE_EMP_NO, B.EMP_NM EXPENSE_EMP_NM,  IFNULL(BELONGING_TP,"1") BELONGING_TP,
+            '4' AS DISTANCE_TP, A1.DISTANCE, B.MILEAGE_RATE_CD, B.MILEAGE_RATE_NM ,B.ODOMETER_START, B.ODOMETER_END, ODOMETER_START_FILE, ODOMETER_END_FILE,
+            '' BIZTRIP_START, '' BIZTRIP_END, '' BIZTRIP_DAYS, '' BIZTRIP_TP   ,
+            '' TAX_TP, '' SENDER_EMAIL, '' RECEIVE_EMAIL, '' RECEIVE_BIZ_NO, '' RECEIVE_BIZ_NM, '' RECEIVE_BIZ_ADDR, '' RECEIVE_BIZ_TYPE, '' RECEIVE_BIZ_CATEGORY   , PAY_AMT,
+            A1.START_LAT, A1.START_LONG, A1.START_ADDR, A1.END_LAT, A1.END_LONG, A1.END_ADDR , A1.START_DH, A1.END_DH,
+            '' CURRENCY_CD, '' CURRENCY_AMT, '' CURRENCY_RATE, '' CURRENCY_DT, '' BASE_CURRENCY_CD    , '' CURRENCY_DEC_NUM  ,   
+            '' EVID_YN, '' CCENTER_TP, '' DEFAULT_AMT_YN, '' DEFAULT_AMT, '' DEFAULT_CCTR_YN, '' DEFAULT_COSTCENTER            
+            ,'' OVERSEAS_AMT, '' OVERSEAS_CUR_CD, '' OVERSEAS_CUR_RATE, '' OVERSEAS_DH, '' OVERSEAS_YN, '' PRIVATE_RMK, '' PRIVATE_YN
+            , B.REPORT_TP, B.REPORT_TP_NM, B.APPROVE_LINE_TP, B.PROCESS_APPRV_GRP,0 TOLL_CNT, IFNULL(B.LIMIT_AMT_YN,'0'), B.LIMIT_AMT, '' GROUP_NO
+            , '' OCR_FILE_NO
+            , IFNULL(B.BELONGING_TYPE,'3') AS  BELONGING_TYPE
+            , 0 AS FILE_CNT
+            , 0 AS OCR_CNT
+            , '' REGR_ID, '' REGR_NM
+            , '' AS BIZTRIP_CAL_MTHD
+            FROM EXPENSE_INBOX_GPS A1 LEFT OUTER JOIN (
+                            SELECT A.EXPENSE_NO, A.EVID_NO, A.COMPANY_CODE, A.EXPENSE_AMT , A.EXPENSE_VAT_AMT, B.REPORT_NO, B.REPORT_TITLE, 
+                                   A.CCTR_CD, C.CCTR_NM, D.PS_CD, D.PS_NM,F.EXPENSE_CD, F.EXPENSE_NM,
+                                   EMP.EMP_NO, EMP.EMP_NM, 
+                                                        A.RMK, A.BELONGING_TP,  A.DISTANCE_TP, A.DISTANCE, R.MILEAGE_RATE_CD,R.MILEAGE_RATE_NM, A.ODOMETER_START, A.ODOMETER_END  , 
+                                                        '' AS ODOMETER_START_FILE, '' AS ODOMETER_END_FILE, 
+                                                        A.REGR_DH, A.MOD_DH  , concat(A.RECEIPT_DT,A.RECEIPT_TS)  RECEIPT_DT, A.PAY_AMT
+                                                        , H.REPORT_TP , H.REPORT_TP_NM, H.APPROVE_LINE_TP,H.PROCESS_APPRV_GRP 
+                                                        , G.LIMIT_AMT_YN, G.LIMIT_AMT
+                                                        , G.BELONGING_TP AS BELONGING_TYPE
+                                                            FROM EXPENSE_MILEAGE_RATE R ,  EXPENSE_MST A 
+                                                            LEFT OUTER JOIN ADMIN_EMP EMP
+                                                            ON A.EXPENSE_EMP_NO = EMP.EMP_NO
+                                                            AND A.COMPANY_CODE = EMP.COMPANY_CODE                                                            
+                                                            LEFT OUTER JOIN EXPENSE_REPORT B
+                                                                    ON A.REPORT_NO = B.REPORT_NO
+                                                                    AND A.REGR_ID =  #{g_userId}
+                                                            LEFT OUTER JOIN EXPENSE_COST_CENTER C
+                                                                    ON A.COMPANY_CODE = C.COMPANY_CODE
+                                                                    AND A.CCTR_CD = C.CCTR_CD
+                                                            LEFT OUTER JOIN EXPENSE_PROJECT D
+                                                                    ON A.COMPANY_CODE = D.COMPANY_CODE
+                                                                    AND A.PS_CD = D.PS_CD     
+                                                            LEFT OUTER JOIN EXPENSE_CATEGORY F
+                                                                    ON A.COMPANY_CODE = F.COMPANY_CODE
+                                                                    AND A.EXPENSE_CD = F.EXPENSE_CD
+                                                             LEFT OUTER JOIN EXPENSE_SOURCE_CATEGORY G 
+                                                                    ON A.COMPANY_CODE = G.COMPANY_CODE
+                                                                    AND A.EXPENSE_CD = G.EXPENSE_CD  
+                                                                    AND A.SOURCE_TP = G.SOURCE_TP                                                                      
+                                                             LEFT OUTER JOIN EXPENSE_REPORT_TYPE H 
+                                                                    ON A.COMPANY_CODE = H.COMPANY_CODE
+                                                                    AND G.REPORT_TP = H.REPORT_TP                                                                     
+                                                            WHERE  A.SOURCE_TP = '4'  -- 유류비
+                                                            AND A.DISTANCE_TP = '4'
+                                                            AND A.COMPANY_CODE =  #{g_comCd}
+                                                            AND A.REGR_ID =  #{g_userId}
+                                                            AND A.USE_YN = '1'   
+                                                            AND A.COMPANY_CODE = R.COMPANY_CODE
+                                                            AND A.MILEAGE_RATE_CD = R.MILEAGE_RATE_CD
+                                                          ) B
+            ON A1.EXPENSE_NO = B.EXPENSE_NO                                                
+            AND A1.COMPANY_CODE = B.COMPANY_CODE
+            WHERE A1.COMPANY_CODE = #{g_comCd}
+            AND A1.REGR_ID =  #{g_userId}
+            AND (A1.USE_YN = '1')   
+            
+            
+UNION ALL
+/* 일당(출장비) */
+SELECT B.REGR_DH, B.MOD_DH ,'0' CHECKED ,'TRAVEL' TYPE , '3' SOURCE_TP , IFNULL(B.EXPENSE_NO,'') EXPENSE_NO ,'' EVID_NO ,IFNULL(B.URL,'') AS FILE_NO, 0 AS RN ,'' ORG_FILE_NAME, '' FILE_TYPE, '' FILE_KIND, '' CARD_NO, B.RECEIPT_DT,  IFNULL(EXPENSE_AMT,'') EXPENSE_AMT, IFNULL(EXPENSE_VAT_AMT,'') EXPENSE_VAT_AMT ,'' SUPPLY_AMT, '' ETC_AMT,  '' VAT_AMT, '' TOT_AMT,  
+            IFNULL(B.REPORT_NO,null) REPORT_NO, IFNULL(B.REPORT_TITLE,'') REPORT_TITLE,
+            IFNULL(B.CCTR_CD,'') CCTR_CD, IFNULL(CCTR_NM,'') CCTR_NM, IFNULL(PS_CD,'') PS_CD, IFNULL(PS_NM,'') PS_NM, IFNULL(EXPENSE_CD,'') EXPENSE_CD, IFNULL(EXPENSE_NM,'') EXPENSE_NM, 
+            IFNULL(B.RMK,'') RMK, 
+            '' BIZ_NO,  '' BIZ_NM, '' BIZ_ADDR, '' BIZ_TYPE, '' BIZ_CATEGORY,'' CARD_BILL_NO,
+            B.EMP_NO EXPENSE_EMP_NO, B.EMP_NM EXPENSE_EMP_NM,  IFNULL(BELONGING_TP,"") BELONGING_TP,
+            B.DISTANCE_TP, DISTANCE, B.MILEAGE_RATE_CD, '' MILEAGE_RATE_NM ,B.ODOMETER_START, B.ODOMETER_END, '' ODOMETER_START_FILE, '' ODOMETER_END_FILE,
+            B.BIZTRIP_START, B.BIZTRIP_END, B.BIZTRIP_DAYS, B.BIZTRIP_TP   ,
+            '' TAX_TP, '' SENDER_EMAIL, '' RECEIVE_EMAIL, '' RECEIVE_BIZ_NO, '' RECEIVE_BIZ_NM, '' RECEIVE_BIZ_ADDR, '' RECEIVE_BIZ_TYPE, '' RECEIVE_BIZ_CATEGORY  , PAY_AMT ,
+            IFNULL(B.START_LAT,''), IFNULL(B.START_LONG,''), IFNULL(B.START_ADDR,''), IFNULL(B.END_LAT,''), IFNULL(B.END_LONG,''), IFNULL(B.END_ADDR,'')  , IFNULL(B.START_DH,'') , IFNULL(B.END_DH,''),
+            IFNULL(A.CURRENCY_CD,#{g_baseCurrencyCd}) CURRENCY_CD, IFNULL(B.CURRENCY_AMT,0) CURRENCY_AMT, IFNULL(B.CURRENCY_RATE,0) CURRENCY_RATE , IFNULL(B.CURRENCY_DT, SUBSTR(B.REGR_DH,  1 , 8 )) CURRENCY_DT, #{g_baseCurrencyCd} BASE_CURRENCY_CD, '' CURRENCY_DEC_NUM  ,  
+            '' EVID_YN, '' CCENTER_TP, '' DEFAULT_AMT_YN, '' DEFAULT_AMT, '' DEFAULT_CCTR_YN, '' DEFAULT_COSTCENTER
+            ,'' OVERSEAS_AMT, '' OVERSEAS_CUR_CD, '' OVERSEAS_CUR_RATE, '' OVERSEAS_DH, '' OVERSEAS_YN, '' PRIVATE_RMK, '' PRIVATE_YN
+            , B.REPORT_TP, B.REPORT_TP_NM, B.APPROVE_LINE_TP, B.PROCESS_APPRV_GRP,0 TOLL_CNT, IFNULL(B.LIMIT_AMT_YN,'0'), B.LIMIT_AMT, '' GROUP_NO
+            , '' OCR_FILE_NO
+            , IFNULL(B.BELONGING_TYPE,'3') AS  BELONGING_TYPE
+            , 0 AS FILE_CNT
+            , 0 AS OCR_CNT
+            , '' REGR_ID, '' REGR_NM
+            , IFNULL(B.BIZTRIP_CAL_MTHD, '10') AS BIZTRIP_CAL_MTHD
+            FROM EXPENSE_BIZTRIP_RATE A , (
+                            SELECT A.EXPENSE_NO, A.EVID_NO, A.COMPANY_CODE, A.EXPENSE_AMT , A.EXPENSE_VAT_AMT, B.REPORT_NO, B.REPORT_TITLE, 
+                                   A.CCTR_CD, C.CCTR_NM, D.PS_CD, D.PS_NM,F.EXPENSE_CD, F.EXPENSE_NM,
+                                   EMP.EMP_NO, EMP.EMP_NM,
+                                                        A.RMK, A.BELONGING_TP,  DISTANCE_TP, DISTANCE, MILEAGE_RATE_CD, ODOMETER_START, ODOMETER_END  , A.REGR_DH , A.MOD_DH , concat(A.RECEIPT_DT,A.RECEIPT_TS)  RECEIPT_DT,
+                                                        A.BIZTRIP_START, A.BIZTRIP_END, A.BIZTRIP_DAYS, A.BIZTRIP_TP AS BIZTRIP_TP, A.PAY_AMT, 
+                                                        A.CURRENCY_AMT, A.CURRENCY_RATE, A.CURRENCY_DT
+                                                        , H.REPORT_TP , H.REPORT_TP_NM, H.APPROVE_LINE_TP,H.PROCESS_APPRV_GRP 
+                                                        , G.LIMIT_AMT_YN, G.LIMIT_AMT
+                                                        , G.BELONGING_TP AS BELONGING_TYPE
+                                                        , A.BIZTRIP_CAL_MTHD,
+                                                        A.START_LAT, A.START_LONG, A.START_ADDR, A.END_LAT, A.END_LONG, A.END_ADDR, A.START_DH, A.END_DH, A.URL 
+                                                            FROM  EXPENSE_MST A 
+                                                            LEFT OUTER JOIN ADMIN_EMP EMP
+                                                            ON A.EXPENSE_EMP_NO = EMP.EMP_NO
+                                                            AND A.COMPANY_CODE = EMP.COMPANY_CODE                                                            
+                                                            LEFT OUTER JOIN EXPENSE_REPORT B
+                                                                    ON A.REPORT_NO = B.REPORT_NO
+                                                                    AND A.REGR_ID =  #{g_userId}
+                                                            LEFT OUTER JOIN EXPENSE_COST_CENTER C
+                                                                    ON A.COMPANY_CODE = C.COMPANY_CODE
+                                                                    AND A.CCTR_CD = C.CCTR_CD
+                                                            LEFT OUTER JOIN EXPENSE_PROJECT D
+                                                                    ON A.COMPANY_CODE = D.COMPANY_CODE
+                                                                    AND A.PS_CD = D.PS_CD     
+                                                            LEFT OUTER JOIN EXPENSE_CATEGORY F
+                                                                    ON A.COMPANY_CODE = F.COMPANY_CODE
+                                                                    AND A.EXPENSE_CD = F.EXPENSE_CD     
+                                                             LEFT OUTER JOIN EXPENSE_SOURCE_CATEGORY G 
+                                                                    ON A.COMPANY_CODE = G.COMPANY_CODE
+                                                                    AND A.EXPENSE_CD = G.EXPENSE_CD  
+                                                                    AND A.SOURCE_TP = G.SOURCE_TP                                                                      
+                                                             LEFT OUTER JOIN EXPENSE_REPORT_TYPE H 
+                                                                    ON A.COMPANY_CODE = H.COMPANY_CODE
+                                                                    AND G.REPORT_TP = H.REPORT_TP                                                                                                                                
+                                                            WHERE  A.SOURCE_TP = '3'  -- 일당
+                                                            AND A.COMPANY_CODE =  #{g_comCd}
+                                                            AND A.REGR_ID =  #{g_userId}
+                                                            AND A.USE_YN = '1'   
+                                                            ) B 
+            WHERE A.COMPANY_CODE = B.COMPANY_CODE
+            AND A.BIZTRIP_RATE_CD = B.BIZTRIP_TP
+            AND A.COMPANY_CODE = #{g_comCd}            
+    ) AAA 
+           -- LEFT OUTER JOIN EXPENSE_IF_SLIP S
+            -- ON AAA.EXPENSE_NO = S.EXPENSE_NO
+            WHERE 1=1
+             <if test='INBOX =="Y"' > 
+             AND (AAA.EXPENSE_NO = '' OR AAA.EXPENSE_NO IS NULL)
+            </if>           
+            <if test='SEARCH_FR_DT !="" and SEARCH_FR_DT != null'> 
+             AND RECEIPT_DT BETWEEN REPLACE_DATE(#{SEARCH_FR_DT},'') AND  CONCAT(REPLACE_DATE(#{SEARCH_TO_DT},''),'999999') 
+            </if>
+             
+             <if test='APPROVE_STATUS_LIST != null and APPROVE_STATUS_LIST.size > 0'> 
+		             AND IFNULL(EX_GET_APPROVE_STATUS(TO_NUMBER(AAA.EXPENSE_NO)),'1') in 
+				    <foreach collection="APPROVE_STATUS_LIST" item="item"  open="(" close=")" separator=",">
+				        #{item}
+				    </foreach>
+			</if>	
+             <if test='TYPE_LIST != null and TYPE_LIST.size > 0' > 
+                     AND SOURCE_TP in 
+                    <foreach collection="TYPE_LIST" item="item"  open="(" close=")" separator=",">
+                        #{item}
+                    </foreach>
+            </if>   			
+			    
+	      <if test='ORDERBY ==""  or ORDERBY == null'> 
+	               ORDER BY RECEIPT_DT DESC, REGR_DH DESC, EVID_NO, FILE_NO   
+<!-- 	               ORDER BY FIELD(APPROVE_STATUS, 6,1,5,2,3,4, null), RECEIPT_DT DESC, REGR_DH DESC, EVID_NO, FILE_NO       -->
+	      </if>
+          <if test='ORDERBY =="DATE"'>
+                   ORDER BY RECEIPT_DT DESC, REGR_DH DESC, EVID_NO, FILE_NO      
+          </if>
+          <if test='ORDERBY =="REJECT"'>
+                   ORDER BY FIELD(APPROVE_STATUS, 5,1,6,2,3,4, null), RECEIPT_DT DESC, REGR_DH DESC, EVID_NO, FILE_NO      
+          </if>                            
+          <if test='ORDERBY =="APPROVING"'>
+                   ORDER BY FIELD(APPROVE_STATUS, 2,5,1,6,3,4, null), RECEIPT_DT DESC, REGR_DH DESC, EVID_NO, FILE_NO      
+          </if>  
+     
+<!--             반려, 결재진행중, 승인 -->
+    </select>
+
+</mapper>

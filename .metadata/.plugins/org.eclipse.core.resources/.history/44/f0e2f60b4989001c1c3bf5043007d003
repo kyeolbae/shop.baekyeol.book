@@ -1,0 +1,68 @@
+package com.ec.eframework.ex.report;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
+import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.ec.eframework.lib.JsonDataMap;
+import com.ec.eframework.lib.MapSession;
+import com.ec.eframework.lib.P;
+import com.ec.eframework.mapper.ex.report.DigitalSignatureServiceMapper;
+
+/**
+ * 전자서명 
+ */
+@Controller
+@RequestMapping("/ex/report/digitalSign")
+public class DigitalSignatureController  {
+	
+	/**
+	 * 전자서명 페이지
+	 */
+	    @RequestMapping(value = "/page")
+	    public String page() {
+	     return "contents/ex/report/digital_signature";
+	    }
+	    
+	    @Autowired
+	    DigitalSignatureServiceMapper digitalSignatureServiceMapper;
+	    
+//	    전자서명 저장
+	    @RequestMapping(value = "/newSignature" , produces = MediaType.APPLICATION_JSON_VALUE)
+	    @ResponseBody
+	    public Map<String, Object>  newSignature(@RequestBody Map<String, Object> paramMap, HttpServletRequest request, HttpSession session) {
+	    	paramMap.putAll((Map)new MapSession(session));
+	    	paramMap.put("SIGN_SEQ", digitalSignatureServiceMapper.getSignSeq());
+	    	P.ln(paramMap.get("SIGN_SEQ").toString());
+			digitalSignatureServiceMapper.insertAdminSignature(paramMap);
+	    	return new JsonDataMap("sign_Data",paramMap);
+	    }
+	    
+	    
+//	    전자서명 업데이트
+	    @RequestMapping(value = "/saveSignature" , produces = MediaType.APPLICATION_JSON_VALUE)
+	    @ResponseBody
+	    public Map<String, Object>  saveSignature(@RequestBody Map<String, Object> paramMap, HttpServletRequest request, HttpSession session) {
+	    	paramMap.putAll((Map)new MapSession(session));
+	    	
+	    	paramMap.put("SIGN_TEXT", StringUtils.split(paramMap.get("sign").toString(), ",")[1]);  	//사인.png 파일의 base64	    
+	    	if (digitalSignatureServiceMapper.updateAdminSignature(paramMap) > 0) {
+	    		paramMap.put("MSG", "저장되었습니다");
+	    	}
+	    	return new JsonDataMap("sign_Data",paramMap);
+	    }
+	    
+	    
+	    
+    
+		    
+}

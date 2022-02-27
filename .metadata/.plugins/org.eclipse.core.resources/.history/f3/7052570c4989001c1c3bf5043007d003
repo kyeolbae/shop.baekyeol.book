@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper namespace="com.ec.eframework.mapper.ex.config.ErpCodeServiceMapper">
+
+<!-- 회계 기준정보 / 거래처 -->
+    
+    <select id="searchExpBankCd" resultType="HashMap">
+    
+        SELECT /* [com.ec.eframework.mapper.ex.config.ErpCodeServiceMapper][은행 조회] */ 
+			 ROW_NUMBER() OVER() AS ID			
+			,NATION_CD
+			,BANK_CD
+			,BANK_NM
+			,USE_YN
+			,REGR_DH
+			,MOD_DH
+			,DEL_DH
+			,REGR_ID
+			,MOD_ID
+			,DEL_ID
+        FROM SLIP_BANK        
+        ORDER BY NATION_CD ASC,BANK_CD ASC,BANK_NM ASC
+
+    </select>
+    
+    <select id="searchExpCostCenter" resultType="HashMap">
+    
+        SELECT /* [com.ec.eframework.mapper.ex.config.ErpCodeServiceMapper][코스트센터조회] */ 
+			ROW_NUMBER() OVER() AS ID			
+			,cctr.COMPANY_CODE
+			,cctr.CCTR_CD
+			,cctr.CCTR_NM
+			,cctr.DEPTH_CD
+			,cctr.DEPTH_NM
+			,cctr.FR_DT
+			,cctr.TO_DT
+			,cctr.PLANT_CD
+			,cctr.POSTING_YN
+			,cctr.DEPT_CD
+			,ad.DEPT_NM
+			,cctr.USE_YN
+			,cctr.REGR_DH
+			,cctr.MOD_DH
+			,cctr.DEL_DH
+			,cctr.REGR_ID
+			,cctr.MOD_ID
+			,cctr.DEL_ID
+        FROM EXPENSE_COST_CENTER cctr
+       left outer join admin_dept ad 
+         on cctr.COMPANY_CODE = ad.COMPANY_CODE 
+         and cctr.DEPT_CD = ad.DEPT_CD 
+        WHERE cctr.COMPANY_CODE = #{g_comCd}     
+        ORDER BY cctr.CCTR_CD
+
+    </select>
+    
+    <select id="searchExpTaxCode" resultType="HashMap">
+    
+        SELECT /* [com.ec.eframework.mapper.ex.config.ExpTaxCodeServiceMapper][세금 조회] */ 
+			 ROW_NUMBER() OVER() AS ID			
+			,COMPANY_CODE
+			,TAX_CD
+			,TAX_NM
+			,USE_YN
+        FROM SLIP_TAX
+        WHERE COMPANY_CODE = #{g_comCd}     
+        ORDER BY TAX_CD
+
+    </select>
+    
+    <select id="searchCurrencyCode" resultType="HashMap">
+    
+        SELECT /* [com.ec.eframework.mapper.ex.config.CurrencyCodeServiceMapper][세금 조회] */ 
+			 ROW_NUMBER() OVER() AS ID			
+			,COMPANY_CODE
+			,CURRENCY_CD
+			,ORD
+			,CURRENCY_SYMBOL
+			,CURRENCY_NM
+			,CURRENCY_DEC_NUM
+			,USE_YN
+			,REGR_DH
+			,MOD_DH
+			,DEL_DH
+			,REGR_ID
+			,MOD_ID
+			,DEL_ID			
+        FROM EXPENSE_CURRENCY
+        WHERE COMPANY_CODE = #{g_comCd}     
+        ORDER BY CURRENCY_CD
+
+    </select>
+    
+    <select id="searchCurrencyRate" resultType="HashMap">
+    
+        SELECT /* [com.ec.eframework.mapper.ex.config.CurrencyRateServiceMapper][세금 조회] */ 
+			 ROW_NUMBER() OVER() AS ID			
+			,BASE_CURRENCY_CD
+			,CURRENCY_CD
+			,CURRENCY_DT
+			,CURRENCY_RATE
+			,CURRENCY_UNIT
+			,REGR_DH
+			,REGR_ID	
+        FROM EXPENSE_CURRENCY_RATE     
+        ORDER BY BASE_CURRENCY_CD
+
+    </select>
+    
+	<select id="searchPlant" resultType="HashMap">
+    
+        SELECT /* [com.ec.eframework.mapper.ex.config.CurrencyRateServiceMapper][세금 조회] */ 
+			 ROW_NUMBER() OVER() AS ID			
+			,COMPANY_CODE
+			,SUB_BIZ_NO
+			,SUB_BIZ_NM
+			,OWNER_NM
+			,BIZ_TYPE
+			,BIZ_CATEGORY
+			,BIZ_NO
+			,REG_NO
+			,FR_DT
+			,TO_DT
+			,USE_YN
+		FROM SLIP_PLANT 
+		WHERE COMPANY_CODE = #{g_comCd}  
+        ORDER BY SUB_BIZ_NO
+
+    </select>
+    
+    <select id="searchProject" resultType="HashMap">
+    
+        SELECT /* [com.ec.eframework.mapper.ex.config.CurrencyRateServiceMapper][세금 조회] */ 
+			 ROW_NUMBER() OVER() AS ID			
+			,COMPANY_CODE
+			,PS_CD
+			,PS_NM
+			,USE_YN
+			,FR_DT
+			,TO_DT
+		FROM EXPENSE_PROJECT 
+		WHERE COMPANY_CODE = #{g_comCd}  
+        ORDER BY PS_CD
+
+    </select>
+       
+    
+     <select id="searchCompany" resultType="HashMap">
+    
+        SELECT 
+			ROW_NUMBER() OVER() AS ID			
+			,COMPANY_CODE
+			,BIZ_NO
+			,BIZ_NM
+			,REG_NO
+			,BIZ_TYPE
+			,BIZ_CATEGORY
+			,POSTNO
+			,ADDR1
+			,ADDR2
+			,ADDR3
+			,BASE_CURRENCY_CD
+			,LANGUAGE_CD
+			,TIMEZONE_CD
+			,NATION_CD
+			,USE_YN
+			,ERP_COMPANY_CODE
+			
+		FROM ADMIN_COMPANYS 
+		WHERE COMPANY_CODE = #{g_comCd}  
+        ORDER BY BIZ_NO
+
+    </select>  
+
+   <update id="updateCompany">
+    update ADMIN_COMPANYS/*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.updateCard][]
+        */
+       SET 
+        BIZ_NO = #{BIZ_NO}
+		,BIZ_NM = #{BIZ_NM}
+		,REG_NO = #{REG_NO}
+		,BIZ_TYPE = #{BIZ_TYPE}
+		,BIZ_CATEGORY = #{BIZ_CATEGORY}
+		,POSTNO = #{POSTNO}
+		,ADDR1 = #{ADDR1}
+		,ADDR2 = #{ADDR2}
+		,ADDR3 = #{ADDR3}
+		,BASE_CURRENCY_CD = #{BASE_CURRENCY_CD}
+		,LANGUAGE_CD = #{LANGUAGE_CD}
+		,TIMEZONE_CD = #{TIMEZONE_CD}
+		,NATION_CD = #{NATION_CD}
+		,USE_YN = #{USE_YN}
+		,ERP_COMPANY_CODE = #{ERP_COMPANY_CODE}
+ 	 where COMPANY_CODE = #{g_comCd}
+
+    </update>
+
+ 	 <insert id="insertCompany">
+         INSERT /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.insertExpApprvLine][]
+        */
+        INTO ADMIN_COMPANYS
+        ( COMPANY_CODE,
+        BIZ_NO,
+        BIZ_NM,
+        REG_NO,
+        BIZ_TYPE,
+        BIZ_CATEGORY,
+        POSTNO,
+        ADDR1,
+        ADDR2,
+        ADDR3,
+        BASE_CURRENCY_CD,
+        LANGUAGE_CD,
+        TIMEZONE_CD,
+        NATION_CD,
+        USE_YN,
+        ERP_COMPANY_CODE
+                ) VALUES
+        (
+        #{g_comCd},
+        #{BIZ_NO},
+        #{BIZ_NM},
+        #{REG_NO},
+        #{BIZ_TYPE},
+        #{BIZ_CATEGORY},
+        #{POSTNO},
+        #{ADDR1},
+        #{ADDR2},
+        #{ADDR3},
+        #{BASE_CURRENCY_CD},
+        #{LANGUAGE_CD},
+        #{TIMEZONE_CD},
+        #{NATION_CD},
+        #{USE_YN},   
+        #{ERP_COMPANY_CODE}    
+        );
+
+    </insert>
+    
+    <select id="searchCompanyModal" resultType="HashMap">
+    
+       SELECT 
+			ROW_NUMBER() OVER() AS ID	
+			,#{g_comCd} as COMPANY_CODE
+			,A.SYSTEM_CODE
+			,A.USE_YN
+			,B.REMARK
+			,B.MAIN_PROG_CD
+			,B.REF1 			
+			,B.REF2
+			,B.REF3
+			,FC_EXPS_GET_DESCRIPTION('ADMIN_SYSTEMS', A.DESCRIPTION_CODE,  #{g_lang} ) as DESCRIPTION_CODE
+		FROM ADMIN_SYSTEMS  A
+		LEFT OUTER JOIN  ADMIN_COMPANY_SYSTEMS  B
+		ON B.SYSTEM_CODE = A.SYSTEM_CODE
+		and B.COMPANY_CODE  = #{g_comCd}
+		AND A.USE_YN = '1'
+
+        
+
+    </select>
+    
+    <insert id="InsertCompanyModal">
+	
+	
+	<if test='USE_YN == "1"'>
+		INSERT 
+		INTO ADMIN_COMPANY_SYSTEMS
+		(  COMPANY_CODE
+		, SYSTEM_CODE
+		, USE_YN
+		, MAIN_PROG_CD
+		) VALUES (
+		  #{g_comCd}
+		, #{SYSTEM_CODE}
+		, #{USE_YN}
+		, #{MAIN_PROG_CD}
+		
+		)
+	</if>
+	<if test='USE_YN == "0"'>
+
+	DELETE
+		FROM ADMIN_COMPANY_SYSTEMS
+		WHERE  SYSTEM_CODE= #{SYSTEM_CODE}
+		and USE_YN = #{USE_YN}
+	</if>
+	
+	</insert>
+       
+
+</mapper>

@@ -1,0 +1,218 @@
+<!-- 
+  -- 프로그램명 : 비용승인 
+  -- 날짜 : 2020.01.01 by hcho
+  -- 수정 : 2020.01.01 by hcho (기안자, 다음 결재자 표기 수정)
+-->
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+<meta charset="utf-8" />
+</head>
+
+<body>
+  <section layout:fragment="content">
+
+            <form class="d-flex  flex-column h-100" th:id=${param.pgm_id}>
+            <img-modal ref="imgmodal" :pgmid="pgmid" subname="imgmodal"   ></img-modal>
+
+
+			<div class="btn-group" :id="pgmid+'toolbtn'">
+				<a class="btn btn-white btn-sm mr-1" data-toggle="collapse"
+					:data-target="'#'+ pgmid + 'collapseFilter'" aria-expanded="false"
+					:aria-controls="pgmid+'collapseExample'"> <i
+					class="icon-filter4"></i> <!--                  <span> 기간</span> -->
+				</a>
+                <a href="javascript:;" class="ec-btn btn btn-sm btn-white mr-2 text-nowrap" @click="searchButtonOnClick()"><i class="icon-refresh "></i></a>                                       
+		
+			</div>
+
+			<div class="collapse mb-3" :id="pgmid+'collapseFilter'">
+               <div class="d-flex align-items-center justify-content-between m-t-10" :id="pgmid+'searchCond1'">
+                     <daterange-m-component-v1 ref="daterange" th:pgmid="${param.pgm_id}"  th:id=${param.pgm_id} subname1="SEARCH_FR_DT" subname2="SEARCH_TO_DT"  required="true"  initval1="firstday-1m" initval2="lastday"></daterange-m-component-v1>
+               <a  class="btn btn-white btn-sm d-flex align-items-center rounded-0"  @click="searchButtonOnClick()">
+                 <span> 적용</span>
+               </a>                         
+               </div>
+             </div>  
+                                            
+            <!-- begin vertical-box -->
+            <div class="vertical-box with-grid bg-light inbox border">
+                <!-- begin vertical-box-column -->
+                <div class="vertical-box-column width-350">
+                    <!-- begin vertical-box -->
+                    <div class="vertical-box">
+                        <!-- begin wrapper -->
+                        <div class="" :id="pgmid+'searchCond'">
+                            <div class="d-flex align-items-between justify-content-between ">
+<!--                                 <a href="#emailNav" data-toggle="collapse" class="btn btn-inverse btn-sm mr-auto d-block d-lg-none"> -->
+<!--                                     <i class="fa fa-cog"></i> -->
+<!--                                 </a> -->
+                                <radiobuttonbox-component-v1 class="w-100" :list="docTypes"   @clickbtn="clickDocTypeBtn"></radiobuttonbox-component-v1>                                   
+                            </div>
+                            
+                        </div>
+                        <!-- end wrapper -->
+                        <!-- begin vertical-box-row -->
+                        <div class="vertical-box-row collapse d-lg-table-row" :id="pgmid+'emailNav'">
+                            <!-- begin vertical-box-cell -->
+                            <div class="vertical-box-cell">
+                                <!-- begin vertical-box-inner-cell -->
+                                <div class="vertical-box-inner-cell">
+                                    <!-- begin scrollbar -->
+<!--                                     <div data-scrollbar="true" data-height="100%"> -->
+                                    <div class="h-100">
+                                        <!-- begin wrapper -->
+                                        <div class="wrapper p-0 h-100">
+                                            <ul class="nav nav-inbox h-100" >
+									             <virtual-scroll-v1 ref="virtualscroll"  v-bind:items="approveList" benchline="8" width="300000" height="84"  forclass="w-100"  >
+									               <template slot-scope={item,index}>      
+                                                <div :class="{ 'bg-blue-transparent-1' : index==selectedIndex  }" class='border-bottom p-10' @click="reportListClick(item,index)" >
+		                                           <div class=" d-flex flex-column"  > 
+                                                     <div class="d-flex justify-content-between">
+                                                           <div class="d-flex align-items-center">{{item.SUBMIT_DH | dateformat('card-week')}}&nbsp{{item.SUBMIT_DH | dateformat('card-time') }}</div>
+<!--                                                            <label :class="[ (item.APPROVAL_ID == item.LOGIN_ID && item.APPROVE_STATUS == '2') ? 'bg-maintheme' : 'label-secondary' ]" class="label m-0"><strong class="f-s-12 ">{{item.APPROVE_STATUS_NM}}</strong></label> -->
+														   <label  class="label label-default border m-0 ">{{item.APPROVE_STATUS_NM}}</label>
+
+                                                     </div>	                                           
+                                                     <div class="d-flex justify-content-between"> 
+                                                       <a>
+<!--                                                            <i v-show= "item.URGENCY_YN !='1'" class="fa fa-fw f-s-8 m-r-5 fa-circle text-blue"></i>  -->
+                                                            <i v-show= "item.URGENCY_YN =='1'" class="icon-flag text-red"></i>
+                                                            <strong>{{item.REPORT_TITLE}}</strong></a>
+<!--                                                        <div>{{item.CNT}}건</div> -->
+                                                     </div>
+                                                     <div class="d-flex justify-content-between">
+                                                           <div class=""><strong>{{item.PAY_SUM_AMT  | numberformat('0,000') }}원</strong>({{item.CNT}}건)</div>
+                                                           <div>{{item.SUBMIT_NM}}</div>
+<!--                                                            <div>기안자:{{item.SUBMIT_NM}}/다음결재자 :{{item.APPROVAL_NM}}</div> -->
+                                                     </div>
+		                                           </div>
+                                                </div>
+                                                </template>
+                                                </virtual-scroll-v1>
+                                            </ul>
+                                        </div>
+                                        <!-- end wrapper -->
+                                    </div>
+                                    <!-- end scrollbar -->
+                                </div>
+                                <!-- end vertical-box-inner-cell -->
+                            </div>
+                            <!-- end vertical-box-cell -->
+                        </div>
+                        <!-- end vertical-box-row -->
+                    </div>
+                    <!-- end vertical-box -->
+                </div>
+                <!-- end vertical-box-column -->
+                <!-- begin vertical-box-column -->
+                <div class="vertical-box-column">
+                    <!-- begin vertical-box -->
+                    <div class="vertical-box">
+                        <!-- begin wrapper -->
+                        <div class="wrapper  d-flex justify-content-between">
+                            <div class="d-flex align-items-center ml-2">
+                                     <span class="f-subtitle-plane">{{selectedReport.REPORT_TITLE}}</span>
+                            </div>   
+                        
+                            <div class="pull-left">
+<!--                                 <div class="btn-group mr-2"> -->
+<!--                                     <a href="javascript:;" :class="{disabled : selectedIndex == undefined }" class="btn btn-white btn-sm" @click="clickCancel()"  ><i class="fa fa-fw fa-reply"></i> <span class="d-none d-lg-inline">회수</span></a> -->
+<!--                                 </div> -->
+<!--                                 <div class="btn-group mr-2"> -->
+<!--                                     <a href="javascript:;" class="btn btn-white btn-sm"><i class="fa fa-fw fa-trash"></i> <span class="d-none d-lg-inline">Delete</span></a> -->
+<!--                                     <a href="javascript:;" class="btn btn-white btn-sm"><i class="fa fa-fw fa-archive"></i> <span class="d-none d-lg-inline">Archive</span></a> -->
+<!--                                 </div> -->
+                                 
+
+
+                            </div>
+                            <div class="pull-right">
+	                            <div class="btn-group " v-if="$options.filters.isNotEmpty(myApprovalItem)">
+				                              <a @click="clickReject(myApprovalItem)" v-if="$options.filters.isNotEmpty(myApprovalItem)" 
+				                                   class="btn btn-white btn-sm ">
+				                                      <span class="">반려</span>
+				                              </a>  			                              
+				                              <a @click="clickApprove(myApprovalItem)" v-if="$options.filters.isNotEmpty(myApprovalItem)" 
+				                                   class="btn btn-white btn-sm ">
+				                                      <span class="">승인</span>
+				                              </a>  
+<!-- 				                              <a @click="" v-if="$options.filters.isNotEmpty(myApprovalItem)"  -->
+<!-- 				                                   class="btn btn-white btn-sm "> -->
+<!-- 				                                      <span class="">보류</span> -->
+<!-- 				                              </a>                              -->
+	                            </div>
+                            
+                                <div class="btn-group mr-2">
+<!--                                     <a  :class="{disabled : selectedIndex == 0 || selectedIndex == undefined }" class="btn btn-white btn-sm " @click="clickPrev"><i class="fa fa-fw fa-arrow-up"></i></a> -->
+<!--                                     <a  :class="{disabled : selectedIndex == approveList.length-1 || selectedIndex == undefined }" class="btn btn-white btn-sm " @click="clickNext"><i class="fa fa-fw fa-arrow-down"></i></a> -->
+                                    <a  class="btn btn-white btn-sm ml-1" @click="printButtonOnClick"><i class="icon-printer"></i></a>
+                                </div>
+<!--                                 <div class="btn-group"> -->
+<!--                                     <a href="email_inbox.html" class="btn btn-white btn-sm"><i class="fa fa-fw fa-times"></i></a> -->
+<!--                                 </div> -->
+                            </div>
+                        </div>
+                        <!-- end wrapper -->
+                        <!-- begin vertical-box-row -->
+                        <div class="vertical-box-row bg-white">
+                            <!-- begin vertical-box-cell -->
+                            <div class="vertical-box-cell">
+                                <!-- begin vertical-box-inner-cell -->
+                                <div class="vertical-box-inner-cell">
+                                
+                                    <!-- begin scrollbar -->
+                                    <div data-scrollbar="true" data-height="100%" :id="pgmid+'printform'">
+                                        <!-- begin wrapper -->
+                                        <div class="wrapper invoice" >
+                                          <div class="invoice-content d-flex">
+                                               <div v-show="selectedIndex != undefined " v-for="(items) in approveHists" class="d-flex bg-light border mr-1">
+                                                       <div class="d-flex flex-column m-0 vertical-text text-center bg-submaintheme text-maintheme align-items-stretch">{{items.APPROVE_STEP_NM }}</div>
+                                                       <div  v-for="( item , index) in items.APPROVE_LIST" class="approve-box form-group d-flex flex-column border-left m-0">
+                                                            <div  class="col-form-label px-0 py-0 text-center border-bottom bg-submaintheme"><span  class="">{{item.APPROVE_TP_NM}}</span></div>
+                                                            <div  class="col-form-label px-0 py-0 text-center f-w-600"><label class="m-0">{{item.REAL_APPROVE_NM}}</label></div>
+                                                            <div  class="f-s-10 px-0 py-0 text-center"><label class="m-0 text-max-70">{{item.REAL_DEPT_NM}}</label></div>
+                                                            <div class="f-s-10 px-1 py-0 text-center h-100">{{item.APPROVE_DH | dateformat('simple-datetime') }} </div>
+                                                            <div v-if="item.APPROVE_YN == '1'" class="f-s-10 px-0 py-0 text-center pb-1"><span class="badge bg-maintheme">승인</span></div>
+                                                            <div v-if="item.APPROVE_YN == '2'"  class="f-s-10 px-0 py-0 text-center pb-1"><span class="badge badge-danger">반려</span></div>
+<!--                                                             <span class="col-form-label px-0 py-1 text-nowrap" > -->
+<!--                                                                                                                        의견, 메모란입니다.(test) -->
+<!--                                                                 <button v-if="$options.filters.isNotEmpty(selectedReport.REPORT_NO) && !$options.filters.isNotEmpty(item.APPROVE_YN) && item.APPROVE_ID == user_id && item.APPROVAL == '1' "  -->
+<!--                                                                                     type="button" class="w-100 text-nowrap  btn btn-primary btn-xs mr-1 rounded-pill"  @click="clickApprove(item, index)">승인</button>    -->
+<!--                                                                 <button v-if=" $options.filters.isNotEmpty(selectedReport.REPORT_NO) && !$options.filters.isNotEmpty(item.APPROVE_YN) && item.APPROVE_ID == user_id && item.APPROVAL == '1' "  -->
+<!--                                                                                     type="button" class="w-100 text-nowrap btn btn-pink btn-xs mr-1 rounded-pill"  @click="clickReject(item, index)">반려</button>                                                -->
+<!--                                                             </span> -->
+                                                       </div>
+                                               </div>                                          
+                                            </div>  
+                                            
+                                            <div th:replace="contents/ex/report/modal/report-expesnelist :: html"></div>
+<!--                                             <div th:replace="contents/ex/report/modal/report-filelist :: html"></div>                                             -->
+
+                                        </div>
+                                        <!-- end wrapper -->
+                                    </div>
+                                    <!-- end scrollbar -->
+                                </div>
+                                <!-- end vertical-box-inner-cell -->
+                            </div>
+                            <!-- end vertical-box-cell -->
+                        </div>
+                        <!-- end vertical-box-row -->
+                    </div>
+                    <!-- end vertical-box -->
+                </div>
+                <!-- end vertical-box-column -->
+            </div>
+            <!-- end vertical-box --> 
+                    
+            </form>
+            
+        <!-- ================== BEGIN THIS PAGE JS ================== -->
+    <div th:replace="contents/ex/report/approval-js :: js"></div>
+    
+   </section>
+
+</body>
+</html>

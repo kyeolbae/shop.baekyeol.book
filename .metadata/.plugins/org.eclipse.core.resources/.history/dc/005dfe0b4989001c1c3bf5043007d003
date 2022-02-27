@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+ 
+      var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************        
+          
+          data: {  pgmid : "[[${param.pgm_id}]]",
+                   columnlayout : [],
+                   gridView : {},
+          },//data
+          created () { //초기화================================================================
+                //그리드 초기화
+                initGridDropDownBox("APPROVE_STATUS","/common/syscommon/selectSystemCommonCode", auiDropDownCallBack,{ COMM_CL_CD:"EX_APPROVE_STATUS" });
+                this.columnlayout =   
+                	
+                   [   
+                       {dataField : "REPORT_TP_NM",     headerText : "신청 유형",   width: 100 },
+                       {dataField : "REPORT_NO",  headerText : "문서번호", width: 80}, 
+                       {dataField : "REPORT_TITLE", headerText : "제목",  width : 180},
+                       {dataField : "REGR_NM",  headerText : "신청자", width: 60}, 
+                       {dataField : "REGR_DEPT_CD",  headerText : "신청부서", width: 120},
+                       {dataField : "BDGT_AMT",  headerText : "신청금액", style : "aui_col_right",dataType : "numeric",formatString :"#,###",width: 100  }, 
+                       {dataField : "REF_YM", headerText : "신청월", dateInputFormat : "yyyymmdd", dataType : "date", formatString : " yyyy-mm", width : 80},
+                       {dataField : "APPROVE_STATUS",  headerText : "결재상태", width: 100,editRenderer : gridDropdownRenderer['APPROVE_STATUS'], labelFunction : auiDrodownLabelFunction,}, 
+                       {dataField : "SUBMIT_DH",  headerText : "상신일", dateInputFormat : "yyyymmdd", dataType : "date", formatString : " yyyy-mm-dd",  width: 90},
+                       {dataField : "APPROVE_DH",  headerText : "결재일", dateInputFormat : "yyyymmdd", dataType : "date", formatString : " yyyy-mm-dd",width: 90},
+                       {dataField : "TXT_REF1",  headerText : "FM예산문서", width: 120,style : "aui_col_right"},
+                       {dataField : "TXT_REF2",  headerText : "FM약정문서번호", width: 100, style : "aui_col_right"},
+                ] ;//columnlayout
+                  
+          }, // created       
+          methods : {  // ======================================================================================
+        	  clickReport : function()    {   
+        		  
+        		log('clickReport');  
+        		this.$refs.report.openModal();
+        		  
+        	  },
+              searchButtonOnClick : function()    {    
+   	  
+                   var param = {
+                       svcId:"searchr",
+                       strUrl:"/ex/bgt/req/searchList",   //전송 url    
+                       param : serializeObjectX($('#[[${param.pgm_id}]]')),
+                       pCall : this.searchButtonOnClickCallback, 
+                       pLoad : true   ,
+                       async : true 
+                   };
+                   //트랜젝션 실행
+                   ajaxReadJsonData(param);
+                   
+             }, // end of searchButtonOnClick
+             
+             searchButtonOnClickCallback : function(svc, data) {
+            	 this.$refs.gridmaster.setGridData(data["ds_master"]['data']);
+             },
+                    
+          }, // end of methods
+
+          mounted: function() {
+             var ref = this;
+             this.$nextTick(function () {
+                   ref.gridView = ref.$refs.gridmaster.myGridID;
+                   
+                   AUIGrid.bind(ref.gridView, "cellDoubleClick",  function(event) {
+                	   var reportTp = event.item.REPORT_TP;
+  						if(reportTp == '4010'){
+                        	     gotoEvent.PGM_ID = "BGT_REQ_CCTR"
+                        }else if(reportTp == '4020'){
+                        	     gotoEvent.PGM_ID = "BGT_REQ_HEAD"
+                        }else if(reportTp == '4030'){
+                                 gotoEvent.PGM_ID = "BGT_REQ_WBS"
+                        }else if(reportTp == '4040'){
+                        	     gotoEvent.PGM_ID = "BGT_REQ_TRANS"
+                        }else if(reportTp == '4050'){
+                        	     gotoEvent.PGM_ID = "BGT_REQ_FWD"
+                        }
+                	    gotoEvent.REPORT_NO = event.item.REPORT_NO ;
+                	    window.dispatchEvent(gotoEvent);
+                         
+                         //    gotoCctrEvent
+                     });
+                   
+              });
+             
+             
+             
+             
+             
+//**********************************************************************************************              
+             vueArr.push(this);
+            },
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

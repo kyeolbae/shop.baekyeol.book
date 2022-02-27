@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<!--     <meta charset="utf-8" /> -->
+</head>
+  <body> 
+   
+   <div  :class="{'d-flex': curItem.TYPE =='CARD' }" class="d-none w-100 flex-column flex-sm-row" th:fragment="html">
+   
+       <!-- begin modal 법인카드-->
+<!--                          <div v-if="curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4'"   class="d-flex justify-content-between align-items-center mb-1 "> -->
+                         <div class="d-flex justify-content-between align-items-center mb-1 ">
+                             <div class="py-2">
+       <!-- begin custom-switches -->
+								<div class="custom-control custom-switch">
+									  <input type="checkbox" class="custom-control-input" :id="pgmid+'cardevidswitch'" @click="changeCardEvidSwitch()">
+									  <label class="custom-control-label" :for="pgmid+'cardevidswitch'">증빙</label>
+								</div>
+        <!-- end custom-switches -->
+                             
+                             </div>
+                             <div v-if="curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4'"  class='d-flex align-items-center'>
+		                             <div class="checkbox checkbox-css p-0">
+		                                  <input type="checkbox" :id="pgmid+'privateUseCheck'" @change="privatUseCheckChanged" />
+		                                  <label :for="pgmid+'privateUseCheck'">정산제외</label>
+		                             </div>
+		                             <div class="d-flex ml-2">  
+		                                     <popup-m-code  ref="popupcardsharedemp" :pgmid="pgmid"  pgmnm="비용처리자" subname="popupcardsharedemp"   name="EMP_NO_SHARED" searchname="사용자ID"  columnlayout="popupuser"   tablename="USER" @codechanged="saveCardSharedEmp" inputvisible="false"  ></popup-m-code>
+		                                     <label class="m-l-5 f-plane m-0 text-center d-flex align-items-center">정산위임</label>
+		                             </div>  
+		                     </div>
+                         </div>
+                         <div v-show="!isCardEvidShow" class="col col-sm-5 border p-5" :id="pgmid+'bizcard-clon-card'">
+                             <div style="position:relative"><div class="d-flex justify-content-center w-100 exp-modalbox-bgicon"><i class="icon-credit-card f-s-160 text-blue-transparent-2"></i></div></div>
+                             <div class="d-flex justify-content-start">
+                                <h4 class="m-0">{{curItem.RECEIPT_DT | dateformat('card-week')}}</h4>
+<!--                                 <span v-if="curItem.REGR_ID != user_id" ><i  class="icon-user-follow"></i>{{curItem.REGR_NM}}님 위임 건</span> -->
+                             </div>
+                             <h5 class="m-0">{{curItem.RECEIPT_DT | dateformat('card-time')}}</h5>
+                             <h4 class="text-right">{{curItem.BIZ_NM}}</h4>
+                             <h6 class="m-0  d-flex justify-content-between"><span>[공급가]</span><span class="">{{curItem.SUPPLY_AMT  | numberformat('0,000')}}원</span></h6>
+                             <h6 class="m-0  d-flex justify-content-between"><span>[부가세]</span><span class="">{{curItem.VAT_AMT  | numberformat('0,000')}}원</span></h6>
+                             <h6 class="m-0  d-flex justify-content-between" ><span>[봉사료]</span><span class="">{{curItem.ETC_AMT  | numberformat('0,000')}}원</span></h6>
+                             <h4 class="m-0   text-right">{{curItem.TOT_AMT  | numberformat('0,000')}}원</h4>
+                             <h6 class="m-0  d-flex justify-content-between" ><span><h5>{{curItem.CARD_NO | cardformat}}</h5></span></h6>
+                             <h6 class="m-0">[사업자번호]{{curItem.BIZ_NO | biznoformat}}</h6>
+                             <h6 class="m-0">[업태/업종]{{curItem.BIZ_CATEGORY + ' '+  curItem.BIZ_TYPE}}</h6>
+                             <h6 class="m-0">[주소]{{curItem.BIZ_ADDR}}</h6>
+                             <h6 class="m-0">[승인번호]{{curItem.CARD_BILL_NO}}</h6>
+                         </div>
+                         <div v-show="isCardEvidShow" class=" p-5 "  :id="pgmid+'card-tab-2'"  >
+                                <div class="d-flex flex-column p-0 receipt-m-box-modal"  >
+                                    <ec-img top= "50"  ocryn="true"  ref="cardimg" ismobile="true"  source="CA"   @edited="receiptimgedited" @clickmainfile="receiptClickMainFile"
+                                    autoprocess="false"  @multiupload="saveServer"   @autoupload="getImgFilesNo"  @clicktrash="deleteEcImg"   addfile="true">
+                                    </ec-img>  
+                                </div>
+                                
+                                
+<!--                                       <div class="receipt-box-modal flex-column" > -->
+<!--                                         <ec-img ref="cardimg" ocryn="true" source="CA"  v-show="$options.filters.isNotEmpty(curItem.FILE_NO)  &&  curItem.TYPE =='CARD'"  @edited="receiptimgedited" @clickmainfile="receiptClickMainFile" -->
+<!--                                         autoprocess="false"  @multiupload="saveServer"   @autoupload="getImgFilesNo"  @clicktrash="deleteEcImg"> -->
+<!--                                         </ec-img> -->
+<!--                                       </div>          -->
+                                
+                                
+                         </div>
+                         
+                         <div class="my-3" :id="pgmid+'cardmodalbody'">
+                             <div class="d-flex flex-column  mb-2">
+                                    <label class="w-100 m-0">증빙일<span class="text-danger">*</span></label>
+                                    <date-m-component-v1  ref="RECEIPT_DT_CARD" th:pgmid="${param.pgm_id}" subname="RECEIPT_DT_CARD"  disabled="disabled"></date-m-component-v1>
+                             </div>
+                             <div class="d-none flex-column  mb-2">
+                                    <label class="w-100 m-0">비용금액<span class="text-danger">*</span></label>
+                                    <div class="w-100 d-flex flex-nowrap">
+                                        <input type="text" name="EXPENSE_AMT_CARD" :id="pgmid+'EXPENSE_AMT_CARD'" class="form-control ec-mobile-input col-7 bg-white text-right"  disabled />
+                                        &nbsp
+                                        <input type="text" name="EXPENSE_VAT_AMT_CARD" :id="pgmid+'EXPENSE_VAT_AMT_CARD'" class="form-control ec-mobile-input col-5 bg-white  text-right"  disabled  />
+                                    </div>
+                             </div>                          
+                             <div class="d-flex flex-column mb-2">
+                                    <label class="w-100 m-0">비용항목<span class="text-danger">*</span></label>
+<!--                                     <popup-m-code ref="popupexpcard" :pgmid="pgmid"  pgmnm="비용항목" subname="popupexpcard"  name="EXPENSE_CD_CARD" searchname="비용항목"  columnlayout="popupexpcard"   tablename="EXCARD" required="true"   readonly="readonly" @codechanged="receiptExpCdChange"  ></popup-m-code> -->
+								    <!-- 인공지능 -->
+                                    <popup-m-new-code searchinput="true" ai="false" ref="popupexpcard" :pgmid="pgmid"  pgmnm="비용항목" subname="popupexpcard"  name="EXPENSE_CD_CARD" searchname="비용항목"  columnlayout="popupexpcard"   tablename="EXCARD" required="true"   readonly="readonly" @codechanged="receiptExpCdChange"  ></popup-m-new-code>
+                             </div> 
+                             
+                             <div v-show="receiptbelongtype != '0'">
+                                <div class="d-flex flex-column  mb-2">
+                                <label class="w-100 m-0">비용귀속<span class="text-danger">*</span></label>
+                                  <div class='d-flex flex-column'>
+                                    <div class=" p-0 d-flex">
+                                               <dropdown-m-syscommon  ref="CARD_CCENTER_TP" class="w-100 p-0 flex-shrink-0"  :pgmid="pgmid"  
+                                                       dropdownlabel=""  selectid="CARD_CCENTER_TP" selectname="CARD_CCENTER_TP" 
+                                                       clcd="EX_CCENTER_TP"   @changed="ccenterTpChange"></dropdown-m-syscommon>
+                                   </div>
+                                   <div class=" p-0 d-flex">
+                                    <span v-show="receiptcosttype=='1'"  class="w-100"><popup-m-code  ref="popupcostcentercard" :pgmid="pgmid"  pgmnm="코스트센터" subname="popupcostcenter-card"   name="CCTR_CD_CARD" searchname="코스트센터"   columnlayout="popupcostcenter"  readonly="readonly" tablename="CCTR" @codechanged="costCenterCdChange"  ></popup-m-code></span>
+                                    <span v-show="receiptcosttype=='2'"  class="w-100"><popup-m-code  ref="popupprojectcard" :pgmid="pgmid"  pgmnm="프로젝트" subname="popupproject-card"   name="PROJECT_CARD" searchname="프로젝트"  columnlayout="popupproj"   tablename="PROJ" readonly="readonly"   @codechanged="projectCdChange" ></popup-m-code></span>
+                                   </div>
+                                   </div>
+                             </div> 
+                             </div>                             
+                             
+                             <div v-for="item in receiptMngList " class="d-flex flex-column  mb-2">
+                                 <label class="w-100 m-0">{{item.MNG_NM}}<span v-show="item.MUST_YN=='1'" class="text-danger">*</span></label>  
+                                 <div v-if="item.INPUT_FORMAT_CD !='01' &&  item.INPUT_FORMAT_CD !='05'  &&  item.INPUT_FORMAT_CD !='02'" class="w-100">
+                                     <input type="text"  :id="pgmid+'popupcardmng'+item.MNG_CD" 
+                                     :class="{required : item.MUST_YN=='1'}" class="form-control ec-mobile-input"  /> 
+                                 </div>                                                                                              
+                                 <div v-if="item.INPUT_FORMAT_CD=='01'" class="w-100">
+                                     <popup-m-code  :ref="'popupcardmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-card"   name="CCTR_CD_CARD" 
+                                     :searchname="item.MNG_NM"  :required="item.MUST_YN=='1' ?  'true' : '' "  :columnlayout="item.COLUMN_LAYOUT"   :tablename="item.TABLE_CD" :codecl="item.COMM_CL_CD" readonly="readonly" 
+                                      ></popup-m-code>
+                                 </div>
+                                 <div v-if="item.INPUT_FORMAT_CD=='02'" class="w-100">
+                                      <inputnumber-m-component  :ref="'popupcardmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-card" :required="item.MUST_YN=='1' ?  'true' : '' "  ></inputnumber-m-component>
+                                 </div>                                 
+                                 <div v-if="item.INPUT_FORMAT_CD=='05'" class="w-100">
+                                     <date-m-component-v1  :ref="'popupcardmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-card"   name="CCTR_CD_RECEIPT" 
+                                     :searchname="item.MNG_NM"  :required="item.MUST_YN=='1' ?  'true' : '' "  readonly="readonly" 
+                                      ></date-m-component-v1>
+                                 </div>                                 
+                            </div>                            
+                                       
+                             <div class="d-flex flex-column  mb-2">
+                                    <label class="w-100 m-0">적요</label>
+                                    <div class="w-100">
+                                        <input type="text" name="RMK_CARD" :id="pgmid+'RMK_CARD'" class="form-control ec-mobile-input "   />
+                                    </div>
+                             </div>                              
+                        </div>                          
+                         
+                         
+<!--                             </div> -->
+          <!-- end of popup 법인카드-->            
+
+   
+   
+   </div> 
+   
+  </body>
+</html>

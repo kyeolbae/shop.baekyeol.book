@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper
+	namespace="com.ec.eframework.mapper.ex.config.CardPurchaseServiceMapper">	
+	
+	<update id="updateCardPurchase">
+	    UPDATE 
+	    EXPENSE_INBOX_CARD         
+        SET
+         EVID_YN= #{EVID_YN},
+         NO_VAT_YN= #{NO_VAT_YN},
+         NO_POSTING_YN= #{NO_POSTING_YN},
+         CCTR_CD= #{CCTR_CD},
+         SHARED_USER_ID=#{SHARED_USER_ID}
+        where COMPANY_CODE = #{g_comCd}
+        and EVID_NO = #{EVID_NO}
+        </update>
+    
+	 
+	
+	 <select id="searchCardPurchase" resultType="HashMap">
+		SELECT
+		ROW_NUMBER() OVER() AS ID
+		,A.EVID_NO
+		,A.PURCHASE_DT
+		,A.RECEIPT_DT
+		,CONCAT(substring(A.RECEIPT_TS, 1, 2),":", substring(A.RECEIPT_TS, 3, 2) , ":", substring(A.RECEIPT_TS, 5, 2)) as RECEIPT_TS
+		,A.BIZ_NM
+		,A.BIZ_NO
+		,A.BIZ_CATEGORY_CD
+		,A.BIZ_CATEGORY
+		,A.BIZ_TAX_TYPE
+		,A.BIZ_TAX_TYPE_NM
+		,A.BIZ_ADDR
+		,A.OVERSEAS_YN
+		,A.TOT_AMT
+		,A.SUPPLY_AMT
+		,A.VAT_AMT
+		,A.ETC_AMT
+		,A.CARD_BILL_NO
+		,FC_CARD_NO_MASK(FC_DEC(A.CARD_NO,#{ENC_KEY})) AS CARD_NO
+		,B.EMP_NM
+		,C.EMP_NO
+		,C.CARD_NM
+		,A.EVID_YN
+		,A.NO_VAT_YN
+		,E.CCTR_NM
+		,c.COOP_CD
+		,c.COOP_NM
+		,E.CCTR_CD
+		,A.CCTR_CD
+		,A.NO_POSTING_YN
+		,A.SHARED_USER_ID
+		,D.USER_NM
+		,A.PRIVATE_YN
+		,A.EXPENSE_NO
+		FROM EXPENSE_INBOX_CARD A
+		left outer join EXPENSE_CARD c
+		on A.COMPANY_CODE = c.COMPANY_CODE
+		and A.CARD_CD = c.CARD_CD
+		left outer join ADMIN_EMP B
+		on c.COMPANY_CODE = B.COMPANY_CODE
+		and c.EMP_NO = B.EMP_NO
+		left outer join expense_cost_center E
+		on A.COMPANY_CODE = E.COMPANY_CODE
+		and A.CCTR_CD = E.CCTR_CD
+		left outer join ADMIN_USER D
+		on A.SHARED_USER_ID = D.USER_ID
+		WHERE A.COMPANY_CODE = #{g_comCd}
+		<if test = 'SEARCH_TYPE == "M"'>
+		and A.PURCHASE_DT BETWEEN REPLACE_DATE(#{SEARCH_FR_DT},'') AND REPLACE_DATE(#{SEARCH_TO_DT},'')
+		order by A.PURCHASE_DT
+		</if>
+		<if test = 'SEARCH_TYPE == "I"'>
+		and A.RECEIPT_DT BETWEEN REPLACE_DATE(#{SEARCH_FR_DT},'') AND REPLACE_DATE(#{SEARCH_TO_DT},'')
+		order by A.RECEIPT_DT,A.RECEIPT_TS
+		</if>
+	</select> 
+	
+	
+	
+	
+</mapper>

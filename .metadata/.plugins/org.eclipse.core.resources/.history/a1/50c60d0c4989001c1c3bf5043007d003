@@ -1,0 +1,227 @@
+/* 
+	-- 프로그램명 : 예산관리 / 결재상태 전송 [관리자용]
+	-- 날짜 : 2021.10.19 by hshwang
+	-- 수정 : 2021.11.04 by hshwang (return data 수정)
+*/
+
+package com.ec.eframework.ex.bgt;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.configurationprocessor.json.JSONArray;
+import org.springframework.boot.configurationprocessor.json.JSONObject;
+import org.springframework.stereotype.Service;
+
+import com.ec.eframework.lib.P;
+import com.ec.eframework.mapper.ex.bgt.BgtToSapServiceMapper;
+import com.ec.eframework.ex.datahub.KwichubToSapService;
+
+import com.ec.eframework.ex.common.HttpSapConnectionService;
+
+@Service
+public class BgtToSapService {
+	
+	@Autowired
+	private HttpSapConnectionService httpConnectionService;
+	@Autowired
+	private KwichubToSapService KwichubToSapService;
+	@Autowired
+	private BgtToSapServiceMapper bgtToSapServiceMapper;
+	
+	// 추가예산(상신)
+	
+	public Map<String, Object> bdgtReqToSap(Map<String, Object> paramMap) {
+		// 순서 중요		
+		Map<String, Object> result = new HashMap();
+		if (!(KwichubToSapService.CheckConfigData(paramMap, result, "PO_BDGT_REQ" ))) return  result;
+
+		try {
+			Map<String, Object> map = bgtToSapServiceMapper.getBdgtReqIsHeader(paramMap);		//데이터 조회
+			if(map != null) {
+				JSONObject json = new JSONObject();
+				JSONObject sub_json = new JSONObject(map);	
+				sub_json.put("TEST", paramMap.get("TEST"));
+				json.put("IS_HEAD", sub_json);	
+				json.put("IT_ITEM", new JSONArray(bgtToSapServiceMapper.getBdgtReqItDetail(paramMap)));
+				JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, json, "TOSAP"); // API 호출		
+				
+//			 response 
+				P.ln(jObject.toString());
+				jObject = jObject.getJSONObject("ES_RESULT");
+				if (jObject.get("RETURN_CD").equals("S")) {
+					result.put("RESULT" , "OK");
+					result.put("MSG" , jObject.get("RETURN_MSG").toString());
+				} else { // 에러
+					result.put("RESULT" , "ERROR");
+					result.put("MSG" , jObject.get("RETURN_MSG").toString());
+				} // if
+			} else {
+				result.put("RESULT" , "ERROR");
+				result.put("MSG" , "조회된 데이터가 없습니다.");
+			}
+		} catch (Exception e) {  
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "실행 도중 에러가 발생했습니다.");
+			e.printStackTrace();
+		}
+		return result;
+	}
+	
+	// 예산전용(상신)
+	
+	public Map<String, Object> bdgtTrsToSap(Map<String, Object> paramMap) {
+		// 순서 중요	
+		Map<String, Object> result = new HashMap();
+		if (!(KwichubToSapService.CheckConfigData(paramMap, result, "PO_BDGT_TRS" ))) return result;
+
+		try {
+			Map<String, Object> map = bgtToSapServiceMapper.getBdgtTrsIsHeader(paramMap);		//데이터 조회
+			if(map != null) {
+				JSONObject json = new JSONObject();
+				JSONObject sub_json = new JSONObject(map);	
+				sub_json.put("TEST", paramMap.get("TEST"));
+				json.put("IS_HEAD", sub_json);
+				json.put("IT_ITEM", new JSONArray(bgtToSapServiceMapper.getBdgtTrsItDetail(paramMap)));
+				JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, json, "TOSAP"); // API 호출		
+				
+//			 response 
+				P.ln(jObject.toString());
+				jObject = jObject.getJSONObject("ES_RESULT");
+				if (jObject.get("RETURN_CD").equals("S")) {
+					result.put("RESULT" , "OK");
+					result.put("MSG" , jObject.get("RETURN_MSG").toString());
+				} else { // 에러
+					result.put("RESULT" , "ERROR");
+					result.put("MSG" , jObject.get("RETURN_MSG").toString());
+				} // if
+			} else {
+				result.put("RESULT" , "ERROR");
+				result.put("MSG" , "조회된 데이터가 없습니다.");
+			}
+		} catch (Exception e) {  
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "실행 도중 에러가 발생했습니다.");
+			e.printStackTrace();
+		}
+		return result;
+	}
+	
+	// 예산이월(상신)
+	
+	public Map<String, Object> bdgtFwdToSap(Map<String, Object> paramMap) {
+		// 순서 중요	
+		Map<String, Object> result = new HashMap();
+		if (!(KwichubToSapService.CheckConfigData(paramMap, result, "PO_BDGT_FWD" ))) return result;
+
+		try {
+			JSONObject json = new JSONObject();
+			Map<String, Object> map = bgtToSapServiceMapper.getBdgtFwdIsHeader(paramMap);		//데이터 조회
+			if(map != null) { 
+				JSONObject sub_json = new JSONObject(map);	
+				sub_json.put("TEST", paramMap.get("TEST"));
+				json.put("IS_HEAD", sub_json);		//json 객체에 json array 키값으로 담기 { 키 : [{a:'1'},{a:'2'},{a:'3'}] }
+				json.put("IT_ITEM", new JSONArray(bgtToSapServiceMapper.getBdgtFwdItDetail(paramMap)));
+				JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, json, "TOSAP"); // API 호출		
+				
+//			 response 
+				P.ln(jObject.toString());
+				jObject = jObject.getJSONObject("ES_RESULT");
+				if (jObject.get("RETURN_CD").equals("S")) {
+					result.put("RESULT" , "OK");
+					result.put("MSG" , jObject.get("RETURN_MSG").toString());
+				} else { // 에러
+					result.put("RESULT" , "ERROR");
+					result.put("MSG" , jObject.get("RETURN_MSG").toString());
+				} // if
+			} else {
+				result.put("RESULT" , "ERROR");
+				result.put("MSG" , "조회된 데이터가 없습니다.");
+			}
+		} catch (Exception e) {  
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "실행 도중 에러가 발생했습니다.");
+			e.printStackTrace();
+		}
+		return result;
+	}
+	
+	// 예산 결재상태 (상신/결재/반려/회수)
+	public Map<String, Object> bdgtApprvToSap(Map<String, Object> paramMap) {
+		// 순서 중요		
+		Map<String, Object> result = new HashMap();
+		if (!(KwichubToSapService.CheckConfigData(paramMap, result, "PO_BDGT_APPRV" ))) return  result;
+
+		try {
+			Map<String, Object> map = bgtToSapServiceMapper.getBdgtApprvIsHeader(paramMap);
+			if(map != null) {
+				JSONObject json = new JSONObject();
+				JSONObject sub_json = new JSONObject(map);	
+				sub_json.put("TEST", paramMap.get("TEST"));
+				json.put("IS_HEAD", sub_json);
+				P.ln(json.toString());
+				JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, json, "TOSAP"); // API 호출
+				
+//			 response 
+				P.ln(jObject.toString());
+				JSONObject sub_jObject = jObject.getJSONObject("ES_RESULT");
+				if (sub_jObject.get("RETURN_CD").equals("S")) {
+					result.put("RESULT" , "OK");
+					result.put("MSG" , "전송완료되었습니다.");
+					result.put("ITEM", httpConnectionService.getMapFromJsonObject(jObject.getJSONObject("ES_ITEM")));
+				} else { // 에러
+					result.put("RESULT" , "ERROR");
+					result.put("MSG" , sub_jObject.get("RETURN_MSG").toString());
+				} // if
+			} else {
+				result.put("RESULT" , "ERROR");
+				result.put("MSG" , "조회된 데이터가 없습니다.");
+			}
+		} catch (Exception e) {  
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "실행 도중 에러가 발생했습니다.");
+			e.printStackTrace();
+		}
+		return result;
+	}
+	
+	// 전표 결재상태 (상신/결재/반려/회수)
+	public Map<String, Object> bdgtSignToSap(Map<String, Object> paramMap) {
+		// 순서 중요		
+		Map<String, Object> result = new HashMap();
+		if (!(KwichubToSapService.CheckConfigData(paramMap, result, "PO_SLIP_APPRV" ))) return  result;
+
+		try {
+			Map<String, Object> map = bgtToSapServiceMapper.getBdgtChitIsHeader(paramMap);
+			if(map != null) {
+				JSONObject json = new JSONObject();
+				JSONObject sub_json = new JSONObject(map);	
+				json.put("IS_HEAD", sub_json);
+				P.ln(json.toString());
+				JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, json, "TOSAP"); // API 호출
+				
+//				 response 
+				P.ln(jObject.toString());
+				jObject = jObject.getJSONObject("ES_RESULT");
+				P.ln(jObject.toString());
+				if(jObject.get("RETURN_CD").equals("S")) {
+					result.put("RESULT" , "OK");
+					result.put("MSG" ,jObject.get("RETURN_MSG"));
+					result.put("ES_RESULT", httpConnectionService.getMapFromJsonObject(jObject));
+				}  else { // 에러
+					result.put("RESULT" , "ERROR");
+					result.put("MSG" , jObject.get("RETURN_MSG").toString());
+				} // if
+			} else {
+				result.put("RESULT" , "ERROR");
+				result.put("MSG" , "조회된 데이터가 없습니다.");
+			}
+		} catch (Exception e) {  
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "실행 도중 에러가 발생했습니다.");
+			e.printStackTrace();
+		}
+		return result;
+	}
+}

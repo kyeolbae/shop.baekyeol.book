@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+	<meta charset="utf-8" />
+</head>
+  <body>
+   <div th:fragment="js">
+    <script type="text/javascript" >
+	  var [[${param.pgm_id}]] = new Vue({
+		  el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************		  
+		  data: {  pgmid : "[[${param.pgm_id}]]",
+			  columnlayoutcard : [],
+			  columnlayoutcarddt : [],
+			       newgriditem : { POSTING_YN:"0", NO_VAT_YN:"0"} ,
+			       gridcard : {},
+			       gridcarddt : {},
+		  },//data
+		  created () { //초기화================================================================
+			    //그리드 초기화
+				initGridDropDownBox("CARD_POSTING_TP","/common/syscommon/selectToCommonDropBox", auiDropDownCallBack,{ COMM_CL_CD:"CARD_POSTING_TP" }); // 차대, 시스템 공통코드
+		  
+		    	this.columnlayoutcard =   
+		    	[
+			        {dataField : "CARD_POSTING_TP",   headerText : "전기유형 <span class='text-danger'>*</span>",  width: 120,  editRenderer : gridDropdownRenderer['CARD_POSTING_TP'], labelFunction : auiDrodownLabelFunction ,editable : true ,filter : { showIcon : true}},
+			        {dataField : "RECEIPT_FR_DT",     headerText : "사용일 <span class='text-danger'>*</span>", dateInputFormat : "yyyymmdd", dataType : "date", formatString : "yyyy-mm-dd", editRenderer : auiCalendarRenderer() ,  width: 120 , filter : { showIcon : true}}, 
+			        {dataField : "RECEIPT_TO_DT",   headerText : "종료일 <span class='text-danger'>*</span>", dateInputFormat : "yyyymmdd", dataType : "date", formatString : "yyyy-mm-dd", editRenderer : auiCalendarRenderer() , width: 120,editable : true,  filter : { showIcon : true}},
+			        {dataField : "POSTING_DT",     headerText : "전기일 <span class='text-danger'>*</span>", dateInputFormat : "yyyymmdd", dataType : "date", formatString : "yyyy-mm-dd", editRenderer : auiCalendarRenderer() ,  width: 120 ,filter : { showIcon : true}}, 
+			        {dataField : "PAY_DT",     headerText : "지급일 <span class='text-danger'>*</span>", dateInputFormat : "yyyymmdd", dataType : "date", formatString : "yyyy-mm-dd", editRenderer : auiCalendarRenderer() ,  width: 120 ,filter : { showIcon : true}}, 
+			        {dataField : "POSTING_YN",   headerText : "전기open",  width: 100, editable : true, renderer : auiCheckboxRenderer(),filter : { showIcon : true}},
+			        {dataField : "RMK",   headerText : "비고",  width: 200, editable : true,filter : { showIcon : true}},
+		        ];//columnlayout	
+		    
+		     this.columnlayoutcarddt =
+		        [
+		        	{dataField : "CARD_POSTING_TP",   headerText : "전기유형 <span class='text-danger'>*</span>",  width: 120,  editRenderer : gridDropdownRenderer['CARD_POSTING_TP'], labelFunction : auiDrodownLabelFunction ,editable : true ,filter : { showIcon : true}},
+			        {dataField : "RECEIPT_FR_DT",     headerText : "사용일 <span class='text-danger'>*</span>", dateInputFormat : "yyyymmdd", dataType : "date", formatString : "yyyy-mm-dd", editRenderer : auiCalendarRenderer() ,  width: 120 , filter : { showIcon : true}}, 
+			        {dataField : "RECEIPT_TO_DT",   headerText : "종료일 <span class='text-danger'>*</span>", dateInputFormat : "yyyymmdd", dataType : "date", formatString : "yyyy-mm-dd", editRenderer : auiCalendarRenderer() , width: 120,editable : true,  filter : { showIcon : true}},
+			        {dataField : "EVID_DT",   headerText : "증빙일 <span class='text-danger'>*</span>", dateInputFormat : "yyyymmdd", dataType : "date", formatString : "yyyy-mm-dd", editRenderer : auiCalendarRenderer() , width: 120,editable : true,  filter : { showIcon : true}},
+			        {dataField : "POSTING_DT",     headerText : "전기일 <span class='text-danger'>*</span>", dateInputFormat : "yyyymmdd", dataType : "date", formatString : "yyyy-mm-dd", editRenderer : auiCalendarRenderer() ,  width: 120 ,filter : { showIcon : true}}, 
+			        {dataField : "PAY_DT",     headerText : "지급일 <span class='text-danger'>*</span>", dateInputFormat : "yyyymmdd", dataType : "date", formatString : "yyyy-mm-dd", editRenderer : auiCalendarRenderer() ,  width: 120 ,filter : { showIcon : true}}, 
+			        {dataField : "POSTING_YN",   headerText : "전기open",  width: 100, editable : true, renderer : auiCheckboxRenderer(),filter : { showIcon : true}},
+			        {dataField : "NO_VAT_YN",   headerText : "불공제",  width: 100, editable : true, renderer : auiCheckboxRenderer(),filter : { showIcon : true}},
+		          ];
+		    	
+		  }, // created		  
+		  methods : {  // ======================================================================================
+			  searchCard : function() {
+							var param = {
+								svcId:"searchCard",
+								strUrl:"ec/ex/config/cardpostdt/searchCard",	
+								param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+								pCall : this.searchCardCallBack, 
+								pLoad : true         
+							};
+							//트랜젝션 실행
+							ajaxReadJsonData(param);
+					  }, // end of searchButtonOnClick
+					  
+					  searchCardCallBack: function(svcId, data){
+					   this.$refs.gridcard.setGridData(data["ds_master"]['data']); 
+						  
+					  },  
+					  
+					  saveCard: function() {
+						   // 그리드 필수항목 체크
+                          if (auiValidateGridData(this.gridcard, ["CARD_POSTING_TP", "RECEIPT_FR_DT","RECEIPT_TO_DT","POSTING_DT","PAY_DT"] ) == false){
+                               return;
+                          }
+                          
+                          // 변경된 데이터가 있는지 없는지 체크
+                          var    ds_master = getCRUDdata(this.gridcard);
+                          
+                          if (ds_master['data'].length == 0 ) {
+                              customAlert('','','변경된 데이터가 없습니다.');
+                              return;
+                          }
+                          
+                          saveColumnLayout(this.gridcard);
+                          
+                          // 저장할 데이터 만들기
+                          var ds_data = {};
+                          ds_data['ds_master'] = getCRUDdata(this.gridcard);
+                          
+                          if(!ds_data){ return; }
+                          
+				             var param = {
+				             svcId:"",
+				             strUrl:"ec/ex/config/cardpostdt/saveCard",   //전송 url 
+				             param : ds_data,
+				             pCall : this.saveCardCallback,
+				             pLoad : true
+				             };
+				             //트랜젝션 실행
+				             ajaxReadJsonData(param);
+				  		},
+				  	
+				  		saveCardCallback: function(){
+				  				saveGritter();
+				  				this.searchCard();
+				          },		  
+					  
+				          searchCardPost : function() {
+								var param = {
+									svcId:"searchCardPost",
+									strUrl:"ec/ex/config/cardpostdt/searchCardPost",	
+									param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+									pCall : this.searchCardPostCallBack, 
+									pLoad : true         
+								};
+								//트랜젝션 실행
+								ajaxReadJsonData(param);
+						  }, // end of searchButtonOnClick
+						  
+						  searchCardPostCallBack: function(svcId, data){
+						   this.$refs.gridcarddt.setGridData(data["ds_detail"]['data']); 
+							  
+						  },  
+						  
+						  saveCardPost: function() {
+							   // 그리드 필수항목 체크
+	                           if (auiValidateGridData(this.gridcarddt, ["CARD_POSTING_TP", "RECEIPT_FR_DT","RECEIPT_TO_DT","EVID_DT","POSTING_DT","PAY_DT"] ) == false){
+	                                return;
+	                           }
+	                          
+	                          // 변경된 데이터가 있는지 없는지 체크
+	                          var    ds_detail = getCRUDdata(this.gridcarddt);
+	                          
+	                          if (ds_detail['data'].length == 0 ) {
+	                              customAlert('','','변경된 데이터가 없습니다.');
+	                              return;
+	                          }
+	                          
+	                          saveColumnLayout(this.gridcarddt);
+	                          
+	                          // 저장할 데이터 만들기
+	                          var ds_data = {};
+	                          ds_data['ds_detail'] = getCRUDdata(this.gridcarddt);
+	                          
+	                          if(!ds_data){ return; }
+	                          
+					             var param = {
+					             svcId:"",
+					             strUrl:"ec/ex/config/cardpostdt/saveCardPost",   //전송 url 
+					             param : ds_data,
+					             pCall : this.saveCardPostCallback,
+					             pLoad : true
+					             };
+					             //트랜젝션 실행
+					             ajaxReadJsonData(param);
+					  		},
+					  	
+					  		saveCardPostCallback: function(){
+					  				saveGritter();
+					  				this.searchCardPost();
+					          },          
+				          
+				          
+			
+		  }, // end of methods
+
+		  mounted: function() {
+			 
+		       var ref = this;
+               this.$nextTick(function () {
+                    ref.gridcard  = ref.$refs.gridcard.myGridID;
+                    ref.gridcarddt = ref.$refs.gridcarddt.myGridID;
+                    
+                    
+                    Split(['#'+ref.pgmid+'firstgrid', '#'+ref.pgmid+'secondgrid'],
+                            {  direction: 'vertical',
+                               onDrag: function() {
+                                   AUIGrid.resize(ref.gridcard);
+                                   AUIGrid.resize(ref.gridcarddt);
+                               },                      
+                            }
+                          )
+                     
+                    
+                    
+			  }); // nextTick
+//**********************************************************************************************	
+             initMultiCards(this.pgmid); // card를 사용할 때만 필요
+             vueArr.push(this);
+			},
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

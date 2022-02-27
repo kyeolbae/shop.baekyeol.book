@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+ 
+      var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************        
+          
+          data: {  pgmid : "[[${param.pgm_id}]]",
+                   columnlayout : [],
+                   gridView : '',
+                   newgriditem : { BDGT_YM:  moment().format("YYYYMM"), REQTY : "[[${param.reqty}]]" },
+                   reportNo : '',
+				   modDh : '',
+				   apprvline : { APPROVE_LINE_TP : "LINE10" }, // 임시
+                   //q string
+                   report_tp : "[[${param.report_tp}]]",
+               	   apprvStatus : "",  // 결재상태
+               	   },//data
+          
+          beforeDestroy () {
+     	     window.removeEventListener('gotoFwdEvent', this.gotoFwdEvent, false );
+       },
+          created () { //초기화================================================================
+        	  
+        	  window.addEventListener('gotoFwdEvent', this.gotoFwdEvent , false);
+                //그리드 초기화
+                this.columnlayout =   
+                   [   
+                       {dataField : "BDGT_YM",  headerText : "반영월(리시버)<span class='text-danger'>*</span>", width: 100, dateInputFormat : "yyyymm", dataType : "date", formatString : "yyyy-mm",  editRenderer : {
+	                   		type : "CalendarRenderer",
+	                		defaultFormat : "yyyymm", // 달력 선택 시 데이터에 적용되는 날짜 형식
+	                		showEditorBtnOver : true, // 마우스 오버 시 에디터버턴 출력 여부
+	                		onlyCalendar : false, // 사용자 입력 불가, 즉 달력으로만 날짜입력 (기본값 : true)
+	                		onlyMonthMode : true // 일 단위 달력이 아닌 월 단위 달력 출력
+	                	}}, 
+                       {dataField : "BDGT_DEPT_NM",  headerText : "<label class='label-required m-0'>예산부서명</label>", width: 180, renderer : {type : "TemplateRenderer" }, pgmid: this.pgmid,  gridname : "popupbgtdept" , labelFunction : auiPopupCode}, 
+                       {dataField : "BDGT_DEPT_CD", headerText : "예산부서코드",  width : 100, style : "bg-light", editable : false},
+                       {dataField : "BA_NM",  headerText : "<label class='label-required m-0'>회계단위</label>", width: 120, editable : false, style : "bg-light"}, 
+                       {dataField : "BA_CD",  headerText : "사업영역코드",  editable : true,width: 120, visible : false }, 
+                       {dataField : "BDGT_ACC_NM",  headerText : "<label class='label-required m-0'>예산과목명</label>	", width: 200, renderer : {type : "TemplateRenderer" }, pgmid: this.pgmid,  gridname : "popupbgtacc" , labelFunction : auiPopupCode},
+                       {dataField : "BDGT_ACC_CD", headerText : "예산과목코드",  width : 100, style : "bg-light", editable : false},
+                       {dataField : "BDGT_AMT",  headerText : "<label class='label-required m-0'>신청금액</label>",editRenderer : {  onlyNumeric : true,maxlength : 15}, style : "aui_col_right", dataType : "numeric",formatString : "#,###",width: 100}, 
+                       {dataField : "RMK",  headerText : "적요",style : "aui_col_left", width: 250,editRenderer : {maxlength : 40} },
+                       
+                ] ;//columnlayout
+                
+                var ref = this;
+                //전표행 합계 row
+                this.footerLayout = [{ 
+                           labelText : "합 계",
+                           positionField : "BA_NM",
+                           colSpan : 2
+                       }, {
+                           dataField : "BDGT_AMT",
+                           operation : "SUM",
+                           positionField : "BDGT_AMT",
+                           formatString : "#,##0",
+                           labelFunction : function(value, columnValues, footerValues) {
+                           
+                             return getNewSum(ref.gridView,this.dataField, value);
+                           },                          
+                           styleFunction : function(ownValue, footerValues) {
+                           
+                              if (footerValues[1] != footerValues[2]) {
+                                 return "aui-grid-footer-blue"; // Invalid Color
+                              }
+                             return "aui-grid-footer-red"; // Valid Color
+                           }, // styleFunction
+                       }, 
+                       
+                       ];
+                  
+          }, // created       
+          methods : {  // ======================================================================================
+        	  
+        	  clickFwdEvent: function(e) {
+					gotoEvent.PGM_ID = "BGT_REQ_CP" // 필수
+					window.dispatchEvent(gotoEvent); // 이벤트 발생시킴
+				},
+        	  
+				saveApproved: function(e) {
+      		  
+      		 	 saveGritter();
+      			// 재조회
+       		 	 this.searchButtonOnClick();
+      	  			},
+ 			  changeMonth : function(e) {
+        		  
+        		  this.newgriditem.BDGT_YM = moment(e,"YYYY-MM").format("YYYYMM");
+        	  },
+        	  user1ButtonOnClick: function() {
+            		// 결재 valid check  
+                      var    o = getCRUDdata(this.gridView);
+                      if (o.data.length > 0 ) {
+                   	   customAlert('','','변경건이 있습니다. 저장 후 처리하세요.');
+                          return;
+                      }
+                      if (isEmpty(this.reportNo) ) {
+                   	   customAlert('','','저장 후 결재처리 할 수 있습니다.');
+                          return;
+                      }          
+       	             // 그리드 행 개수 확인
+       	           if (AUIGrid.getRowCount(this.gridView) == 0) {
+       	        	  customAlert("","","결재할 데이터가 없습니다.");
+                   	  return false;
+       	           }   
+       	             
+       	          // 이미 상신한 건
+       	           if (this.apprvStatus  == '2'  ) {  // 
+       	        	   customAlert("","","결재 진행건 입니다.");
+                   	  return false;
+       	           }   
+       	           if (this.apprvStatus  == '5' ) {  // 
+       	        	   customAlert("","","반려건 입니다.");
+                   	  return false;
+       	           }    
+       	           if (this.apprvStatus  == '4'  ) {  // 
+       	        	   customAlert("","","결재 완료건 입니다.");
+                   	  return false;
+       	           }      	           
+       	           // sap 체크 추가 
+    		        	var o = {};
+    					o.svcId = 'bdtReq'
+    					o.BDGT_TYPE = 'BDGT_FWD'
+    					o.REPORT_NO = $('#'+this.pgmid+'REQ_RPT_NO').val();
+    					o.BDGT_STAT = "";
+    					o.TEST = "X";	 
+    	        	 
+    					var param = {
+    	                        svcId: o.svcId,
+    	                        strUrl:"/ex/bgt/stat/saveSap",   
+    	                        param : o, 
+    	                        pCall : this.saveSapOnclickCallBack, 
+    	                        pLoad : true         
+    	                    };
+    	                    //트랜젝션 실행
+    	                ajaxReadJsonData(param);
+
+            	  },      
+            	  saveSapOnclickCallBack : function(svcId, data) {
+  					var result = data["data_result"].data.RESULT;
+  					if (result != 'OK') {
+  						customAlert('','', data["data_result"].data.MSG);
+  						return false;
+  					}
+  					
+  					if(svcId == "bdtReq") 
+  					{
+  						$('#'+this.pgmid+'REQ_RPT_NO').val('');
+  						$('#'+this.pgmid+'REQ_STAT').val('');
+  					}
+  		   	           // 결재 팝업 추가
+  					   this.$refs.reportReq.openModal();
+		               this.$refs.reportReq.setReportNo(this.reportNo);
+		               this.$refs.reportReq.modDh = this.modDh; 
+  				},
+              searchButtonOnClick : function() {
+            	  
+                            var param = {
+                                svcId:"searchr",
+                                strUrl:"/ex/bgt/req/searchFwd",   //전송 url    
+                                param : Object.assign(serializeObjectX($('#[[${param.pgm_id}]]')),{REPORT_NO : this.reportNo}),
+                                pCall : this.searchButtonOnClickCallback, 
+                                pLoad : true          
+                            };
+                            //트랜젝션 실행
+                            ajaxReadJsonData(param);
+                            
+                      }, // end of searchButtonOnClick
+                      
+                      searchButtonOnClickCallback : function(svc, data) {
+                    	  var bgt = data['ds_master'].data[0];
+                    	  if(bgt == null || ""){
+                    		  customGritter("조회할수없습니다.");  
+                    		  return false;
+                    	  }
+                    	  $('#'+this.pgmid + 'regr_id').val(bgt.REGR_ID); 	
+                    	  $('#'+this.pgmid + 'regr_dept_cd').val(bgt.REGR_DEPT_CD);
+                    
+                    	  if (data.ds_master.data.length == 0) {
+                    		  customGritter("데이터가 없습니다.");
+                    		  return false;
+                    	  }else
+	                    	  this.reportNo = data.ds_master.data[0].REPORT_NO;
+            	  	  	 	  this.apprvStatus = data.ds_master.data[0].APPROVE_STATUS; // 추가
+                    	  	  $('#'+this.pgmid+"REQ_RPT_NO").val(this.reportNo);
+	                    	  this.$refs.gridmaster.setGridData(data.ds_detail.data);
+                      },
+              
+              
+              saveButtonOnClick: function(){
+	
+	
+	             // 그리드 행 개수 확인
+	             if (AUIGrid.getRowCount(this.gridView) == 0) {
+	            	 customGritter("저장할 데이터가 없습니다.");
+	            	 return false;
+	             }
+	             
+                 var    j = getCRUDdata(this.gridView);
+                 log(j)
+                 if (j.data.length <= 0 ) {
+              	   customAlert('','','변경 건이 없습니다.');
+                     return;
+                 }
+                 
+              // 이미 상신한 건
+     	           if (this.apprvStatus  == '2'  ) {  // 
+     	        	   customAlert("","","결재 진행건 입니다.");
+                 	  return false;
+     	           }   
+     	           if (this.apprvStatus  == '5' ) {  // 
+     	        	   customAlert("","","반려건 입니다.");
+                 	  return false;
+     	           }    
+     	           if (this.apprvStatus  == '4'  ) {  // 
+     	        	   customAlert("","","결재 완료건 입니다.");
+                 	  return false;
+     	           } 
+                 // 그리드 필수항목 체크
+                 if (auiValidateGridData(this.gridView, ["BDGT_DEPT_NM","BA_NM", "BDGT_ACC_NM","BDGT_AMT"] ) == false){
+                      return;
+                 }        
+                  saveColumnLayout(this.gridView);
+                // 저장할 데이터 만들기
+
+                var date = this.$refs.ref_ym.getDate()
+                
+                if (isEmpty(this.reportNo)) {
+                	var  o = { ds_master : { REPORT_NO :  this.reportNo ,  REPORT_TP : this.report_tp   ,  __rowStatus : 'I'}   }  ;
+                }else{
+                	var  o = { ds_master : { REPORT_NO :  this.reportNo , __rowStatus : 'U'}   }  ;
+                }
+                o.ds_detail = getCRUDdata(this.gridView);
+                
+                o.REPORT_NO = this.reportNo;
+                
+                o.REF_YM = date;
+                
+                var param = {
+                    svcId:"save", 
+                    strUrl: "/ex/bgt/req/saveFwd",   //전송 url 
+                    param : o,        // 전송할 파라미터
+                    pCall : this.saveButtonOnClickCallback, 
+                    pLoad : true,          // 로딩이미지 노출 여부  
+                    async : false, // 저장시 꼭 false
+                };
+
+                //트랜젝션 실행
+                ajaxReadJsonData(param); 
+            }, //   saveButtonOnClickCallback         
+            saveButtonOnClickCallback(svcId, data){
+                //재조회
+                saveGritter();
+                this.reportNo = data.ds_master.REPORT_NO;
+                $('#'+this.pgmid+'REQ_RPT_NO').val(this.reportNo);
+                this.searchButtonOnClick(this.reportNo);
+                
+            },
+            
+            deleteButtonOnClick() {
+            	
+                if (isEmpty(this.reportNo)) {
+                	customAlert("","","삭제할 데이터가 없습니다.");
+                	return false;
+                }
+            	bootboxDeleteConfirm(this.deleteButtonOnClickCall);
+            },
+            deleteButtonOnClickCall() {    
+              
+               var  o = { ds_master : { REPORT_NO :  this.reportNo , __rowStatus : 'D'}   }  ;
+             
+               o.REPORT_NO = this.reportNo;
+
+             var param = {
+                 svcId:"delete", 
+                 strUrl: "/ex/bgt/req/saveFwd",   //전송 url 
+                 param : o,        // 전송할 파라미터
+                 pCall : this.deleteButtonOnClickCallback, 
+                 pLoad : true,          // 로딩이미지 노출 여부  
+                 async : false, // 저장시 꼭 false
+             };
+
+             //트랜젝션 실행
+             ajaxReadJsonData(param); 
+	         }, //   deleteButtonOnClickCall          
+	         deleteButtonOnClickCallback() {    
+	        	 
+	        	  // 성공시 신규버튼 클릭
+	        	 this.newButtonOnClick();
+	        	 
+	         }, // deleteButtonOnClickCall
+	         newButtonOnClick() {    
+	        	 
+	        	 $('#'+this.pgmid+"regr_dept_cd").val("[[${session.g_deptCd}]]");
+	        	 $('#'+this.pgmid+"regr_id").val("[[${session.g_userNm}]]");
+	       
+	        	 $('#'+this.pgmid+"REQ_RPT_NO").val("");
+	        	 this.reportNo = '';
+	        	 this.apprvStatus ='';
+	        	 AUIGrid.clearGridData(this.gridView);
+	        	 this.$refs.gridmaster.addGridRow();
+	         }, // deleteButtonOnClickCall  
+	         
+	         
+		         
+		         saveSap : function(o) {
+						var param = {
+		                        svcId: o.svcId,
+		                        strUrl:"/ex/bgt/stat/saveSap",   
+		                        param : o, 
+		                        pCall : this.saveSapOnclickCallBack, 
+		                        pLoad : true         
+		                    };
+		                    //트랜젝션 실행
+		                ajaxReadJsonData(param);
+					},
+					
+					saveSapOnclickCallBack : function(svcId, data) {
+						var msg = data["data_result"].data.MSG;
+						if(msg == '성공') saveGritter(); 
+						else customAlert('','', msg);
+						
+					},
+					
+					gotoFwdEvent : function(e) {
+	  					  this.reportNo = e.REPORT_NO;
+	  					  this.searchButtonOnClick();	
+	  				},
+	  				
+	  				changeBgtDept: function (item, parentrowid) {
+		        		  log(item);
+		        		  log(parentrowid);
+		        		  AUIGrid.setCellValue(this.gridView, parentrowid ,'BA_CD', item.REF1);
+		        		  AUIGrid.setCellValue(this.gridView, parentrowid ,'BA_NM', item.REF2);
+		        	},
+	         
+	         
+          }, // end of methods
+
+          mounted: function() {
+             var ref = this;
+             this.$nextTick(function () {
+                   ref.gridView = ref.$refs.gridmaster.myGridID;
+                   //새행추가
+                   ref.$refs.gridmaster.addGridRow();
+              });
+             
+           
+//**********************************************************************************************              
+             vueArr.push(this);
+            },
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

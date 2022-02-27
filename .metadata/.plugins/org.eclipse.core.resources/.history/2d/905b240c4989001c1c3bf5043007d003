@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+ 
+      var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************        
+          
+          data: {  pgmid : "[[${param.pgm_id}]]",
+                   columnlayout : [],
+                   newgriditem : {USE_YN:"1"},
+                   gridView : '',
+          },//data
+          created () { //초기화================================================================
+                //그리드 초기화
+                initGridDropDownBox("CLOSING_TP","/ex/common/commonSelect/search", auiDropDownCallBack,{ SELECT_ID :"getExClosingTp" }); // 비용마감일구분
+                //initGridDropDownBox("TIME_LIST","/ex/common/commonSelect/search", auiDropDownCallBack,{ SELECT_ID :"getExTimeList" }); // 마감시간
+                //그리드 select column 초기화
+                initGridDropDownBox("OWNER_TP_NM","/common/syscommon/selectSystemCommonCode", auiDropDownCallBack,{ COMM_CL_CD:"EX_CARD_OWNER" }); // 비용항목구분
+                initGridDropDownBox("AFTER_CLOSING_HH","/common/syscommon/selectSystemCommonCode", auiDropDownCallBack,{ COMM_CL_CD:"LIST_TIME" }); // 비용항목구분
+                initGridDropDownBox("CARD_POSTING_TP","/common/syscommon/selectToCommonDropBox", auiDropDownCallBack,{ COMM_CL_CD:"CARD_POSTING_TP" });
+                this.columnlayout =   
+                   [    
+                	   {dataField : "CARD_NO",   headerText : "법인카드번호",style : "bg-light", editable : false,labelFunction : function( rowIndex, columnIndex, value, headerText, item ) { return cardformat(nvl(value,''));}, width: 150, filter : { showIcon : true}},
+                	   {dataField : "OWNER_TP_NM",   headerText : "카드소유구분",style : "bg-light", editable : true, editRenderer : gridDropdownRenderer['OWNER_TP_NM'], labelFunction : auiDrodownLabelFunction, width: 120, filter : { showIcon : true}},
+                	   {dataField : "USER_NM",   headerText : "관리자명", width: 120, editable : true,style : "aui_col_left", renderer : {type : "TemplateRenderer" }, pgmid: this.pgmid,  gridname : "codepopupuser" , labelFunction : auiPopupCode },
+                	   {dataField : "OWNER_ID",   headerText : "관리자ID",style : "bg-light",  width: 120, editable : false},
+                	   {dataField : "EMP_NM",   headerText : "사원명", width: 120, editable : true,style : "aui_col_left", renderer : {type : "TemplateRenderer" }, pgmid: this.pgmid,  gridname : "codepopupemp" , labelFunction : auiPopupCode },
+
+                	   {dataField : "EMP_NO",   headerText : "사원번호",style : "bg-light", editable : false, width: 120, filter : { showIcon : true}},
+                	   {dataField : "OWNER_KNM",   headerText : "소유자명",style : "bg-light",editable : false,  width: 120, filter : { showIcon : true}},
+                	   {dataField : "OWNER_ENM",   headerText : "소유자영문명",style : "bg-light",editable : false,  width: 120, filter : { showIcon : true}},
+                	   {dataField : "DEPT_NM",   headerText : "부서명",style : "bg-light",editable : false,  width: 120, filter : { showIcon : true}},
+                	   {dataField : "BP_CD",   headerText : "거래처코드", editable : true, width: 120, filter : { showIcon : true}},
+                	   {dataField : "BPACCT_SEQ",   headerText : "계좌순번", editable : true, width: 120, filter : { showIcon : true}},
+                	   {dataField : "PAY_TERM",   headerText : "지급조건", editable : true, width: 120, filter : { showIcon : true}},
+                	   {dataField : "CCTR_NM",   headerText : "코스트센터명", editable : false,style : "bg-light", width: 120, filter : { showIcon : true}},
+                	   {dataField : "CARD_POSTING_TP",   headerText : "법인카드 전기유형", editable : false,style : "bg-light", width: 130,editRenderer :['CARD_POSTING_TP'], labelFunction : auiDrodownLabelFunction , filter : { showIcon : true}},
+                	   {dataField : "COOP_NM",   headerText : "제휴카드명", editable : false,style : "bg-light", width: 200,filter : { showIcon : true}},
+                	   {dataField : "CARD_TP",   headerText : "카드종류",style : "bg-light",  editable : false,width: 120, filter : { showIcon : true}},
+                	   {dataField : "CARD_BRAND",   headerText : "카드브랜드",style : "bg-light",editable : false,  width: 120, filter : { showIcon : true}},
+                	   {dataField : "STATUS_CD",   headerText : "카드상태",style : "bg-light",editable : false,  width: 120, filter : { showIcon : true}},
+                	   {dataField : "STATUS_NM",   headerText : "카드상태명",style : "bg-light",editable : false,  width: 120, filter : { showIcon : true}},
+                	   {dataField : "TP1",   headerText : "구분1",style : "bg-light",editable : false,  width: 120, filter : { showIcon : true}},
+                	   {dataField : "TP1_NM",   headerText : "구분1_명",style : "bg-light",editable : false,  width: 120, filter : { showIcon : true}},
+                	   {dataField : "TP2",   headerText : "구분2",style : "bg-light",editable : false,  width: 120, filter : { showIcon : true}},
+                	   {dataField : "TP2_NM",   headerText : "구분2_명",style : "bg-light",editable : false,  width: 120, filter : { showIcon : true}},
+                	   {dataField : "TP3",   headerText : "구분3",style : "bg-light",editable : false,  width: 120, filter : { showIcon : true}},
+                	   {dataField : "TP3_NM",   headerText : "구분3_명",style : "bg-light",editable : false,  width: 120, filter : { showIcon : true}},
+                	   {dataField : "VALID_YM",   headerText : "유효기간",style : "bg-light",editable : false,  width: 120, filter : { showIcon : true}},
+                	   {dataField : "SIGN_DD",   headerText : "결재일",style : "bg-light",editable : false,  width: 120, filter : { showIcon : true}},
+                	   {dataField : "SIGN_BANK_CD",editable : false, style : "bg-light",  headerText : "결재은행코드",  width: 120, filter : { showIcon : true}},
+                	   {dataField : "SIGN_BANK_NM",editable : false, style : "bg-light",  headerText : "결재은행이름",  width: 120, filter : { showIcon : true}},
+                	   {dataField : "SIGN_BANKACCT_NO",editable : false, style : "bg-light",  headerText : "결재계좌",  width: 120, filter : { showIcon : true}},
+                	   {dataField : "BIZ_NO",   headerText : "사업자번호",style : "bg-light",editable : false,  width: 120, filter : { showIcon : true}},
+                	   {dataField : "USE_YN",   headerText : "사용여부", editable : false, width: 120,renderer : auiCheckboxRenderer(), filter : { showIcon : true}},
+
+                ] ;//columnlayout
+                  
+          }, // created       
+          methods : {  // ======================================================================================
+              searchButtonOnClick : function() {
+              
+                            var param = {
+                                svcId:"searchExpCard",
+                                strUrl:"/ec/ex/config/expcard/searchExpCard",   //전송 url    
+                                inDs :  "" ,  
+                                param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+                                pCall : this.tranCallBack, 
+                                pLoad : true          
+                            };
+                            //트랜젝션 실행
+                            ajaxReadJsonData(param);
+                      }, // end of searchButtonOnClick
+              
+              saveButtonOnClick : function() {
+                            // 그리드 필수항목 체크
+//                             if (auiValidateGridData(this.gridView, ["CLOSING_TP", "RECEIPT_FR_DT","RECEIPT_TO_DT"
+//                                 ,"CLOSING_DH","CLOSING_HH","AFTER_CLOSING_DH","AFTER_CLOSING_HH","AFTER_POSTING_DT"] ) == false){
+//                                  return;
+//                             }
+                            
+                            // 변경된 데이터가 있는지 없는지 체크
+                            var    ds_master = getCRUDdata(this.gridView);
+                            
+                            if (ds_master['data'].length == 0 ) {
+                                customAlert('','','변경된 데이터가 없습니다.');
+                                return;
+                            }
+                            // Confirmation dialog, 시스템 설정에 따라 보이고 안보이고
+                            bootboxSaveConfirm(this);             
+              },  //saveButtonOnClick
+              
+              saveButtonOnClickCallback(){
+                
+                   saveColumnLayout(this.gridView);
+                
+                // 저장할 데이터 만들기
+                var    ds_master = {};
+                ds_master['ds_master'] = getCRUDdata(this.gridView);
+                
+                if(!ds_master){ return; }
+                
+                var param = {
+                    svcId:"save", 
+                    strUrl: "/ec/ex/config/expcard/saveExpCard",   //전송 url 
+                    inDs : {
+                        ds_master:ds_master
+                    },
+                    param : ds_master,        // 전송할 파라미터
+                    pCall : this.tranCallBack, 
+                    pLoad : true          // 로딩이미지 노출 여부  
+                };
+
+                //트랜젝션 실행
+                ajaxReadJsonData(param); 
+            }, //   saveButtonOnClickCallback         
+              
+                tranCallBack : function(svcId, data, errCd, msgTp, msgCd, msgText) { //******************************
+                      if(svcId=="searchExpCard"){
+                            if(data["ds_master"]['data'].length >= 0) {
+                                this.$refs.gridmaster.setGridData(data["ds_master"]['data']);
+                            }
+                      }else if(svcId =="save"){
+                            this.searchButtonOnClick(); // 재조회  
+                            saveGritter();
+                      } // end if
+                    },  // tranCallBack
+                    
+          }, // end of methods
+
+          mounted: function() {
+             var ref = this;
+             this.$nextTick(function () {
+                   ref.gridView = ref.$refs.gridmaster.myGridID;
+                   // pk컬럼(신규는 가능, update불가)
+                   auiSetAddedRowEnabledCell(ref.gridView,['CARD_CD'] ['CARD_NO']['OWNER_TP_NM']['USER_ID']['EMP_NO']['OWNER_KNM']
+                  /['OWNER_ENM']['DEPT_NM']['CARD_TP']['CARD_BRAND']['TP1']['TP2']['TP3']['VALID_YM']['SIGN_DD']['SIGN_BANK_CD']
+                  ['SIGN_BANKACCT_NO']['BIZ_NO']);
+              });
+             
+//**********************************************************************************************              
+             vueArr.push(this);
+            },
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

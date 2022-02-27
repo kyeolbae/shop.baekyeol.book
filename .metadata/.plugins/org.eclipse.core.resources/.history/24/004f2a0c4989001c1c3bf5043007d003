@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper namespace="com.ec.eframework.mapper.ex.expense.TransListServiceMapper">
+
+    
+        
+    
+    
+    <select id="reportApprvTransList" resultType="HashMap">
+		select ROW_NUMBER() OVER(order by mst.RECEIPT_DT asc, mst.EXPENSE_NO asc) AS ID
+			,ecc.CCTR_NM      -- 코스트센터명
+			,cat.EXPENSE_NM   -- 비용항목명
+			,mst.RECEIPT_DT   -- 사용일
+			,emp.EMP_NM       -- 사원명
+			,mst.MOD_DH
+			,ifnull( case mst.SOURCE_TP when '2' then (select mng.MNGVAL_NM from EXPENSE_MST_MNG MNG where MNG.EXPENSE_NO = mst.EXPENSE_NO and MNG.MNG_CD = 'E201' ) -- 영수증/출발지
+			else '' end
+			, '') as start_place -- 기타/출발지
+			,ifnull( case mst.SOURCE_TP when '2' then (select MNGVAL_NM from EXPENSE_MST_MNG MNG where MNG.EXPENSE_NO = mst.EXPENSE_NO and MNG.MNG_CD = 'E202' ) -- 영수증/도착지                            '' then ()
+			else '' end
+			, '') as end_place -- 기타/도착지
+			,ifnull( case mst.SOURCE_TP when '2' then (select MNGVAL_NM from EXPENSE_MST_MNG MNG where MNG.EXPENSE_NO = mst.EXPENSE_NO and MNG.MNG_CD = 'E203' ) -- 영수증/용무                             '' then ()
+			else '' end
+			, '') as biz_reason  -- 기타/용무
+			,ifnull( case mst.SOURCE_TP when '2' then (select MNGVAL_NM from EXPENSE_MST_MNG MNG where MNG.EXPENSE_NO = mst.EXPENSE_NO and MNG.MNG_CD = 'E302' ) -- 영수증/교통수단                             '' then ()
+			else '' end
+			, '') as transport -- 기타/교통수단
+			,mst.PAY_AMT      -- 지급액
+			,mst.EXPENSE_NO   -- 비용번호
+		from expense_mst mst
+		left outer join expense_cost_center ecc
+			on mst.CCTR_CD = ecc.CCTR_CD
+			and mst.COMPANY_CODE = ecc.COMPANY_CODE
+		left outer join expense_category cat
+			on mst.EXPENSE_CD = cat.EXPENSE_CD
+			and mst.COMPANY_CODE = cat.COMPANY_CODE
+		left outer join admin_emp emp
+			on mst.EXPENSE_EMP_NO = emp.EMP_NO
+			and mst.COMPANY_CODE = emp.COMPANY_CODE									
+		where   1 = 1
+		      <if test='REPORT_NO !=null and REPORT_NO !="" '>
+				and 	mst.REPORT_NO = #{REPORT_NO}     -- 결재번호 (결재함, 상신함)
+			  </if>
+			  <if test='ds_master !=null and ds_master.size  > 0 '>
+					and mst.EXPENSE_NO in
+					<foreach collection="ds_master" item="item" open="(" close=")" separator=",">
+						 #{item.EXPENSE_NO}
+					</foreach>
+			  </if>
+		
+    -- { REPORT_NO : 889 , ds_master : [{EXPENSE_NO : 998},{EXPENSE_NO : 11},{EXPENSE_NO : 999}]  }
+    </select> 
+
+</mapper>

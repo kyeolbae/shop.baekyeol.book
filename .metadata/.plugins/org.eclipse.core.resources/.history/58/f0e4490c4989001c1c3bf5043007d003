@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<!--     <meta charset="utf-8" /> -->
+</head>
+  <body>
+   
+   <div  :class="{'d-flex': curItem.TYPE =='ETAX' }" class="d-none w-100 flex-column flex-sm-row" th:fragment="html">
+   
+       <!-- begin modal 법인카드-->
+                         <div class="col col-sm-5 border p-5" :id="pgmid+'bizcard-clon-card'">
+                             <div style="position:relative"><div class="d-flex justify-content-center w-100 exp-modalbox-bgicon"><i class="icon-envelope-letter f-s-160 text-blue-transparent-2 mt-4"></i></div></div>
+                             <h4 class="m-0">{{curItem.RECEIPT_DT | dateformat('card-week')}}</h4>
+                             <h4 class="text-right">{{curItem.BIZ_NM}}</h4>
+                             <h5 class="m-0 text-right text-red">{{curItem.BIZ_NO | biznoformat }}</h5>
+                             <h6 class="m-0  d-flex justify-content-between"><span>[공급가]</span><span class="">{{curItem.SUPPLY_AMT  | numberformat('0,000')}}원</span></h6>
+                             <h6 class="m-0  d-flex justify-content-between"><span>[부가세]</span><span class="">{{curItem.VAT_AMT  | numberformat('0,000')}}원</span></h6>
+                             <h4 class="m-0   text-right">{{curItem.TOT_AMT  | numberformat('0,000')}}원</h4>
+                             <span class="border bg-light">공급자</span>
+                             <h6 class="m-0  d-flex justify-content-between"><span>[상호]</span><span class="">{{curItem.BIZ_NM}}</span></h6>
+                             <h6 class="m-0  d-flex justify-content-between"><span>[대표자명]</span><span class="">{{curItem.OWNER_NM}}</span></h6>
+                             <h6 class="m-0  d-flex justify-content-between"><span>[주소] &nbsp {{curItem.BIZ_ADDR}}</span></h6>
+                             <div>&nbsp</div>
+                             <span class="border bg-light  ">공급 받는자</span>
+                             <h6 class="m-0  d-flex justify-content-between"><span>[상호]</span><span class="">{{curItem.RECEIVE_BIZ_NM}}</span></h6>
+                             <h6 class="m-0  d-flex justify-content-between"><span>[대표자명]</span><span class="">{{curItem.RECEIVE_OWNER_NM}}</span></h6>
+                             <h6 class="m-0  d-flex justify-content-between"><span>[주소] &nbsp {{curItem.RECEIVE_BIZ_ADDR}}</span></h6>
+                             
+                         </div>
+                         <div class="col col-sm-7 p-0">
+                         
+                                     <div class="my-3" :id="pgmid+'etaxmodalbody'">
+                                            <div class="d-flex flex-column  mb-2">
+                                                <label class="w-100 m-0">증빙일<span class="text-danger">*</span></label>
+                                                <div class="w-100 d-flex flex-nowrap">
+                                                    <date-m-component-v1 ref="RECEIPT_DT_ETAX" th:pgmid="${param.pgm_id}" subname="RECEIPT_DT_ETAX"    disabled="disabled"></date-m-component-v1>
+                                                </div>
+                                           </div>
+                                            <div class="d-flex flex-column  mb-2">
+                                               <label class="w-100 m-0">과세구분<span class="text-danger">*</span></label>
+                                               <div class="w-100 d-flex flex-nowrap justify-content-center">
+                                                   <radio-syscommon ref="EX_TAX_TP" th:pgmid=${param.pgm_id}    selectid="EX_TAX_TP" selectname="EX_TAX_TP" clcd="EX_TAX_TP" @changed=""   disabled="disabled"> </radio-syscommon> 
+                                               </div>                                                
+                                           </div>                                                                           
+                                            <div class="d-flex flex-column  mb-2">
+                                                <label class="w-100 m-0">공급가<span class="text-danger">*</span></label>
+                                                <div class="w-100 d-flex flex-nowrap">
+                                                     <input type="text" name="EXPENSE_AMT_ETAX" :id="pgmid+'EXPENSE_AMT_ETAX'" class="form-control ec-mobile-input bg-white text-right"  :value="curItem.SUPPLY_AMT | numberformat('0,000') " disabled  />
+                                                </div>
+                                           </div> 
+                                            <div class="d-flex flex-column  mb-2">
+                                                <label class="w-100 m-0">부가세
+<!--                                                   <span  v-show="curItem.VAT_DEDUCTION_TP == '2'" class="text-red"><strong>(불공제)</strong></span><span class="text-danger">*</span> -->
+                                                </label>
+                                                <div class="w-100 d-flex flex-nowrap">
+                                                     <input type="text" name="EXPENSE_VAT_AMT_ETAX" :id="pgmid+'EXPENSE_VAT_AMT_ETAX'" class="form-control ec-mobile-input bg-white text-right"  :value="curItem.VAT_AMT ,'0,000' | numberformat('0,000')"  disabled  /> 
+                                                </div>
+                                           </div>                                            
+                                            <div class="d-flex flex-column  mb-2">
+                                                <label class="w-100 m-0">총지급액<span class="text-danger">*</span></label>
+                                                <div class="w-100 d-flex flex-nowrap">
+                                                     <input type="text" name="TOT_AMT_ETAX" :id="pgmid+'TOT_AMT_ETAX'" :value="(curItem.SUPPLY_AMT + curItem.VAT_AMT) | numberformat('0,000' )" class="form-control ec-mobile-input bg-white text-right" disabled  />
+                                                </div>
+                                           </div> 
+                                            <div class="d-flex flex-column  mb-2">
+                                                <label class="w-100 m-0">거래처<span class="text-danger">*</span></label>
+                                                <div class="w-100 d-flex flex-nowrap">
+                                                    <popup-m-code ref="popupbiz" :pgmid="pgmid"  pgmnm="거래처" subname="popupbiz"  name="popupbiz"   searchname="거래처"  columnlayout="popupbiz"   tablename="BIZ" required="true"   readonly="readonly" @codechanged="bizCdChange" ></popup-m-code>
+                                                </div>
+                                           </div> 
+                                            <div class="d-flex flex-column  mb-2">
+                                                <label class="w-100 m-0">비용항목<span class="text-danger">*</span></label>
+                                                <div class="w-100 d-flex flex-nowrap">
+                                                    <popup-m-code ref="popupexpetax" :pgmid="pgmid"  pgmnm="비용항목" subname="popupexpetax"  name="EXPENSE_CD_ETAX"   searchname="비용항목"  columnlayout="popupexpcard"   tablename="EXETAX"   required="true" readonly="readonly" @codechanged="etcExpCdChange" ></popup-m-code>
+                                                </div>
+                                           </div> 
+<!--                                             <div class="ec-grid-row"> -->
+<!--                                                 <label class="col-3  ec-col-label justify-content-md-end"><span class="text-danger">*</span>코스트센터</label>  -->
+<!--                                                 <div class="col-9  ec-col-input"> -->
+<!--                                                     <popup-code  ref="popupcostcenteretax" :pgmid="pgmid"  pgmnm="코스트센터" subname="popupcostcenter-etax"   name="CCTR_CD_ETAX" searchname="코스트센터"  columnlayout="popupcostcenter"   tablename="CCTR"  required="true" ></popup-code> -->
+<!--                                                 </div> -->
+<!--                                            </div>  -->
+                                           
+                                             <span v-show="receiptbelongtype != '0'">
+                                              <div class="d-flex flex-column  mb-2">
+                                                <label class="w-100 m-0">비용귀속<span class="text-danger">*</span></label>                                                
+                                                <div class='d-flex flex-column'>
+                                                
+                                                  <div class=" p-0 d-flex">
+                                                             <dropdown-m-syscommon  ref="ETAX_CCENTER_TP" class="w-100 p-0 flex-shrink-0"  :pgmid="pgmid"  
+                                                                     dropdownlabel=""  selectid="ETAX_CCENTER_TP" selectname="ETAX_CCENTER_TP" 
+                                                                     clcd="EX_CCENTER_TP"   @changed="ccenterTpChange"></dropdown-m-syscommon>
+                                                 </div>
+                                                 <div class=" p-0 d-flex">  
+                                                  <span v-show="receiptcosttype=='1'" class="w-100"><popup-m-code  ref="popupcostcenteretax" :pgmid="pgmid"  pgmnm="코스트센터" subname="popupcostcenter-etax"   name="CCTR_CD_ETAX" searchname="코스트센터"  readonly="readonly"  columnlayout="popupcostcenter"   tablename="CCTR" @codechanged="costCenterCdChange"  ></popup-m-code></span>
+                                                  <span v-show="receiptcosttype=='2'" class="w-100"><popup-m-code  ref="popupprojectetax" :pgmid="pgmid"  pgmnm="프로젝트" subname="popupproject-etax"   name="PROJECT_ETAX" searchname="프로젝트" readonly="readonly"  columnlayout="popupproj"   tablename="PROJ"    @codechanged="projectCdChange" ></popup-m-code></span>
+                                                </div>
+                                                </div>
+                                           </div> 
+                                           </span>                                              
+                                           
+                                          
+                                            <div v-for="item in receiptMngList " class="d-flex flex-column  mb-2">
+                                                <label class="w-100 m-0"><span v-show="item.MUST_YN=='1'" class="text-danger">*</span>{{item.MNG_NM}}</label> 
+                                                <div v-if="item.INPUT_FORMAT_CD !='01' &&  item.INPUT_FORMAT_CD !='05'  &&  item.INPUT_FORMAT_CD !='02'" class="w-100 d-flex flex-nowrap">
+                                                    <input type="text"  :id="pgmid+'etaxmng'+item.MNG_CD" 
+                                                    :class="{required : item.MUST_YN=='1'}" class="form-control ec-mobile-input"  /> 
+                                                </div>                                                                                              
+                                                <div v-if="item.INPUT_FORMAT_CD=='01'" class="w-100 d-flex flex-nowrap">
+                                                    <popup-m-code  :ref="'popupetaxmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-etax"   name="CCTR_CD_ETAX" 
+                                                    :searchname="item.MNG_NM"  :required="item.MUST_YN=='1' ?  'true' : '' "  :columnlayout="item.COLUMN_LAYOUT"   :tablename="item.TABLE_CD" :codecl="item.COMM_CL_CD" 
+                                                    readonly="readonly"  ></popup-m-code>
+                                                </div>
+				                                 <div v-if="item.INPUT_FORMAT_CD=='05'" class="w-100">
+				                                     <date-m-component-v1  :ref="'popupetaxmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-etax"   name="CCTR_CD_ETAX" 
+				                                     :searchname="item.MNG_NM"  :required="item.MUST_YN=='1' ?  'true' : '' "  readonly="readonly" 
+				                                      ></date-m-component-v1>
+				                                 </div>                                                
+                                           </div>  
+                                            <div class="d-flex flex-column  mb-2">
+                                                <label class="w-100 m-0">적요</label> 
+                                                <div class="w-100 d-flex flex-nowrap">
+                                                    <input type="text" name="RMK_ETAX" :id="pgmid+'RMK_ETAX'" :value="curItem.RMK"  class="form-control ec-mobile-input" /> 
+                                                </div>
+                                           </div> 
+                                    </div>
+                            </div>
+          <!-- end of popup 법인카드-->            
+
+   
+   
+   </div> 
+   
+  </body>
+</html>

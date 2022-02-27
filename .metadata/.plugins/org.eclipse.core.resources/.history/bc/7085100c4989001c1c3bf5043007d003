@@ -1,0 +1,3214 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="utf-8" />
+</head>
+<body>
+   
+<script th:fragment="js">
+
+Vue.component('report-bgt-cctr-emart', { //예산일반 ==================================================================
+	data: function () {
+		return {
+			id : objId(),
+            refHeader : objId(),
+        	refMng : objId(),
+            refFile: objId(),
+			Report : [],
+	        reportNo : '',
+	        reportTp : '',
+	        reportTitle : '',
+	        reportRmk : '',
+	        paySumAmt : '',
+		}
+		}, props: {pgmid : String ,subname:String, },
+		template:
+		'<div class="h-100">\
+		                 <report-header-comp  :ref="refHeader" v-show="true" title="true" ></report-header-comp> \
+		                 <report-mng-comp :ref="refMng" v-show="true"  >   </report-mng-comp> \
+		                 <div class="w-100 text-right f-maintheme f-subtitle">{{getSumAmt | numberformat("0,000") }}원</div> \
+	                     <div class="d-flex flex-wrap bg-light border">\
+	                     		<div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+		                            <div class="col-1 py-2 px-0 text-center ">순번</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">반영월</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">코스트센터</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">예산부서</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">계정</div>\
+		                        </div> \
+		                        <div class="col-12 col-xl-6 p-0 d-flex"> \
+		                            <div class="col-3 py-2 px-0 text-center border-left">예산과목</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">신청금액</div>\
+		                            <div class="col-6 py-2 px-0 text-center border-left">적요</div>\
+		                        </div> \
+	                      </div>\
+	                      <div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in Report" >\
+	                      	    <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+		                            <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_YM | dateformat("yyyy.mm")}}</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">{{item.BDGT_DEPT_NM}}</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">{{item.ACC_NM}}</div>\
+		                       </div> \
+		                       <div class="col-12 col-xl-6 p-0 d-flex"> \
+			                            <div class="col-3 py-2 px-0 text-center border-left">{{item.BDGT_ACC_NM}}</div>\
+			                            <div class="col-3 py-2 px-0 text-center border-left">{{item.BDGT_AMT | numberformat("0,000")}}</div>\
+			                            <div class="col-6 py-2 px-0 text-center border-left">{{item.RMK}}</div>\
+	                           </div> \
+	                      </div>\
+	               </div>\
+	    </div>',
+		created () {
+			
+		},
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.Report.forEach(item => {  t = t + item.BDGT_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+		methods : { 
+			// 필수함수
+			   initData : function() {  // 필수함수
+				   this.$refs[this.refHeader].initData();
+				   this.$refs[this.refMng].initData();
+			   },
+			   setObj : function( o ) { // 필수함수
+				   this.Report = o;
+				   var arr = []
+				   this.Report.forEach( function (item) {
+					  arr.push({EXPENSE_NO : item.EXPENSE_NO});
+				   } );
+			       this.$refs[this.refFile].getFiles(arr);
+			   },
+			      
+			   sendObj: function( o ) {  // 필수함수
+				   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+					return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+					    , ds_report : this.$refs[this.refHeader].getObj() 
+					, ds_files : this.reportFiles
+					}, this.$refs[this.refMng].getObj()   );
+				   },
+			   setReportTp : function( reporttp ) { // 필수함수
+				   this.$refs[this.refMng].searchMng(reporttp);
+			   },	
+			// 필수함수 end			
+			search : function(reportNo) {
+				 var param = {
+	                 svcId:"searchr",
+	                 strUrl:"/ex/bgt/req/searchBgt",   //전송 url    
+	                 param : {REPORT_NO : reportNo},
+	                 pCall : this.searchCallback, 
+	                 pLoad : true   ,
+	             };
+	             //트랜젝션 실행
+	             ajaxReadJsonData(param);
+	             console.log(param);
+	             this.$refs[this.refHeader].search(reportNo);
+	       }, // end of searchButtonOnClick
+	       
+	       searchCallback : function(svc, data) {
+	    	   this.Report = data.ds_detail.data
+	       },
+			
+	       procApprove: function(reportNo) {  // parent에서 승인시 이 함수 호출하므로, 추가작업(데이터저장 등)이 필요할 때 반드시 만들어 주세요.
+              	    	   
+	    	   // DB저장 필요할 때, 다음 이벤트 emit  
+	    	   // this.$emit('procApproved',response);  // response는 key, seq 등
+	       },	
+	       
+	       
+	       
+	       
+	       
+		},//method 
+		
+		mounted: function() { 
+	        var ref = this;
+	        this.search();
+	        this.$nextTick(function () {
+	        	
+	               });   
+		},
+}); // report-bgt-cctr-emart
+
+Vue.component('report-cctr-emart', { //예산일반 상신함 ==================================================================
+	data: function () {
+		return {
+			id : objId(),
+            refHeader : objId(),
+        	refMng : objId(),
+            refFile: objId(),
+            
+			Report : [],
+	        reportNo : '',
+	        reportTp : '',
+	        reportTitle : '',
+	        reportRmk : '',
+	        paySumAmt : '',
+			
+		}
+		}, props: {pgmid : String ,subname:String, },
+		template:
+		'<div class="h-100">\
+		                 <report-header-read-comp  :ref="refHeader" v-show="true" ></report-header-read-comp> \
+		                 <report-mng-read-comp :ref="refMng" v-show="true"  >   </report-mng-read-comp> \
+	                     <div class="d-flex flex-wrap bg-light border">\
+	                     		<div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+		                            <div class="col-1 py-2 px-0 text-center ">순번</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">반영월</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">코스트센터</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">예산부서</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">계정</div>\
+		                        </div> \
+		                        <div class="col-12 col-xl-6 p-0 d-flex"> \
+		                            <div class="col-3 py-2 px-0 text-center border-left">예산과목</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">신청금액</div>\
+		                            <div class="col-6 py-2 px-0 text-center border-left">적요</div>\
+		                        </div> \
+	                      </div>\
+	                      <div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in Report" >\
+	                      	    <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+		                            <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_YM | dateformat("yyyy.mm")}}</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">{{item.BDGT_DEPT_NM}}</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">{{item.ACC_NM}}</div>\
+		                       </div> \
+		                       <div class="col-12 col-xl-6 p-0 d-flex"> \
+			                            <div class="col-3 py-2 px-0 text-center border-left">{{item.BDGT_ACC_NM}}</div>\
+			                            <div class="col-3 py-2 px-0 text-center border-left">{{item.BDGT_AMT | numberformat("0,000")}}</div>\
+			                            <div class="col-6 py-2 px-0 text-center border-left">{{item.RMK}}</div>\
+	                           </div> \
+	                      </div>\
+	               </div>\
+	    </div>',
+		created () {
+			
+		},
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.Report.forEach(item => {  t = t + item.BDGT_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+		methods : { 
+			// 필수함수
+			   initData : function() {  // 필수함수
+				   this.$refs[this.refHeader].initData();
+				   this.$refs[this.refMng].initData();
+			   },
+			   setObj : function( o ) { // 필수함수
+			       
+			   },   
+			   sendObj: function( o ) {  // 필수함수
+
+			   },
+			   setReportTp : function( reporttp ) { // 필수함수
+				   this.$refs[this.refMng].searchMng(reporttp);
+			   },	
+			// 필수함수 end			
+			search : function(reportno) {
+				this.reportNo = reportno;
+				// header : title, 내용, 첨부파일
+		          this.$refs[this.refHeader].search(this.reportNo);
+				 var param = {
+	                 svcId:"searchr",
+	                 strUrl:"/ex/bgt/req/searchBgt",   //전송 url    
+	                 param : {REPORT_NO : this.reportNo},
+	                 pCall : this.searchCallback, 
+	                 pLoad : true   ,
+	             };
+	             //트랜젝션 실행
+	             ajaxReadJsonData(param);
+	             console.log(param)
+	       }, // end of searchButtonOnClick
+	       
+	       searchCallback : function(svc, data) {
+	    	   this.Report = data.ds_detail.data
+	    	   this.$refs[this.refHeader].setAmt(this.getSumAmt)
+	       },
+			
+	       procApprove: function(reportNo) {  // parent에서 승인시 이 함수 호출하므로, 추가작업(데이터저장 등)이 필요할 때 반드시 만들어 주세요.
+              	    	   
+	    	   // DB저장 필요할 때, 다음 이벤트 emit  
+	    	   // this.$emit('procApproved',response);  // response는 key, seq 등
+	       },	
+	       
+	       
+	       
+	       
+	       
+		},//method 
+		
+		mounted: function() { 
+	        var ref = this;
+	        this.search();
+	        this.$nextTick(function () {
+	        	
+	               });   
+		},
+}); // report-bgt-cctr-emart
+
+
+Vue.component('report-bgt-head-emart', { //예산본사 ==================================================================
+	data: function () {
+		return {
+			id : objId(),
+			Report : [],
+	        reportNo : '',
+	        reportTp : '',
+	        reportTitle : '',
+	        reportRmk : '',
+	        paySumAmt : '',
+			refHeader : objId(),
+			refMng: objId(),
+		}
+		}, props: {pgmid : String ,subname:String, },
+		template:
+		'<div class="h-100">\
+		                 <report-header-comp  :ref="refHeader" v-show="true"  ></report-header-comp> \
+		                 <report-mng-comp :ref="refMng" v-show="true"  >   </report-mng-comp> \
+		                 <div class="w-100 text-right f-maintheme f-subtitle">{{getSumAmt | numberformat("0,000") }}원</div> \
+	                     <div class="d-flex flex-wrap bg-light border">\
+	                     		<div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+		                            <div class="col-2 py-2 px-0 text-center ">순번</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">코스트센터</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">예산부서</div>\
+		                            <div class="col-4 py-2 px-0 text-center border-left">계정</div>\
+		                        </div> \
+		                        <div class="col-12 col-xl-6 p-0 d-flex"> \
+		                            <div class="col-3 py-2 px-0 text-center border-left">예산과목</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">신청금액</div>\
+		                            <div class="col-6 py-2 px-0 text-center border-left">적요</div>\
+		                        </div> \
+	                      </div>\
+	                      <div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in Report" >\
+	                      	    <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+		                            <div class="col-2 py-2 px-0 text-center">{{item.ID}}</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">{{item.BDGT_DEPT_NM}}</div>\
+		                            <div class="col-4 py-2 px-0 text-center border-left">{{item.ACC_NM}}</div>\
+		                       </div> \
+		                       <div class="col-12 col-xl-6 p-0 d-flex"> \
+			                            <div class="col-3 py-2 px-0 text-center border-left">{{item.BDGT_ACC_NM}}</div>\
+			                            <div class="col-3 py-2 px-0 text-center border-left">{{item.BDGT_AMT | numberformat("0,000")}}</div>\
+			                            <div class="col-6 py-2 px-0 text-center border-left">{{item.RMK}}</div>\
+	                           </div> \
+	                      </div>\
+	               </div>\
+	    </div>',
+		created () {
+			
+		},
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.Report.forEach(item => {  t = t + item.BDGT_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+		methods : { 
+			// 필수함수
+			   initData : function() {  // 필수함수
+				   this.$refs[this.refHeader].initData();
+				   this.$refs[this.refMng].initData();
+			   },
+			   setObj : function( o ) { // 필수함수
+				
+			   },   
+			   sendObj: function( o ) {  // 필수함수
+				   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+					return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+					    , ds_report : this.$refs[this.refHeader].getObj() 
+					, ds_files : this.reportFiles
+					}, this.$refs[this.refMng].getObj()   );
+				   },
+			   setReportTp : function( reporttp ) { // 필수함수
+				   this.$refs[this.refMng].searchMng(reporttp);
+			   },	
+			// 필수함수 end			
+			search : function(reportNo) {
+
+				 var param = {
+	                 svcId:"searchr",
+	                 strUrl:"/ex/bgt/req/searchBgtHead",   //전송 url    
+	                 param : {REPORT_NO : reportNo},
+	                 pCall : this.searchCallback, 
+	                 pLoad : true   ,
+	             };
+	             //트랜젝션 실행
+	             ajaxReadJsonData(param);
+	             console.log(param);
+	             this.$refs[this.refHeader].search(reportNo);
+	       }, // end of searchButtonOnClick
+	       
+	       searchCallback : function(svc, data) {
+	    	   this.Report = data.ds_detail.data
+	       },
+			
+	       procApprove: function(reportNo) {  // parent에서 승인시 이 함수 호출하므로, 추가작업(데이터저장 등)이 필요할 때 반드시 만들어 주세요.
+              	    	   
+	    	   // DB저장 필요할 때, 다음 이벤트 emit  
+	    	   // this.$emit('procApproved',response);  // response는 key, seq 등
+	       },	
+	       
+	       
+	       
+	       
+	       
+		},//method 
+		
+		mounted: function() { 
+	        var ref = this;
+	        this.search();
+	        this.$nextTick(function () {
+	        	
+	               });   
+		},
+}); // report-bgt-head-emart
+
+
+Vue.component('report-head-emart', { //예산본사 ==================================================================
+	data: function () {
+		return {
+			id : objId(),
+			Report : [],
+	        reportNo : '',
+	        reportTp : '',
+	        reportTitle : '',
+	        reportRmk : '',
+	        paySumAmt : '',
+			refHeader : objId(),
+			refMng: objId(),
+		}
+		}, props: {pgmid : String ,subname:String, },
+		template:
+		'<div class="h-100">\
+		                 <report-header-read-comp  :ref="refHeader" v-show="true"  ></report-header-read-comp> \
+		                 <report-mng-read-comp :ref="refMng" v-show="true"  >   </report-mng-read-comp> \
+	                     <div class="d-flex flex-wrap bg-light border">\
+	                     		<div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+		                            <div class="col-2 py-2 px-0 text-center ">순번</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">코스트센터</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">예산부서</div>\
+		                            <div class="col-4 py-2 px-0 text-center border-left">계정</div>\
+		                        </div> \
+		                        <div class="col-12 col-xl-6 p-0 d-flex"> \
+		                            <div class="col-3 py-2 px-0 text-center border-left">예산과목</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">신청금액</div>\
+		                            <div class="col-6 py-2 px-0 text-center border-left">적요</div>\
+		                        </div> \
+	                      </div>\
+	                      <div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in Report" >\
+	                      	    <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+		                            <div class="col-2 py-2 px-0 text-center">{{item.ID}}</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">{{item.BDGT_DEPT_NM}}</div>\
+		                            <div class="col-4 py-2 px-0 text-center border-left">{{item.ACC_NM}}</div>\
+		                       </div> \
+		                       <div class="col-12 col-xl-6 p-0 d-flex"> \
+			                            <div class="col-3 py-2 px-0 text-center border-left">{{item.BDGT_ACC_NM}}</div>\
+			                            <div class="col-3 py-2 px-0 text-center border-left">{{item.BDGT_AMT | numberformat("0,000")}}</div>\
+			                            <div class="col-6 py-2 px-0 text-center border-left">{{item.RMK}}</div>\
+	                           </div> \
+	                      </div>\
+	               </div>\
+	    </div>',
+		created () {
+			
+		},
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.Report.forEach(item => {  t = t + item.BDGT_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+		methods : { 
+			// 필수함수
+			   initData : function() {  // 필수함수
+				   this.$refs[this.refHeader].initData();
+				   this.$refs[this.refMng].initData();
+			   },
+			   setObj : function( o ) { // 필수함수
+				
+			   },   
+			   sendObj: function( o ) {  // 필수함수
+
+			   },
+			   setReportTp : function( reporttp ) { // 필수함수
+				   this.$refs[this.refMng].searchMng(reporttp);
+			   },	
+			// 필수함수 end			
+			search : function(reportno) {
+				this.reportNo = reportno;
+				// header : title, 내용, 첨부파일
+		          this.$refs[this.refHeader].search(this.reportNo);
+				 var param = {
+	                 svcId:"searchr",
+	                 strUrl:"/ex/bgt/req/searchBgtHead",   //전송 url    
+	                 param : {REPORT_NO : this.reportNo},
+	                 pCall : this.searchCallback, 
+	                 pLoad : true   ,
+	             };
+	             //트랜젝션 실행
+	             ajaxReadJsonData(param);
+	             console.log(param)
+	       }, // end of searchButtonOnClick
+	       
+	       searchCallback : function(svc, data) {
+	    	   console.log(data.ds_detail.data)
+	    	   this.Report = data.ds_detail.data
+	    	   console.log(this.Report.item)
+	    	   this.$refs[this.refHeader].setAmt(this.getSumAmt)
+	       },
+			
+	       procApprove: function(reportNo) {  // parent에서 승인시 이 함수 호출하므로, 추가작업(데이터저장 등)이 필요할 때 반드시 만들어 주세요.
+              	    	   
+	    	   // DB저장 필요할 때, 다음 이벤트 emit  
+	    	   // this.$emit('procApproved',response);  // response는 key, seq 등
+	       },	
+	       
+	       
+	       
+	       
+	       
+		},//method 
+		
+		mounted: function() { 
+	        var ref = this;
+	        this.search();
+	        this.$nextTick(function () {
+	        	
+	               });   
+		},
+}); // report-head-emart
+
+
+Vue.component('report-bgt-wbs-emart', { //예산wbs ==================================================================
+	data: function () {
+		return {
+			id : objId(),
+			Report : [],
+	        reportNo : '',
+	        reportTp : '',
+	        reportTitle : '',
+	        reportRmk : '',
+	        paySumAmt : '',
+			refHeader : objId(),
+			refMng: objId(),
+		}
+		}, props: {pgmid : String ,subname:String, },
+		template:
+		'<div class="h-100">\
+		                 <report-header-comp  :ref="refHeader" v-show="true"  ></report-header-comp> \
+		                 <report-mng-comp :ref="refMng" v-show="true"  >   </report-mng-comp> \
+		                 <div class="w-100 text-right f-maintheme f-subtitle">{{getSumAmt | numberformat("0,000") }}원</div> \
+	                     <div class="d-flex flex-wrap bg-light border">\
+	                     		<div class="col-12 col-xl-12 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+		                            <div class="col-1 py-2 px-0 text-center ">순번</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">wbs</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">예산부서</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">예산과목</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">신청금액</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">적요</div>\
+		                        </div> \
+	                      </div>\
+	                      <div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in Report" >\
+	                      	    <div class="col-12 col-xl-12 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+		                            <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">{{item.PS_NM}}</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_DEPT_NM}}</div>\
+			                        <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_ACC_NM}}</div>\
+			                        <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_AMT | numberformat("0,000")}}</div>\
+			                        <div class="col-3 py-2 px-0 text-center border-left">{{item.RMK}}</div>\
+	                           </div> \
+	                      </div>\
+	               </div>\
+	    </div>',
+		created () {
+			
+		},
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.Report.forEach(item => {  t = t + item.BDGT_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+		methods : { 
+			// 필수함수
+			   initData : function() {  // 필수함수
+				   this.$refs[this.refHeader].initData();
+				   this.$refs[this.refMng].initData();
+			   },
+			   setObj : function( o ) { // 필수함수
+				
+			   },   
+			   sendObj: function( o ) {  // 필수함수
+				   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+					return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+					    , ds_report : this.$refs[this.refHeader].getObj() 
+					, ds_files : this.reportFiles
+					}, this.$refs[this.refMng].getObj()   );
+				   },
+			   setReportTp : function( reporttp ) { // 필수함수
+				   this.$refs[this.refMng].searchMng(reporttp);
+			   },	
+			// 필수함수 end			
+			search : function(reportNo) {
+
+				 var param = {
+	                 svcId:"searchr",
+	                 strUrl:"/ex/bgt/req/searchWbs",   //전송 url    
+	                 param : {REPORT_NO : reportNo},
+	                 pCall : this.searchCallback, 
+	                 pLoad : true   ,
+	             };
+	             //트랜젝션 실행
+	             ajaxReadJsonData(param);
+	             console.log(param);
+	             this.$refs[this.refHeader].search(reportNo);
+	       }, // end of searchButtonOnClick
+	       
+	       searchCallback : function(svc, data) {
+	    	   this.Report = data.ds_detail.data
+	       },
+			
+	       procApprove: function(reportNo) {  // parent에서 승인시 이 함수 호출하므로, 추가작업(데이터저장 등)이 필요할 때 반드시 만들어 주세요.
+              	    	   
+	    	   // DB저장 필요할 때, 다음 이벤트 emit  
+	    	   // this.$emit('procApproved',response);  // response는 key, seq 등
+	       },	
+	       
+	       
+	       
+	       
+	       
+		},//method 
+		
+		mounted: function() { 
+	        var ref = this;
+	        this.search();
+	        this.$nextTick(function () {
+	        	
+	               });   
+		},
+}); // report-bgt-wbs-emart
+
+
+Vue.component('report-wbs-emart', { //예산wbs ==================================================================
+	data: function () {
+		return {
+			id : objId(),
+			Report : [],
+	        reportNo : '',
+	        reportTp : '',
+	        reportTitle : '',
+	        reportRmk : '',
+	        paySumAmt : '',
+			refHeader : objId(),
+			refMng: objId(),
+		}
+		}, props: {pgmid : String ,subname:String, },
+		template:
+		'<div class="h-100">\
+		                 <report-header-read-comp  :ref="refHeader" v-show="true"  ></report-header-read-comp> \
+		                 <report-mng-read-comp :ref="refMng" v-show="true"  >   </report-mng-read-comp> \
+	                     <div class="d-flex flex-wrap bg-light border">\
+	                     		<div class="col-12 col-xl-12 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+		                            <div class="col-1 py-2 px-0 text-center ">순번</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">wbs</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">예산부서</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">예산과목</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">신청금액</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">적요</div>\
+		                        </div> \
+	                      </div>\
+	                      <div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in Report" >\
+	                      	    <div class="col-12 col-xl-12 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+		                            <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">{{item.PS_NM}}</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_DEPT_NM}}</div>\
+			                        <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_ACC_NM}}</div>\
+			                        <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_AMT | numberformat("0,000")}}</div>\
+			                        <div class="col-3 py-2 px-0 text-center border-left">{{item.RMK}}</div>\
+	                           </div> \
+	                      </div>\
+	               </div>\
+	    </div>',
+		created () {
+			
+		},
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.Report.forEach(item => {  t = t + item.BDGT_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+		methods : { 
+			// 필수함수
+			   initData : function() {  // 필수함수
+				   this.$refs[this.refHeader].initData();
+				   this.$refs[this.refMng].initData();
+			   },
+			   setObj : function( o ) { // 필수함수
+				
+			   },   
+			   sendObj: function( o ) {  // 필수함수
+
+			   },
+			   setReportTp : function( reporttp ) { // 필수함수
+				   this.$refs[this.refMng].searchMng(reporttp);
+			   },	
+			// 필수함수 end			
+			search : function(reportno) {
+				this.reportNo = reportno;
+				// header : title, 내용, 첨부파일
+		          this.$refs[this.refHeader].search(this.reportNo);
+				 var param = {
+	                 svcId:"searchr",
+	                 strUrl:"/ex/bgt/req/searchWbs",   //전송 url    
+	                 param : {REPORT_NO : this.reportNo},
+	                 pCall : this.searchCallback, 
+	                 pLoad : true   ,
+	             };
+	             //트랜젝션 실행
+	             ajaxReadJsonData(param);
+	             console.log(param)
+	       }, // end of searchButtonOnClick
+	       
+	       searchCallback : function(svc, data) {
+	    	   console.log(data.ds_detail.data)
+	    	   this.Report = data.ds_detail.data
+	    	   console.log(this.Report.item)
+	    	   this.$refs[this.refHeader].setAmt(this.getSumAmt)
+	       },
+			
+	       procApprove: function(reportNo) {  // parent에서 승인시 이 함수 호출하므로, 추가작업(데이터저장 등)이 필요할 때 반드시 만들어 주세요.
+              	    	   
+	    	   // DB저장 필요할 때, 다음 이벤트 emit  
+	    	   // this.$emit('procApproved',response);  // response는 key, seq 등
+	       },	
+	       
+	       
+	       
+	       
+	       
+		},//method 
+		
+		mounted: function() { 
+	        var ref = this;
+	        this.search();
+	        this.$nextTick(function () {
+	        	
+	               });   
+		},
+}); // report-wbs-emart
+
+
+Vue.component('report-bgt-trans-emart', { //예산전용 ==================================================================
+	data: function () {
+		return {
+			id : objId(),
+			Report : [],
+	        reportNo : '',
+	        reportTp : '',
+	        reportTitle : '',
+	        reportRmk : '',
+	        paySumAmt : '',
+			refHeader : objId(),
+			refMng: objId(),
+		}
+		}, props: {pgmid : String ,subname:String, },
+		template:
+		'<div class="h-100">\
+		                 <report-header-comp  :ref="refHeader" v-show="true"  ></report-header-comp> \
+		                 <report-mng-comp :ref="refMng" v-show="true"  >   </report-mng-comp> \
+		                 <div class="w-100 text-right f-maintheme f-subtitle">{{getSumAmt | numberformat("0,000") }}원</div> \
+	                     <div class="d-flex flex-wrap bg-light border">\
+	                     		<div class="col-12 col-xl-12 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+		                            <div class="col-1 py-2 px-0 text-center ">순번</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">예산부서</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">예산과목</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">신청금액</div>\
+		                            <div class="col-5 py-2 px-0 text-center border-left">적요</div>\
+		                        </div> \
+	                      </div>\
+	                      <div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in Report" >\
+	                      	    <div class="col-12 col-xl-12 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+		                            <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_DEPT_NM}}</div>\
+			                        <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_ACC_NM}}</div>\
+			                        <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_AMT | numberformat("0,000")}}</div>\
+			                        <div class="col-5 py-2 px-0 text-center border-left">{{item.RMK}}</div>\
+	                           </div> \
+	                      </div>\
+	               </div>\
+	    </div>',
+		created () {
+			
+		},
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.Report.forEach(item => {  t = t + item.BDGT_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+		methods : { 
+			// 필수함수
+			   initData : function() {  // 필수함수
+				   this.$refs[this.refHeader].initData();
+				   this.$refs[this.refMng].initData();
+			   },
+			   setObj : function( o ) { // 필수함수
+				
+			   },   
+			   sendObj: function( o ) {  // 필수함수
+				   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+					return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+					    , ds_report : this.$refs[this.refHeader].getObj() 
+					, ds_files : this.reportFiles
+					}, this.$refs[this.refMng].getObj()   );
+				   },
+			   setReportTp : function( reporttp ) { // 필수함수
+				   this.$refs[this.refMng].searchMng(reporttp);
+			   },	
+			// 필수함수 end			
+			search : function(reportNo) {
+
+				 var param = {
+	                 svcId:"searchr",
+	                 strUrl:"/ex/bgt/req/searchBgtTrans",   //전송 url    
+	                 param : {REPORT_NO : reportNo},
+	                 pCall : this.searchCallback, 
+	                 pLoad : true   ,
+	             };
+	             //트랜젝션 실행
+	             ajaxReadJsonData(param);
+	             console.log(param);
+	             this.$refs[this.refHeader].search(reportNo);
+	       }, // end of searchButtonOnClick
+	       
+	       searchCallback : function(svc, data) {
+	    	   console.log(data.ds_detail.data)
+	    	   this.Report = data.ds_detail.data
+	    	   console.log(this.Report.item)
+	       },
+			
+	       procApprove: function(reportNo) {  // parent에서 승인시 이 함수 호출하므로, 추가작업(데이터저장 등)이 필요할 때 반드시 만들어 주세요.
+              	    	   
+	    	   // DB저장 필요할 때, 다음 이벤트 emit  
+	    	   // this.$emit('procApproved',response);  // response는 key, seq 등
+	       },	
+	       
+	       
+	       
+	       
+	       
+		},//method 
+		
+		mounted: function() { 
+	        var ref = this;
+	        this.search();
+	        this.$nextTick(function () {
+	        	
+	               });   
+		},
+}); // report-bgt-trans-emart
+
+
+Vue.component('report-trans-emart', { //예산전용 ==================================================================
+	data: function () {
+		return {
+			id : objId(),
+			Report : [],
+	        reportNo : '',
+	        reportTp : '',
+	        reportTitle : '',
+	        reportRmk : '',
+	        paySumAmt : '',
+			refHeader : objId(),
+			refMng: objId(),
+		}
+		}, props: {pgmid : String ,subname:String, },
+		template:
+		'<div class="h-100">\
+		                 <report-header-read-comp  :ref="refHeader" v-show="true"  ></report-header-read-comp> \
+		                 <report-mng-read-comp :ref="refMng" v-show="true"  >   </report-mng-read-comp> \
+	                     <div class="d-flex flex-wrap bg-light border">\
+	                     		<div class="col-12 col-xl-12 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+		                            <div class="col-1 py-2 px-0 text-center ">순번</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">예산부서</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">예산과목</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">신청금액</div>\
+		                            <div class="col-5 py-2 px-0 text-center border-left">적요</div>\
+		                        </div> \
+	                      </div>\
+	                      <div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in Report" >\
+	                      	    <div class="col-12 col-xl-12 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+		                            <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_DEPT_NM}}</div>\
+			                        <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_ACC_NM}}</div>\
+			                        <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_AMT | numberformat("0,000")}}</div>\
+			                        <div class="col-5 py-2 px-0 text-center border-left">{{item.RMK}}</div>\
+	                           </div> \
+	                      </div>\
+	               </div>\
+	    </div>',
+		created () {
+			
+		},
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.Report.forEach(item => {  t = t + item.BDGT_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+		methods : { 
+			// 필수함수
+			   initData : function() {  // 필수함수
+				   this.$refs[this.refHeader].initData();
+				   this.$refs[this.refMng].initData();
+			   },
+			   setObj : function( o ) { // 필수함수
+				
+			   },   
+			   sendObj: function( o ) {  // 필수함수
+
+			   },
+			   setReportTp : function( reporttp ) { // 필수함수
+				   this.$refs[this.refMng].searchMng(reporttp);
+			   },	
+			// 필수함수 end			
+			search : function(reportno) {
+				this.reportNo = reportno;
+				// header : title, 내용, 첨부파일
+		          this.$refs[this.refHeader].search(this.reportNo);
+				 var param = {
+	                 svcId:"searchr",
+	                 strUrl:"/ex/bgt/req/searchBgtTrans",   //전송 url    
+	                 param : {REPORT_NO : this.reportNo},
+	                 pCall : this.searchCallback, 
+	                 pLoad : true   ,
+	             };
+	             //트랜젝션 실행
+	             ajaxReadJsonData(param);
+	             console.log(param)
+	       }, // end of searchButtonOnClick
+	       
+	       searchCallback : function(svc, data) {
+	    	   this.Report = data.ds_detail.data
+	       },
+			
+	       procApprove: function(reportNo) {  // parent에서 승인시 이 함수 호출하므로, 추가작업(데이터저장 등)이 필요할 때 반드시 만들어 주세요.
+              	    	   
+	    	   // DB저장 필요할 때, 다음 이벤트 emit  
+	    	   // this.$emit('procApproved',response);  // response는 key, seq 등
+	       },	
+	       
+	       
+	       
+	       
+	       
+		},//method 
+		
+		mounted: function() { 
+	        var ref = this;
+	        this.search();
+	        this.$nextTick(function () {
+	        	
+	               });   
+		},
+}); // report-trans-emart
+
+
+Vue.component('report-bgt-fwd-emart', { //예산이월 ==================================================================
+	data: function () {
+		return {
+			id : objId(),
+			Report : [],
+	        reportNo : '',
+	        reportTp : '',
+	        reportTitle : '',
+	        reportRmk : '',
+	        paySumAmt : '',
+			refHeader : objId(),
+			refMng: objId(),
+		}
+		}, props: {pgmid : String ,subname:String, },
+		template:
+		'<div class="h-100">\
+		                 <report-header-comp  :ref="refHeader" v-show="true"  ></report-header-comp> \
+		                 <report-mng-comp :ref="refMng" v-show="true"  >   </report-mng-comp> \
+		                 <div class="w-100 text-right f-maintheme f-subtitle">{{getSumAmt | numberformat("0,000") }}원</div> \
+	                     <div class="d-flex flex-wrap bg-light border">\
+	                     		<div class="col-12 col-xl-12 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+		                            <div class="col-1 py-2 px-0 text-center ">순번</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">리시버년월</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">예산부서</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">예산과목</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">신청금액</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">적요</div>\
+		                        </div> \
+	                      </div>\
+	                      <div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in Report" >\
+	                      	    <div class="col-12 col-xl-12 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+		                            <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_YM | dateformat("yyyy.mm")}}</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_DEPT_NM}}</div>\
+			                        <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_ACC_NM}}</div>\
+			                        <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_AMT | numberformat("0,000")}}</div>\
+			                        <div class="col-3 py-2 px-0 text-center border-left">{{item.RMK}}</div>\
+	                           </div> \
+	                      </div>\
+	               </div>\
+	    </div>',
+		created () {
+			
+		},
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.Report.forEach(item => {  t = t + item.BDGT_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+		methods : { 
+			// 필수함수
+			   initData : function() {  // 필수함수
+				   this.$refs[this.refHeader].initData();
+				   this.$refs[this.refMng].initData();
+			   },
+			   setObj : function( o ) { // 필수함수
+				
+			   },   
+			   sendObj: function( o ) {  // 필수함수
+				   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+					return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+					    , ds_report : this.$refs[this.refHeader].getObj() 
+					, ds_files : this.reportFiles
+					}, this.$refs[this.refMng].getObj()   );
+				   },
+			   setReportTp : function( reporttp ) { // 필수함수
+				   this.$refs[this.refMng].searchMng(reporttp);
+			   },	
+			// 필수함수 end			
+			search : function(reportNo) {
+
+				 var param = {
+	                 svcId:"searchr",
+	                 strUrl:"/ex/bgt/req/searchFwd",   //전송 url    
+	                 param : {REPORT_NO : reportNo},
+	                 pCall : this.searchCallback, 
+	                 pLoad : true   ,
+	             };
+	             //트랜젝션 실행
+	             ajaxReadJsonData(param);
+	             console.log(param);
+	             this.$refs[this.refHeader].search(reportNo);
+	       }, // end of searchButtonOnClick
+	       
+	       searchCallback : function(svc, data) {
+	    	   console.log(data.ds_detail.data)
+	    	   this.Report = data.ds_detail.data
+	    	   console.log(this.Report.item)
+	       },
+			
+	       procApprove: function(reportNo) {  // parent에서 승인시 이 함수 호출하므로, 추가작업(데이터저장 등)이 필요할 때 반드시 만들어 주세요.
+              	    	   
+	    	   // DB저장 필요할 때, 다음 이벤트 emit  
+	    	   // this.$emit('procApproved',response);  // response는 key, seq 등
+	       },	
+	       
+	       
+	       
+	       
+	       
+		},//method 
+		
+		mounted: function() { 
+	        var ref = this;
+	        this.search();
+	        this.$nextTick(function () {
+	        	
+	               });   
+		},
+}); // report-bgt-fwd-emart
+
+Vue.component('report-fwd-emart', { //예산이월 ==================================================================
+	data: function () {
+		return {
+			id : objId(),
+			Report : [],
+	        reportNo : '',
+	        reportTp : '',
+	        reportTitle : '',
+	        reportRmk : '',
+	        paySumAmt : '',
+			refHeader : objId(),
+			refMng: objId(),
+		}
+		}, props: {pgmid : String ,subname:String, },
+		template:
+		'<div class="h-100">\
+		                 <report-header-read-comp  :ref="refHeader" v-show="true"  ></report-header-read-comp> \
+		                 <report-mng-read-comp :ref="refMng" v-show="true"  >   </report-mng-read-comp> \
+	                     <div class="d-flex flex-wrap bg-light border">\
+	                     		<div class="col-12 col-xl-12 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+		                            <div class="col-1 py-2 px-0 text-center ">순번</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">리시버년월</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">예산부서</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">예산과목</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">신청금액</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">적요</div>\
+		                        </div> \
+	                      </div>\
+	                      <div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in Report" >\
+	                      	    <div class="col-12 col-xl-12 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+		                            <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_YM | dateformat("yyyy.mm")}}</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_DEPT_NM}}</div>\
+			                        <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_ACC_NM}}</div>\
+			                        <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_AMT | numberformat("0,000")}}</div>\
+			                        <div class="col-3 py-2 px-0 text-center border-left">{{item.RMK}}</div>\
+	                           </div> \
+	                      </div>\
+	               </div>\
+	    </div>',
+		created () {
+			
+		},
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.Report.forEach(item => {  t = t + item.BDGT_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+		methods : { 
+			// 필수함수
+			   initData : function() {  // 필수함수
+				   this.$refs[this.refHeader].initData();
+				   this.$refs[this.refMng].initData();
+			   },
+			   setObj : function( o ) { // 필수함수
+				
+			   },   
+			   sendObj: function( o ) {  // 필수함수
+
+			   },
+			   setReportTp : function( reporttp ) { // 필수함수
+				   this.$refs[this.refMng].searchMng(reporttp);
+			   },	
+			// 필수함수 end			
+			search : function(reportno) {
+				this.reportNo = reportno;
+				// header : title, 내용, 첨부파일
+		          this.$refs[this.refHeader].search(this.reportNo);
+				 var param = {
+	                 svcId:"searchr",
+	                 strUrl:"/ex/bgt/req/searchFwd",   //전송 url    
+	                 param : {REPORT_NO : this.reportNo},
+	                 pCall : this.searchCallback, 
+	                 pLoad : true   ,
+	             };
+	             //트랜젝션 실행
+	             ajaxReadJsonData(param);
+	             console.log(param)
+	       }, // end of searchButtonOnClick
+	       
+	       searchCallback : function(svc, data) {
+	    	   console.log(data.ds_detail.data)
+	    	   this.Report = data.ds_detail.data
+	    	   console.log(this.Report.item)
+	    	   this.$refs[this.refHeader].setAmt(this.getSumAmt)
+	       },
+			
+	       procApprove: function(reportNo) {  // parent에서 승인시 이 함수 호출하므로, 추가작업(데이터저장 등)이 필요할 때 반드시 만들어 주세요.
+              	    	   
+	    	   // DB저장 필요할 때, 다음 이벤트 emit  
+	    	   // this.$emit('procApproved',response);  // response는 key, seq 등
+	       },	
+	       
+	       
+	       
+	       
+	       
+		},//method 
+		
+		mounted: function() { 
+	        var ref = this;
+	        this.search();
+	        this.$nextTick(function () {
+	        	
+	               });   
+		},
+}); // report-fwd-emart
+
+
+Vue.component('report-transportation-list', { //시내교통비 문서=================================================================
+	data: function () {
+		return {
+			id : objId(),
+			refHeader : objId(),
+			refMng: objId(),
+			refFile: objId(),			
+			reportFiles :[],
+			
+			Report : [],
+	        reportNo : '',
+	        reportTp : '',
+	        reportTitle : '',
+	        reportRmk : '',
+	        paySumAmt : '',
+	        expenseList:[],
+	        
+	        
+	        
+	        
+
+		}
+		}, props: {pgmid : String ,subname:String, },
+		template:
+		'<div class="h-100">\
+		    <report-header-read-comp :ref="refHeader" v-show="false" ></report-header-read-comp> \
+			<report-mng-read-comp :ref="refMng" v-show="false" >   </report-mng-read-comp> \
+			<div class="w-100 text-right f-maintheme f-subtitle">{{getSumAmt | numberformat("0,000") }}원</div> \
+					<div class="d-flex flex-wrap bg-light border">\
+						   <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+						       <div class="col-1 py-2 px-0 text-center ">순번</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">코스트센터</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">비용항목</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">사용일</div>\
+						       <div class="col-2 py-2 px-0 text-center border-left">사원명</div>\
+						   </div> \
+						   <div class="col-12 col-xl-6 p-0 d-flex"> \
+						       <div class="col-2 py-2 px-0 text-center border-left">출발지</div>\
+						       <div class="col-2 py-2 px-0 text-center border-left">도착지</div>\
+						       <div class="col-2 py-2 px-0 text-center border-left">거리(km)</div>\
+						       <div class="col-2 py-2 px-0 text-center border-left">용무</div>\
+						       <div class="col-2 py-2 px-0 text-center border-left">교통수단</div>\
+						       <div class="col-2 py-2 px-0 text-center border-left">지급액</div>\
+						   </div> \
+			 	    </div>\
+					<div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in expenseList" >\
+							 <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+						         <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.EXPENSE_NM}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.RECEIPT_DT | dateformat("card-week")}}</div>\
+						         <div class="col-2 py-2 px-0 text-center border-left">{{item.EMP_NM}}</div>\
+							 </div> \
+				             <div class="col-12 col-xl-6 p-0 d-flex"> \
+						         <div class="col-2 py-2 px-0 text-center border-left">{{item.start_place}}</div>\
+						         <div class="col-2 py-2 px-0 text-center border-left">{{item.end_place}}</div>\
+						         <div class="col-2 py-2 px-0 text-center border-left">{{item.distance}}</div>\
+						         <div class="col-2 py-2 px-0 text-center border-left">{{item.biz_reason}}</div>\
+						         <div class="col-2 py-2 px-0 text-center border-left">{{item.transport}}</div>\
+						         <div class="col-2 py-2 px-0 text-center border-left">{{item.PAY_AMT | numberformat("0,000")}}</div>\
+						     </div> \
+		 	         </div> \
+				<report-file-comp :ref="refFile" v-show="true" readonly="true" >   </report-file-comp> \
+			</div> \
+	    </div>',
+		created () {
+			
+		},
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.expenseList.forEach(item => {  t = t + item.PAY_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+		methods : { 
+			// 필수함수
+			   initData : function() {  // 필수함수
+				   this.$refs[this.refHeader].initData();
+				   this.$refs[this.refMng].initData();
+				   this.$refs[this.refFile].initData();
+			   },
+			   setObj : function( o ) { // 필수함수
+				   this.expenseList = o;
+				   var arr = []
+				   this.expenseList.forEach( function (item) {
+					  arr.push({EXPENSE_NO : item.EXPENSE_NO});
+				   } );
+			       this.$refs[this.refFile].getFiles(arr);
+			   },   
+			   sendObj: function( o ) {  // 필수함수
+				   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+					return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+					    , ds_report : this.$refs[this.refHeader].getObj() 
+					, ds_files : this.reportFiles
+					}, this.$refs[this.refMng].getObj()   );
+				   },
+			   setReportTp : function( reporttp ) { // 필수함수
+				   this.$refs[this.refMng].searchMng(reporttp);
+			   },	
+			// 필수함수 end
+			
+			search : function( reportno ) { //필수함수
+	        // 컴포넌트 1개당 컨트롤러(서비스), mapper, xml 각 한개씩
+	        // url은 /컴포넌트명/함수명
+	          this.reportNo = reportno;
+	       // header : title, 내용, 첨부파일
+	          this.$refs[this.refHeader].search(this.reportNo);
+	          
+	        //비용 파일 (리포포 파일X)
+	          this.$refs[this.refFile].search(this.reportNo);
+	        
+	          var param = {
+		                svcId:"reportApprvTransportationList",
+		                strUrl:"/ex/expense/report/reportApprvTransportationList", 
+		                inDs :  "" ,  
+		                param : {REPORT_NO : this.reportNo}, 
+		                pCall : this.getReportCallback, 
+		                pLoad : true          
+		            };
+		           ajaxReadJsonData(param);  	    
+					console.log("getReport")	    	
+		           log(param)
+		    
+	     },
+                      
+			    getReportCallback : function(svcId, data) {
+			    	   this.expenseList = data.ds_master.data
+			    	   this.$refs[this.refHeader].setAmt(this.getSumAmt)
+			    },  
+			
+	       procApprove: function(reportNo) {  // parent에서 승인시 이 함수 호출하므로, 추가작업(데이터저장 등)이 필요할 때 반드시 만들어 주세요.
+              	    	   
+	    	   // DB저장 필요할 때, 다음 이벤트 emit  
+	    	   // this.$emit('procApproved',response);  // response는 key, seq 등
+	       },	
+	       
+	       
+	       
+	       
+	       
+		},//method 
+		
+		mounted: function() { 
+	        var ref = this;
+	        
+	        this.$nextTick(function () {
+	               });   
+		},
+}); // report-expense-list
+
+
+
+
+//상신용 비용리스트(결재화면)
+Vue.component('report-apprv-transportation-list', { // ==================================================================
+    data: function () { 
+    return {
+              //필수 변수
+    	      id : objId(),
+              refHeader : objId(),
+          	  refMng : objId(),
+              refFile: objId(),
+          	  
+              //
+              reportFiles : [],
+              reportNo : '',
+              reportTp : '',
+              reportTpNm : '',
+              
+              expFiles : [],
+              expenseList : [],
+              reportMngList : [],
+              expListCard : [],
+              expListTravel : [],
+              expListGas : [],
+              expListToll : [],
+              expListReceipt : [],
+              expListEtax : [],
+              expListPtax : [],
+              expListEtc : [],
+              
+              reportTitle : '',
+              reportRmk : '',
+              paySumAmt : '',
+              imgid: objId(),
+      }
+    },
+
+    props: {pgmid : String ,subname:String, ismobile : String  }, 
+    template: 
+    '<div class=""  > \
+    \
+    \
+        \
+        <report-header-comp  :ref="refHeader"  v-show="false"  title="true" ></report-header-comp> \
+        <report-mng-comp :ref="refMng" v-show="false"  ></report-mng-comp> \
+          \
+          \
+          <div  class="table-responsive">  \
+          <div class="w-100 text-right f-maintheme f-subtitle">{{getSumAmt | numberformat("0,000") }}원</div> \
+	          <div class="d-flex flex-wrap bg-light border">\
+		   			   <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+		   			       <div class="col-1 py-2 px-0 text-center ">순번</div>\
+		   			       <div class="col-3 py-2 px-0 text-center border-left">코스트센터</div>\
+		   			       <div class="col-3 py-2 px-0 text-center border-left">비용항목</div>\
+		   			       <div class="col-3 py-2 px-0 text-center border-left">사용일</div>\
+		   			       <div class="col-2 py-2 px-0 text-center border-left">사원명</div>\
+		   			   </div> \
+		   			   <div class="col-12 col-xl-6 p-0 d-flex"> \
+		   			       <div class="col-2 py-2 px-0 text-center border-left">출발지</div>\
+		   			       <div class="col-2 py-2 px-0 text-center border-left">도착지</div>\
+		   			       <div class="col-2 py-2 px-0 text-center border-left">거리(km)</div>\
+		   			       <div class="col-2 py-2 px-0 text-center border-left">용무</div>\
+		   			       <div class="col-2 py-2 px-0 text-center border-left">교통수단</div>\
+		   			       <div class="col-2 py-2 px-0 text-center border-left">지급액</div>\
+		   			   </div> \
+	    	  </div>\
+    	  \
+    	  \
+	   	  <div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in expenseList" >\
+		   			<div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+		   		         <div class="col-1 py-2 px-0 text-center">{{index+1}}</div>\
+		   		         <div class="col-3 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+		   		         <div class="col-3 py-2 px-0 text-center border-left">{{item.EXPENSE_NM}}</div>\
+		   		         <div class="col-3 py-2 px-0 text-center border-left">{{item.RECEIPT_DT | dateformat("card-week")}}</div>\
+		   		         <div class="col-2 py-2 px-0 text-center border-left">{{item.EMP_NM}}</div>\
+		   		    </div> \
+	                <div class="col-12 col-xl-6 p-0 d-flex"> \
+		   		         <div class="col-2 py-2 px-0 text-center border-left">{{item.start_place}}</div>\
+		   		         <div class="col-2 py-2 px-0 text-center border-left">{{item.end_place}}</div>\
+		   		         <div class="col-2 py-2 px-0 text-center border-left">{{item.distance}}</div>\
+		   		         <div class="col-2 py-2 px-0 text-center border-left">{{item.biz_reason}}</div>\
+		   		         <div class="col-2 py-2 px-0 text-center border-left">{{item.transport}}</div>\
+		   		         <div class="col-2 py-2 px-0 text-center border-left">{{item.PAY_AMT | numberformat("0,000")}}</div>\
+	   		        </div> \
+	   	   </div> \
+   	           \
+   	           \
+          <report-file-comp :ref="refFile" v-show="true"  >   </report-file-comp> \
+       </div> \
+     </div> \
+    \
+    \
+    \
+	</div>',
+	created () { 
+                
+        },
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.expenseList.forEach(item => {  t = t + item.PAY_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+   methods : {
+	   initData: function() {  // 필수함수
+		   this.$refs[this.refHeader].initData();
+		   this.$refs[this.refMng].initData();
+		   this.$refs[this.refFile].initData();
+	   },
+	   sendObj: function( o ) {  // 필수함수
+		   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+			return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+			                     , ds_report : this.$refs[this.refHeader].getObj() 
+			                     , ds_etcList : { data : this.expenseList, CHG_MSG : "비용항목에 변경된 데이터가 있습니다. 조회 후 다시 처리하세요."}
+			                     , ds_files : this.reportFiles
+			                     }, this.$refs[this.refMng].getObj()   );
+			 
+		   },	   
+	   setObj : function( o ) { // 필수함수
+		   this.expenseList = o;
+	       
+           // 비용item 첨부파일
+		   var arr = []
+		   this.expenseList.forEach( function (item) {
+			  arr.push({EXPENSE_NO : item.EXPENSE_NO});
+		   } );
+	       this.$refs[this.refFile].getFiles(arr);
+	       
+	       
+	       this.searchExpense()
+	   
+	   },
+	   
+	   setReportTp : function( reporttp, reporttitle  ) { // 필수함수
+		   this.$refs[this.refMng].searchMng(reporttp);
+		   this.reportTp = reporttp;
+		   this.reportTitle = reporttitle;
+		   log('this.reportTitle');
+		   log(this.reportTitle);
+		   
+		   
+		   this.$refs[this.refHeader].setTitle(this.reportTitle);
+	   },
+       fileClick : function(item, index) {
+       	 this.$refs.imgmodal.setUrl('/ec/common/syscommon/fileupload/downloadFile/'+ item.FILE_NO, item.FILE_TYPE);
+       	 this.$refs.imgmodal.showModal();
+       },
+       tmapClick : function(url) {
+       	 this.$refs.imgmodal.setUrl(url, 'PNG');
+       	 this.$refs.imgmodal.showModal();
+       },	
+	    search : function( reportno ) { //필수함수
+	        // 컴포넌트 1개당 컨트롤러(서비스), mapper, xml 각 한개씩
+	        // url은 /컴포넌트명/함수명
+	          log('search : function( reportno )');
+	          this.reportNo = reportno;
+	          log('this.$refs[this.refHeader].search(this.reportNo)');
+	          log(this.reportNo);
+              this.$refs[this.refHeader].search(this.reportNo);	          
+	          
+	           var param = {
+	                   svcId:"getReportedList",
+	                   strUrl:"/ex/expense/approve/getReportByNo",
+	                   param : {REPORT_NO : this.reportNo}, //조회조건 부분만(전체는 에러 : 관리항목 input존재)
+	                   pCall : this.getReportByNoCallback, 
+	                   pLoad : true         
+	               };            
+	       //    ajaxReadJsonData(param);       
+	        
+	          var param = {
+                      svcId:"",
+                      strUrl:"/ex/expense/expensemst/getExpListByReportNo",    //전송 url    
+                      inDs :  "" ,  
+                      param : { REPORT_NO : this.reportNo },  
+                      pCall : this.getExpListByReportNoCallback, 
+                      pLoad : true,          
+                      };
+              //        ajaxReadJsonData(param);  
+                               
+   	          var param = {
+                         svcId:"",
+                         strUrl:"/ex/expense/expensemst/getExpFileListByReportNo",    //전송 url  
+                         inDs :  "" ,  
+                         param : { REPORT_NO : this.reportNo },  
+                         pCall : this.getExpFileListByReportNoCallback, 
+                         pLoad : true,          
+                         };
+                  //      ajaxReadJsonData(param);  
+                         
+              var param = {
+                      svcId:"getReportFileByReportNo",
+                      strUrl:"/ex/expense/report/getReportFileByReportNo", 
+                      inDs :  "" ,  
+                      param : {REPORT_NO: this.reportNo}, 
+                      pCall : this.getReportFileByReportNoCallback, 
+                      pLoad : true          
+                  };
+               //  ajaxReadJsonData(param);    
+            //             
+	    },
+
+	    getReportByNoCallback : function(svcId, data) {
+	    	   this.reportTitle = data.ds_master.data[0].REPORT_TITLE;
+	    	   this.reportRmk = data.ds_master.data[0].REPORT_RMK;
+	    	   this.paySumAmt = data.ds_master.data[0].PAY_SUM_AMT;	
+	    },
+        getExpFileListByReportNoCallback : function(svcId, data) {
+       	 this.expFiles = data["ds_master"]['data'];
+        },
+        getExpListByReportNoCallback : function(svcId, data) {
+        	log('getExpListByReportNoCallback : function(svcId, data)');
+            this.expenseList = [];
+            this.expenseList = data["ds_master"]['data'];
+            this.reportMngList = [];
+            this.reportMngList = data["ds_mng"]['data'];
+            
+            this.expListCard = this.expenseList.filter( function (item) { item.FILE_LISTS = JSON.parse( item.FILE_LIST );  return item.SOURCE_TP == '1'  });
+            
+            
+            this.expListTravel = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '3'  });
+            this.expListGas = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '4'  });
+            this.expListToll = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '6'  });
+            this.expListReceipt = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '2'  });
+            this.expListEtax = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == 'A'  });
+            this.expListPtax = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == 'B'  });
+            this.expListEtc = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP != '1' 
+                                                                       &&  item.SOURCE_TP != '2'
+                                                                       &&  item.SOURCE_TP != '3'
+                                                                       &&  item.SOURCE_TP != '4'
+                                                                       &&  item.SOURCE_TP != '6'
+                                                                       &&  item.SOURCE_TP != 'A'
+                                                                       &&  item.SOURCE_TP != 'B'                                                                              
+            });
+            
+            
+        }, 
+        
+        getReportFileByReportNoCallback : function(svcId, data) {
+        	this.reportFiles = data.ds_master.data;
+        },      
+        
+        
+        searchExpense : function()  { 
+        	var o = {}
+        	o.ds_master = this.expenseList
+        	log(o)
+				var param = {
+				                svcId:"reportApprvTransportationList",
+				                strUrl:"/ex/expense/report/reportApprvTransportationList", 
+				                inDs :  "" ,  
+				                param : o, 
+				                pCall : this.searchExpenseCallback, 
+				                pLoad : true          
+				            };
+				           ajaxReadJsonData(param);  	    
+							console.log("getReport")	    	
+				           log(param)
+				    
+			     },
+	    
+			     searchExpenseCallback : function(svcId, data) {
+			    	 this.expenseList = data.ds_master.data;
+			     }
+	    
+   },//method
+
+   mounted: function() {
+	   var ref = this;
+       this.$nextTick(function () {
+//     	   ref.searchExpense()
+              }); 
+	   
+
+    },
+}); // test
+
+
+//상신용 소액전도금(결재화면)
+Vue.component('report-apprv-smalldeposit-list', { // ==================================================================
+    data: function () { 
+    return {
+              //필수 변수
+    	      id : objId(),
+              refHeader : objId(),
+          	  refMng : objId(),
+              refFile: objId(),
+          	  
+              //
+              reportFiles : [],
+              reportNo : '',
+              reportTp : '',
+              reportTpNm : '',
+              
+              expFiles : [],
+              depositList : [],
+              reportMngList : [],
+              expListCard : [],
+              expListTravel : [],
+              expListGas : [],
+              expListToll : [],
+              expListReceipt : [],
+              expListEtax : [],
+              expListPtax : [],
+              expListEtc : [],
+              
+              reportTitle : '',
+              reportRmk : '',
+              paySumAmt : '',
+              imgid: objId(),
+      }
+    },
+
+    props: {pgmid : String ,subname:String, ismobile : String  }, 
+    template: 
+    '<div class=""  > \
+    \
+    \
+      <div v-if="ismobile != \'true\'" > \
+        \
+        <report-header-comp  :ref="refHeader"  v-show="false"  title="true" ></report-header-comp> \
+        <report-mng-comp :ref="refMng" v-show="false"  ></report-mng-comp> \
+          \
+          \
+          <div  class="table-responsive">  \
+          <div class="w-100 text-right f-maintheme f-subtitle">{{getSumAmt | numberformat("0,000") }}원</div> \
+	          <div class="d-flex flex-wrap bg-light border">\
+		   			   <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+		   			       <div class="col-1 py-2 px-0 text-center ">순번</div>\
+		   			       <div class="col-3 py-2 px-0 text-center border-left">코스트센터</div>\
+		   			       <div class="col-3 py-2 px-0 text-center border-left">항목</div>\
+		   			       <div class="col-2 py-2 px-0 text-center border-left">사원명</div>\
+		   			       <div class="col-3 py-2 px-0 text-center border-left">정리예정일</div>\
+		   			   </div> \
+		   			   <div class="col-12 col-xl-6 p-0 d-flex"> \
+		   			       <div class="col-8 py-2 px-0 text-center border-left">적요</div>\
+		   			       <div class="col-4 py-2 px-0 text-center border-left">금액</div>\
+		   			   </div> \
+	    	  </div>\
+    	  \
+    	  \
+	   	  <div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in depositList" >\
+		   			<div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+		   		         <div class="col-1 py-2 px-0 text-center">{{index+1}}</div>\
+		   		         <div class="col-3 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+		   		         <div class="col-3 py-2 px-0 text-center border-left">{{item.EXPENSE_NM}}</div>\
+		   		         <div class="col-2 py-2 px-0 text-center border-left">{{item.EMP_NM}}</div>\
+		   		         <div class="col-3 py-2 px-0 text-center border-left">{{item.PROC_DATE | dateformat("card-week")}}</div>\
+		   		    </div> \
+	                <div class="col-12 col-xl-6 p-0 d-flex"> \
+		   		         <div class="col-8 py-2 px-0 text-center border-left">{{item.RMK}}</div>\
+		   		         <div class="col-4 py-2 px-0 text-center border-left">{{item.PAY_AMT | numberformat("0,000")}}</div>\
+	   		        </div> \
+	   	   </div> \
+   	           \
+   	           \
+          <report-file-comp :ref="refFile" v-show="true"  >   </report-file-comp> \
+       </div> \
+     </div> \
+    \
+    \
+    \
+	</div>',
+	created () { 
+                
+        },
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.depositList.forEach(item => {  t = t + item.PAY_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+   methods : {
+	   initData: function() {  // 필수함수
+		   this.$refs[this.refHeader].initData();
+		   this.$refs[this.refMng].initData();
+		   this.$refs[this.refFile].initData();
+	   },
+	   sendObj: function( o ) {  // 필수함수
+		   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+			return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+			                     , ds_report : this.$refs[this.refHeader].getObj() 
+			                     , ds_etcList : { data : this.depositList, CHG_MSG : "비용항목에 변경된 데이터가 있습니다. 조회 후 다시 처리하세요."}
+			                     , ds_files : this.reportFiles
+			                     }, this.$refs[this.refMng].getObj()   );
+			 
+		   },	   
+	   setObj : function( o ) { // 필수함수
+		   this.depositList = o;
+	       
+           // 비용item 첨부파일
+		   var arr = []
+		   this.depositList.forEach( function (item) {
+			  arr.push({EXPENSE_NO : item.EXPENSE_NO});
+		   } );
+	       this.$refs[this.refFile].getFiles(arr);
+	       
+	       
+	       this.searchSmallDeposit()
+	   
+	   },
+	   
+	   setReportTp : function( reporttp, reporttitle  ) { // 필수함수
+		   this.$refs[this.refMng].searchMng(reporttp);
+		   this.reportTp = reporttp;
+		   this.reportTitle = reporttitle;
+		   log('this.reportTitle');
+		   log(this.reportTitle);
+		   
+		   
+		   this.$refs[this.refHeader].setTitle(this.reportTitle);
+	   },
+       fileClick : function(item, index) {
+       	 this.$refs.imgmodal.setUrl('/ec/common/syscommon/fileupload/downloadFile/'+ item.FILE_NO, item.FILE_TYPE);
+       	 this.$refs.imgmodal.showModal();
+       },
+       tmapClick : function(url) {
+       	 this.$refs.imgmodal.setUrl(url, 'PNG');
+       	 this.$refs.imgmodal.showModal();
+       },	
+	    search : function( reportno ) { //필수함수
+	        // 컴포넌트 1개당 컨트롤러(서비스), mapper, xml 각 한개씩
+	        // url은 /컴포넌트명/함수명
+	          log('search : function( reportno )');
+	          this.reportNo = reportno;
+	          log('this.$refs[this.refHeader].search(this.reportNo)');
+	          log(this.reportNo);
+              this.$refs[this.refHeader].search(this.reportNo);	          
+	          
+	           var param = {
+	                   svcId:"getReportedList",
+	                   strUrl:"/ex/expense/approve/getReportByNo",
+	                   param : {REPORT_NO : this.reportNo}, //조회조건 부분만(전체는 에러 : 관리항목 input존재)
+	                   pCall : this.getReportByNoCallback, 
+	                   pLoad : true         
+	               };            
+	       //    ajaxReadJsonData(param);       
+	        
+	          var param = {
+                      svcId:"",
+                      strUrl:"/ex/expense/expensemst/getExpListByReportNo",    //전송 url    
+                      inDs :  "" ,  
+                      param : { REPORT_NO : this.reportNo },  
+                      pCall : this.getExpListByReportNoCallback, 
+                      pLoad : true,          
+                      };
+              //        ajaxReadJsonData(param);  
+                      
+   	          var param = {
+                         svcId:"",
+                         strUrl:"/ex/expense/expensemst/getExpFileListByReportNo",    //전송 url  
+                         inDs :  "" ,  
+                         param : { REPORT_NO : this.reportNo },  
+                         pCall : this.getExpFileListByReportNoCallback, 
+                         pLoad : true,          
+                         };
+                  //      ajaxReadJsonData(param);  
+                         
+              var param = {
+                      svcId:"getReportFileByReportNo",
+                      strUrl:"/ex/expense/report/getReportFileByReportNo", 
+                      inDs :  "" ,  
+                      param : {REPORT_NO: this.reportNo}, 
+                      pCall : this.getReportFileByReportNoCallback, 
+                      pLoad : true          
+                  };
+               //  ajaxReadJsonData(param);    
+            //             
+	    },
+
+	    getReportByNoCallback : function(svcId, data) {
+	    	   this.reportTitle = data.ds_master.data[0].REPORT_TITLE;
+	    	   this.reportRmk = data.ds_master.data[0].REPORT_RMK;
+	    	   this.paySumAmt = data.ds_master.data[0].PAY_SUM_AMT;	
+	    },
+        getExpFileListByReportNoCallback : function(svcId, data) {
+       	 this.expFiles = data["ds_master"]['data'];
+        },
+        getExpListByReportNoCallback : function(svcId, data) {
+        	log('getExpListByReportNoCallback : function(svcId, data)');
+            this.depositList = [];
+            this.depositList = data["ds_master"]['data'];
+            this.reportMngList = [];
+            this.reportMngList = data["ds_mng"]['data'];
+            
+            this.expListCard = this.depositList.filter( function (item) { item.FILE_LISTS = JSON.parse( item.FILE_LIST );  return item.SOURCE_TP == '1'  });
+            
+            
+            this.expListTravel = this.depositList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '3'  });
+            this.expListGas = this.depositList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '4'  });
+            this.expListToll = this.depositList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '6'  });
+            this.expListReceipt = this.depositList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '2'  });
+            this.expListEtax = this.depositList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == 'A'  });
+            this.expListPtax = this.depositList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == 'B'  });
+            this.expListEtc = this.depositList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP != '1' 
+                                                                       &&  item.SOURCE_TP != '2'
+                                                                       &&  item.SOURCE_TP != '3'
+                                                                       &&  item.SOURCE_TP != '4'
+                                                                       &&  item.SOURCE_TP != '6'
+                                                                       &&  item.SOURCE_TP != 'A'
+                                                                       &&  item.SOURCE_TP != 'B'                                                                              
+            });
+            
+            
+        }, 
+        
+        getReportFileByReportNoCallback : function(svcId, data) {
+        	this.reportFiles = data.ds_master.data;
+        },      
+        
+        
+        searchSmallDeposit : function()  { 
+        	var o = {}
+        	o.ds_master = this.depositList
+        	log(o)
+				var param = {
+				                svcId:"reportApprvSmalldepositList",
+				                strUrl:"/ex/expense/report/reportApprvSmalldepositList", 
+				                inDs :  "" ,  
+				                param : o, 
+				                pCall : this.SmallDepositCallback, 
+				                pLoad : true          
+				            };
+				           ajaxReadJsonData(param);  	    
+							console.log("getReport")	    	
+				           log(param)
+				    
+			     },
+	    
+			     SmallDepositCallback : function(svcId, data) {
+			    	 this.depositList = data.ds_master.data;
+			     }
+	    
+   },//method
+
+   mounted: function() {
+	   var ref = this;
+       this.$nextTick(function () {
+//     	   ref.searchExpense()
+              }); 
+	   
+
+    },
+}); // test
+
+
+Vue.component('report-smalldeposit-list', { //소액전도금 문서=================================================================
+	data: function () {
+		return {
+			id : objId(),
+			refHeader : objId(),
+			refMng: objId(),
+			refFile: objId(),			
+			
+			
+			Report : [],
+	        reportNo : '',
+	        reportTp : '',
+	        reportTitle : '',
+	        reportRmk : '',
+	        paySumAmt : '',
+	        depositList:[],
+	        
+	        
+	        
+	        
+
+		}
+		}, props: {pgmid : String ,subname:String, },
+		template:
+		'<div class="h-100">\
+		    <report-header-read-comp :ref="refHeader" v-show="false" ></report-header-read-comp> \
+			<report-mng-read-comp :ref="refMng" v-show="false" >   </report-mng-read-comp> \
+					<div class="d-flex flex-wrap bg-light border">\
+								<div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+				   			       <div class="col-1 py-2 px-0 text-center ">순번</div>\
+				   			       <div class="col-3 py-2 px-0 text-center border-left">코스트센터</div>\
+				   			       <div class="col-3 py-2 px-0 text-center border-left">항목</div>\
+				   			       <div class="col-2 py-2 px-0 text-center border-left">사원명</div>\
+				   			       <div class="col-3 py-2 px-0 text-center border-left">정리예정일</div>\
+				   			   </div> \
+				   			   <div class="col-12 col-xl-6 p-0 d-flex"> \
+				   			       <div class="col-8 py-2 px-0 text-center border-left">적요</div>\
+				   			       <div class="col-4 py-2 px-0 text-center border-left">금액</div>\
+				   			   </div> \
+			 	    </div>\
+					<div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in depositList" >\
+							 <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+				   		         <div class="col-1 py-2 px-0 text-center">{{index+1}}</div>\
+				   		         <div class="col-3 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+				   		         <div class="col-3 py-2 px-0 text-center border-left">{{item.EXPENSE_NM}}</div>\
+				   		         <div class="col-2 py-2 px-0 text-center border-left">{{item.EMP_NM}}</div>\
+				   		         <div class="col-3 py-2 px-0 text-center border-left">{{item.PROC_DATE | dateformat("card-week")}}</div>\
+				   		    </div> \
+			                <div class="col-12 col-xl-6 p-0 d-flex"> \
+				   		         <div class="col-8 py-2 px-0 text-center border-left">{{item.RMK}}</div>\
+				   		         <div class="col-4 py-2 px-0 text-center border-left">{{item.PAY_AMT | numberformat("0,000")}}</div>\
+			   		        </div> \
+		 	         </div> \
+				<report-file-comp :ref="refFile" v-show="true" readonly="true" >   </report-file-comp> \
+	    </div>',
+		created () {
+			
+		},
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.depositList.forEach(item => {  t = t + item.PAY_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+		methods : { 
+			// 필수함수
+			   initData : function() {  // 필수함수
+				   this.$refs[this.refHeader].initData();
+				   this.$refs[this.refMng].initData();
+				   this.$refs[this.refFile].initData();
+			   },
+			   setObj : function( o ) { // 필수함수
+				   
+			   },   
+			   sendObj: function( o ) {  // 필수함수
+				   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+					return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+					    , ds_report : this.$refs[this.refHeader].getObj() 
+					, ds_files : this.reportFiles
+					}, this.$refs[this.refMng].getObj()   );
+				   },
+			   setReportTp : function( reporttp ) { // 필수함수
+				   this.$refs[this.refMng].searchMng(reporttp);
+			   },	
+			// 필수함수 end
+			
+			search : function( reportno ) { //필수함수
+	        // 컴포넌트 1개당 컨트롤러(서비스), mapper, xml 각 한개씩
+	        // url은 /컴포넌트명/함수명
+	          this.reportNo = reportno;
+	       // header : title, 내용, 첨부파일
+	          this.$refs[this.refHeader].search(this.reportNo);
+	          
+	        //비용 파일 (리포포 파일X)
+	          this.$refs[this.refFile].search(this.reportNo);
+	        
+	          var param = {
+		                svcId:"reportApprvSmalldepositList",
+		                strUrl:"/ex/expense/report/reportApprvSmalldepositList", 
+		                inDs :  "" ,  
+		                param : {REPORT_NO : this.reportNo}, 
+		                pCall : this.SmallDepositCallback, 
+		                pLoad : true          
+		            };
+		           ajaxReadJsonData(param);  	    
+					console.log("getReport")	    	
+		           log(param)
+		    
+	     },
+	     
+                      
+	     		SmallDepositCallback : function(svcId, data) {
+			    	   this.depositList = data.ds_master.data
+			    	   this.$refs[this.refHeader].setAmt(this.getSumAmt)
+			    },  
+			
+	       procApprove: function(reportNo) {  // parent에서 승인시 이 함수 호출하므로, 추가작업(데이터저장 등)이 필요할 때 반드시 만들어 주세요.
+              	    	   
+	    	   // DB저장 필요할 때, 다음 이벤트 emit  
+	    	   // this.$emit('procApproved',response);  // response는 key, seq 등
+	       },	
+	       
+	       
+	       
+	       
+	       
+		},//method 
+		
+		mounted: function() { 
+	        var ref = this;
+	        
+	        this.$nextTick(function () {
+	               });   
+		},
+}); // report-expense-list
+
+
+//상신용 비용리스트(결재화면)
+Vue.component('report-apprv-trans-list', { // 단신부임자 교통비==================================================================
+    data: function () { 
+    return {
+              //필수 변수
+    	      id : objId(),
+              refHeader : objId(),
+          	  refMng : objId(),
+              refFile: objId(),
+          	  
+              //
+              reportFiles : [],
+              reportNo : '',
+              reportTp : '',
+              reportTpNm : '',
+              
+              expFiles : [],
+              expenseList : [],
+              reportMngList : [],
+              expListCard : [],
+              expListTravel : [],
+              expListGas : [],
+              expListToll : [],
+              expListReceipt : [],
+              expListEtax : [],
+              expListPtax : [],
+              expListEtc : [],
+              
+              reportTitle : '',
+              reportRmk : '',
+              paySumAmt : '',
+              imgid: objId(),
+      }
+    },
+
+    props: {pgmid : String ,subname:String, ismobile : String  }, 
+    template: 
+    '<div class=""  > \
+    \
+    \
+        \
+        <report-header-comp  :ref="refHeader"  v-show="false" title="true" ></report-header-comp> \
+        <report-mng-comp :ref="refMng" v-show="false"  ></report-mng-comp> \
+          \
+          \
+          <div  class="table-responsive">  \
+          <div class="w-100 text-right f-maintheme f-subtitle">{{getSumAmt | numberformat("0,000") }}원</div> \
+	          <div class="d-flex flex-wrap bg-light border">\
+		   			   <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+		   			       <div class="col-1 py-2 px-0 text-center ">순번</div>\
+		   			       <div class="col-3 py-2 px-0 text-center border-left">코스트센터</div>\
+		   			       <div class="col-3 py-2 px-0 text-center border-left">비용항목</div>\
+		   			       <div class="col-3 py-2 px-0 text-center border-left">사용일</div>\
+		   			       <div class="col-2 py-2 px-0 text-center border-left">사원명</div>\
+		   			   </div> \
+		   			   <div class="col-12 col-xl-6 p-0 d-flex"> \
+		   			       <div class="col-2 py-2 px-0 text-center border-left">출발지</div>\
+		   			       <div class="col-2 py-2 px-0 text-center border-left">도착지</div>\
+		   			       <div class="col-3 py-2 px-0 text-center border-left">용무</div>\
+		   			       <div class="col-2 py-2 px-0 text-center border-left">교통수단</div>\
+		   			       <div class="col-3 py-2 px-0 text-center border-left">지급액</div>\
+		   			   </div> \
+	    	  </div>\
+    	  \
+    	  \
+	   	  <div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in expenseList" >\
+		   			<div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+		   		         <div class="col-1 py-2 px-0 text-center">{{index+1}}</div>\
+		   		         <div class="col-3 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+		   		         <div class="col-3 py-2 px-0 text-center border-left">{{item.EXPENSE_NM}}</div>\
+		   		         <div class="col-3 py-2 px-0 text-center border-left">{{item.RECEIPT_DT | dateformat("card-week")}}</div>\
+		   		         <div class="col-2 py-2 px-0 text-center border-left">{{item.EMP_NM}}</div>\
+		   		    </div> \
+	                <div class="col-12 col-xl-6 p-0 d-flex"> \
+		   		         <div class="col-2 py-2 px-0 text-center border-left">{{item.start_place}}</div>\
+		   		         <div class="col-2 py-2 px-0 text-center border-left">{{item.end_place}}</div>\
+		   		         <div class="col-3 py-2 px-0 text-center border-left">{{item.biz_reason}}</div>\
+		   		         <div class="col-2 py-2 px-0 text-center border-left">{{item.transport}}</div>\
+		   		         <div class="col-2 py-2 px-0 text-center border-left">{{item.PAY_AMT | numberformat("0,000")}}</div>\
+	   		        </div> \
+	   	   </div> \
+   	           \
+   	           \
+          <report-file-comp :ref="refFile" v-show="true"  >   </report-file-comp> \
+       </div> \
+     </div> \
+    \
+    \
+    \
+	</div>',
+	created () { 
+                
+        },
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.expenseList.forEach(item => {  t = t + item.PAY_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+   methods : {
+	   initData: function() {  // 필수함수
+		   this.$refs[this.refHeader].initData();
+		   this.$refs[this.refMng].initData();
+		   this.$refs[this.refFile].initData();
+	   },
+	   sendObj: function( o ) {  // 필수함수
+		   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+			return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+			                     , ds_report : this.$refs[this.refHeader].getObj() 
+			                     , ds_etcList : { data : this.expenseList, CHG_MSG : "비용항목에 변경된 데이터가 있습니다. 조회 후 다시 처리하세요."}
+			                     , ds_files : this.reportFiles
+			                     }, this.$refs[this.refMng].getObj()   );
+			 
+		   },	   
+	   setObj : function( o ) { // 필수함수
+		   this.expenseList = o;
+	       
+           // 비용item 첨부파일
+		   var arr = []
+		   this.expenseList.forEach( function (item) {
+			  arr.push({EXPENSE_NO : item.EXPENSE_NO});
+		   } );
+	       this.$refs[this.refFile].getFiles(arr);
+	       
+	       
+	       this.searchExpense()
+	   
+	   },
+	   
+	   setReportTp : function( reporttp, reporttitle  ) { // 필수함수
+		   this.$refs[this.refMng].searchMng(reporttp);
+		   this.reportTp = reporttp;
+		   this.reportTitle = reporttitle;
+		   log('this.reportTitle');
+		   log(this.reportTitle);
+		   
+		   
+		   this.$refs[this.refHeader].setTitle(this.reportTitle);
+	   },
+       fileClick : function(item, index) {
+       	 this.$refs.imgmodal.setUrl('/ec/common/syscommon/fileupload/downloadFile/'+ item.FILE_NO, item.FILE_TYPE);
+       	 this.$refs.imgmodal.showModal();
+       },
+       tmapClick : function(url) {
+       	 this.$refs.imgmodal.setUrl(url, 'PNG');
+       	 this.$refs.imgmodal.showModal();
+       },	
+	    search : function( reportno ) { //필수함수
+	        // 컴포넌트 1개당 컨트롤러(서비스), mapper, xml 각 한개씩
+	        // url은 /컴포넌트명/함수명
+	          log('search : function( reportno )');
+	          this.reportNo = reportno;
+	          log('this.$refs[this.refHeader].search(this.reportNo)');
+	          log(this.reportNo);
+              this.$refs[this.refHeader].search(this.reportNo);	          
+	          
+	           var param = {
+	                   svcId:"getReportedList",
+	                   strUrl:"/ex/expense/approve/getReportByNo",
+	                   param : {REPORT_NO : this.reportNo}, //조회조건 부분만(전체는 에러 : 관리항목 input존재)
+	                   pCall : this.getReportByNoCallback, 
+	                   pLoad : true         
+	               };            
+	       //    ajaxReadJsonData(param);       
+	        
+	          var param = {
+                      svcId:"",
+                      strUrl:"/ex/expense/expensemst/getExpListByReportNo",    //전송 url    
+                      inDs :  "" ,  
+                      param : { REPORT_NO : this.reportNo },  
+                      pCall : this.getExpListByReportNoCallback, 
+                      pLoad : true,          
+                      };
+              //        ajaxReadJsonData(param);  
+                               
+   	          var param = {
+                         svcId:"",
+                         strUrl:"/ex/expense/expensemst/getExpFileListByReportNo",    //전송 url  
+                         inDs :  "" ,  
+                         param : { REPORT_NO : this.reportNo },  
+                         pCall : this.getExpFileListByReportNoCallback, 
+                         pLoad : true,          
+                         };
+                  //      ajaxReadJsonData(param);  
+                         
+              var param = {
+                      svcId:"getReportFileByReportNo",
+                      strUrl:"/ex/expense/report/getReportFileByReportNo", 
+                      inDs :  "" ,  
+                      param : {REPORT_NO: this.reportNo}, 
+                      pCall : this.getReportFileByReportNoCallback, 
+                      pLoad : true          
+                  };
+               //  ajaxReadJsonData(param);    
+            //             
+	    },
+
+	    getReportByNoCallback : function(svcId, data) {
+	    	   this.reportTitle = data.ds_master.data[0].REPORT_TITLE;
+	    	   this.reportRmk = data.ds_master.data[0].REPORT_RMK;
+	    	   this.paySumAmt = data.ds_master.data[0].PAY_SUM_AMT;	
+	    },
+        getExpFileListByReportNoCallback : function(svcId, data) {
+       	 this.expFiles = data["ds_master"]['data'];
+        },
+        getExpListByReportNoCallback : function(svcId, data) {
+        	log('getExpListByReportNoCallback : function(svcId, data)');
+            this.expenseList = [];
+            this.expenseList = data["ds_master"]['data'];
+            this.reportMngList = [];
+            this.reportMngList = data["ds_mng"]['data'];
+            
+            this.expListCard = this.expenseList.filter( function (item) { item.FILE_LISTS = JSON.parse( item.FILE_LIST );  return item.SOURCE_TP == '1'  });
+            
+            
+            this.expListTravel = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '3'  });
+            this.expListGas = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '4'  });
+            this.expListToll = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '6'  });
+            this.expListReceipt = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '2'  });
+            this.expListEtax = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == 'A'  });
+            this.expListPtax = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == 'B'  });
+            this.expListEtc = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP != '1' 
+                                                                       &&  item.SOURCE_TP != '2'
+                                                                       &&  item.SOURCE_TP != '3'
+                                                                       &&  item.SOURCE_TP != '4'
+                                                                       &&  item.SOURCE_TP != '6'
+                                                                       &&  item.SOURCE_TP != 'A'
+                                                                       &&  item.SOURCE_TP != 'B'                                                                              
+            });
+            
+            
+        }, 
+        
+        getReportFileByReportNoCallback : function(svcId, data) {
+        	this.reportFiles = data.ds_master.data;
+        },      
+        
+        
+        searchExpense : function()  { 
+        	var o = {}
+        	o.ds_master = this.expenseList
+        	log(o)
+				var param = {
+				                svcId:"reportApprvTransList",
+				                strUrl:"/ex/expense/report/reportApprvTransList", 
+				                inDs :  "" ,  
+				                param : o, 
+				                pCall : this.searchExpenseCallback, 
+				                pLoad : true          
+				            };
+				           ajaxReadJsonData(param);  	    
+							console.log("getReport")	    	
+				           log(param)
+				    
+			     },
+	    
+			     searchExpenseCallback : function(svcId, data) {
+			    	 this.expenseList = data.ds_master.data;
+			     }
+	    
+   },//method
+
+   mounted: function() {
+	   var ref = this;
+       this.$nextTick(function () {
+//     	   ref.searchExpense()
+              }); 
+	   
+
+    },
+}); // test
+
+
+Vue.component('report-trans-list', { //단신부임자 교통비 문서=================================================================
+	data: function () {
+		return {
+			id : objId(),
+			refHeader : objId(),
+			refMng: objId(),
+			refFile: objId(),			
+			reportFiles :[],
+			
+			Report : [],
+	        reportNo : '',
+	        reportTp : '',
+	        reportTitle : '',
+	        reportRmk : '',
+	        paySumAmt : '',
+	        expenseList:[],
+	        
+	        
+	        
+	        
+
+		}
+		}, props: {pgmid : String ,subname:String, },
+		template:
+		'<div class="h-100">\
+		    <report-header-read-comp :ref="refHeader" v-show="false" ></report-header-read-comp> \
+			<report-mng-read-comp :ref="refMng" v-show="false" >   </report-mng-read-comp> \
+			<div class="w-100 text-right f-maintheme f-subtitle">{{getSumAmt | numberformat("0,000") }}원</div> \
+					<div class="d-flex flex-wrap bg-light border">\
+						   <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+						       <div class="col-1 py-2 px-0 text-center ">순번</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">코스트센터</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">비용항목</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">사용일</div>\
+						       <div class="col-2 py-2 px-0 text-center border-left">사원명</div>\
+						   </div> \
+						   <div class="col-12 col-xl-6 p-0 d-flex"> \
+						       <div class="col-2 py-2 px-0 text-center border-left">출발지</div>\
+						       <div class="col-2 py-2 px-0 text-center border-left">도착지</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">용무</div>\
+						       <div class="col-2 py-2 px-0 text-center border-left">교통수단</div>\
+						       <div class="col-2 py-2 px-0 text-center border-left">지급액</div>\
+						   </div> \
+			 	    </div>\
+					<div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in expenseList" >\
+							 <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+						         <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.EXPENSE_NM}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.RECEIPT_DT | dateformat("card-week")}}</div>\
+						         <div class="col-2 py-2 px-0 text-center border-left">{{item.EMP_NM}}</div>\
+							 </div> \
+				             <div class="col-12 col-xl-6 p-0 d-flex"> \
+						         <div class="col-2 py-2 px-0 text-center border-left">{{item.start_place}}</div>\
+						         <div class="col-2 py-2 px-0 text-center border-left">{{item.end_place}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.biz_reason}}</div>\
+						         <div class="col-2 py-2 px-0 text-center border-left">{{item.transport}}</div>\
+						         <div class="col-2 py-2 px-0 text-center border-left">{{item.PAY_AMT | numberformat("0,000")}}</div>\
+						     </div> \
+		 	         </div> \
+				<report-file-comp :ref="refFile" v-show="true" readonly="true" >   </report-file-comp> \
+			</div> \
+	    </div>',
+		created () {
+			
+		},
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.expenseList.forEach(item => {  t = t + item.PAY_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+		methods : { 
+			// 필수함수
+			   initData : function() {  // 필수함수
+				   this.$refs[this.refHeader].initData();
+				   this.$refs[this.refMng].initData();
+				   this.$refs[this.refFile].initData();
+			   },
+			   setObj : function( o ) { // 필수함수
+				   this.expenseList = o;
+				   var arr = []
+				   this.expenseList.forEach( function (item) {
+					  arr.push({EXPENSE_NO : item.EXPENSE_NO});
+				   } );
+			       this.$refs[this.refFile].getFiles(arr);
+			   },   
+			   sendObj: function( o ) {  // 필수함수
+				   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+					return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+					    , ds_report : this.$refs[this.refHeader].getObj() 
+					, ds_files : this.reportFiles
+					}, this.$refs[this.refMng].getObj()   );
+				   },
+			   setReportTp : function( reporttp ) { // 필수함수
+				   this.$refs[this.refMng].searchMng(reporttp);
+			   },	
+			// 필수함수 end
+			
+			search : function( reportno ) { //필수함수
+	        // 컴포넌트 1개당 컨트롤러(서비스), mapper, xml 각 한개씩
+	        // url은 /컴포넌트명/함수명
+	          this.reportNo = reportno;
+	       // header : title, 내용, 첨부파일
+	          this.$refs[this.refHeader].search(this.reportNo);
+	          
+	        //비용 파일 (리포포 파일X)
+	          this.$refs[this.refFile].search(this.reportNo);
+	        
+	          var param = {
+	        		 	svcId:"reportApprvTransList",
+		                strUrl:"/ex/expense/report/reportApprvTransList", 
+		                inDs :  "" ,  
+		                param : {REPORT_NO : this.reportNo}, 
+		                pCall : this.getReportCallback, 
+		                pLoad : true          
+		            };
+		           ajaxReadJsonData(param);  	    
+					console.log("getReport")	    	
+		           log(param)
+		    
+	     },
+                      
+			    getReportCallback : function(svcId, data) {
+			    	   this.expenseList = data.ds_master.data
+			    	   this.$refs[this.refHeader].setAmt(this.getSumAmt)
+			    },  
+			
+	       procApprove: function(reportNo) {  // parent에서 승인시 이 함수 호출하므로, 추가작업(데이터저장 등)이 필요할 때 반드시 만들어 주세요.
+              	    	   
+	    	   // DB저장 필요할 때, 다음 이벤트 emit  
+	    	   // this.$emit('procApproved',response);  // response는 key, seq 등
+	       },	
+	       
+	       
+	       
+	       
+	       
+		},//method 
+		
+		mounted: function() { 
+	        var ref = this;
+	        
+	        this.$nextTick(function () {
+	               });   
+		},
+}); // report-expense-list
+
+//상신용 비용리스트(결재화면)
+Vue.component('report-apprv-club-list', { // 동호회활동비==================================================================
+    data: function () { 
+    return {
+              //필수 변수
+    	      id : objId(),
+              refHeader : objId(),
+          	  refMng : objId(),
+              refFile: objId(),
+          	  
+              //
+              reportFiles : [],
+              reportNo : '',
+              reportTp : '',
+              reportTpNm : '',
+              
+              expFiles : [],
+              expenseList : [],
+              reportMngList : [],
+              expListCard : [],
+              expListTravel : [],
+              expListGas : [],
+              expListToll : [],
+              expListReceipt : [],
+              expListEtax : [],
+              expListPtax : [],
+              expListEtc : [],
+              
+              reportTitle : '',
+              reportRmk : '',
+              paySumAmt : '',
+              imgid: objId(),
+      }
+    },
+
+    props: {pgmid : String ,subname:String, ismobile : String  }, 
+    template:
+		'<div class="h-100">\
+		    <report-header-comp :ref="refHeader" v-show="false" title="true"></report-header-comp> \
+			<report-mng-comp :ref="refMng" v-show="true" >   </report-mng-comp> \
+			<div class="w-100 text-right f-maintheme f-subtitle">{{getSumAmt | numberformat("0,000") }}원</div> \
+					<div class="d-flex flex-wrap bg-light border">\
+						   <div class="col-12 col-xl-12 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+						       <div class="col-1 py-2 px-0 text-center ">순번</div>\
+						       <div class="col-2 py-2 px-0 text-center border-left">코스트센터</div>\
+						       <div class="col-2 py-2 px-0 text-center border-left">비용항목</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">사용일</div>\
+						       <div class="col-2 py-2 px-0 text-center border-left">사원명</div>\
+						       <div class="col-2 py-2 px-0 text-center border-left">지급액</div>\
+						   </div> \
+			 	    </div>\
+					<div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in expenseList" >\
+							 <div class="col-12 col-xl-12 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+						         <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+						         <div class="col-2 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+						         <div class="col-2 py-2 px-0 text-center border-left">{{item.EXPENSE_NM}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.RECEIPT_DT | dateformat("card-week")}}</div>\
+						         <div class="col-2 py-2 px-0 text-center border-left">{{item.EMP_NM}}</div>\
+						         <div class="col-2 py-2 px-0 text-center border-left">{{item.PAY_AMT | numberformat("0,000")}}</div>\
+							 </div> \
+		 	         </div> \
+				<report-file-comp :ref="refFile" v-show="true" readonly="true" >   </report-file-comp> \
+			</div> \
+	    </div>',
+	created () { 
+                
+        },
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.expenseList.forEach(item => {  t = t + item.PAY_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+   methods : {
+	   initData: function() {  // 필수함수
+		   this.$refs[this.refHeader].initData();
+		   this.$refs[this.refMng].initData();
+		   this.$refs[this.refFile].initData();
+	   },
+	   sendObj: function( o ) {  // 필수함수
+		   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+			return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+			                     , ds_report : this.$refs[this.refHeader].getObj() 
+			                     , ds_etcList : { data : this.expenseList, CHG_MSG : "비용항목에 변경된 데이터가 있습니다. 조회 후 다시 처리하세요."}
+			                     , ds_files : this.reportFiles
+			                     }, this.$refs[this.refMng].getObj()   );
+			 
+		   },	   
+	   setObj : function( o ) { // 필수함수
+		   this.expenseList = o;
+	       
+           // 비용item 첨부파일
+		   var arr = []
+		   this.expenseList.forEach( function (item) {
+			  arr.push({EXPENSE_NO : item.EXPENSE_NO});
+		   } );
+	       this.$refs[this.refFile].getFiles(arr);
+	       
+	       
+	       this.searchExpense()
+	   
+	   },
+	   
+	   setReportTp : function( reporttp, reporttitle  ) { // 필수함수
+		   this.$refs[this.refMng].searchMng(reporttp);
+		   this.reportTp = reporttp;
+		   this.reportTitle = reporttitle;
+		   log('this.reportTitle');
+		   log(this.reportTitle);
+		   
+		   
+		   this.$refs[this.refHeader].setTitle(this.reportTitle);
+	   },
+       fileClick : function(item, index) {
+       	 this.$refs.imgmodal.setUrl('/ec/common/syscommon/fileupload/downloadFile/'+ item.FILE_NO, item.FILE_TYPE);
+       	 this.$refs.imgmodal.showModal();
+       },
+       tmapClick : function(url) {
+       	 this.$refs.imgmodal.setUrl(url, 'PNG');
+       	 this.$refs.imgmodal.showModal();
+       },	
+	    search : function( reportno ) { //필수함수
+	        // 컴포넌트 1개당 컨트롤러(서비스), mapper, xml 각 한개씩
+	        // url은 /컴포넌트명/함수명
+	          log('search : function( reportno )');
+	          this.reportNo = reportno;
+	          log('this.$refs[this.refHeader].search(this.reportNo)');
+	          log(this.reportNo);
+              this.$refs[this.refHeader].search(this.reportNo);	          
+	          
+	           var param = {
+	                   svcId:"getReportedList",
+	                   strUrl:"/ex/expense/approve/getReportByNo",
+	                   param : {REPORT_NO : this.reportNo}, //조회조건 부분만(전체는 에러 : 관리항목 input존재)
+	                   pCall : this.getReportByNoCallback, 
+	                   pLoad : true         
+	               };            
+	       //    ajaxReadJsonData(param);       
+	        
+	          var param = {
+                      svcId:"",
+                      strUrl:"/ex/expense/expensemst/getExpListByReportNo",    //전송 url    
+                      inDs :  "" ,  
+                      param : { REPORT_NO : this.reportNo },  
+                      pCall : this.getExpListByReportNoCallback, 
+                      pLoad : true,          
+                      };
+              //        ajaxReadJsonData(param);  
+                               
+   	          var param = {
+                         svcId:"",
+                         strUrl:"/ex/expense/expensemst/getExpFileListByReportNo",    //전송 url  
+                         inDs :  "" ,  
+                         param : { REPORT_NO : this.reportNo },  
+                         pCall : this.getExpFileListByReportNoCallback, 
+                         pLoad : true,          
+                         };
+                  //      ajaxReadJsonData(param);  
+                         
+              var param = {
+                      svcId:"getReportFileByReportNo",
+                      strUrl:"/ex/expense/report/getReportFileByReportNo", 
+                      inDs :  "" ,  
+                      param : {REPORT_NO: this.reportNo}, 
+                      pCall : this.getReportFileByReportNoCallback, 
+                      pLoad : true          
+                  };
+               //  ajaxReadJsonData(param);    
+            //             
+	    },
+
+	    getReportByNoCallback : function(svcId, data) {
+	    	   this.reportTitle = data.ds_master.data[0].REPORT_TITLE;
+	    	   this.reportRmk = data.ds_master.data[0].REPORT_RMK;
+	    	   this.paySumAmt = data.ds_master.data[0].PAY_SUM_AMT;	
+	    },
+        getExpFileListByReportNoCallback : function(svcId, data) {
+       	 this.expFiles = data["ds_master"]['data'];
+        },
+        getExpListByReportNoCallback : function(svcId, data) {
+        	log('getExpListByReportNoCallback : function(svcId, data)');
+            this.expenseList = [];
+            this.expenseList = data["ds_master"]['data'];
+            this.reportMngList = [];
+            this.reportMngList = data["ds_mng"]['data'];
+            
+            this.expListCard = this.expenseList.filter( function (item) { item.FILE_LISTS = JSON.parse( item.FILE_LIST );  return item.SOURCE_TP == '1'  });
+            
+            
+            this.expListTravel = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '3'  });
+            this.expListGas = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '4'  });
+            this.expListToll = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '6'  });
+            this.expListReceipt = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '2'  });
+            this.expListEtax = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == 'A'  });
+            this.expListPtax = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == 'B'  });
+            this.expListEtc = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP != '1' 
+                                                                       &&  item.SOURCE_TP != '2'
+                                                                       &&  item.SOURCE_TP != '3'
+                                                                       &&  item.SOURCE_TP != '4'
+                                                                       &&  item.SOURCE_TP != '6'
+                                                                       &&  item.SOURCE_TP != 'A'
+                                                                       &&  item.SOURCE_TP != 'B'                                                                              
+            });
+            
+            
+        }, 
+        
+        getReportFileByReportNoCallback : function(svcId, data) {
+        	this.reportFiles = data.ds_master.data;
+        },      
+        
+        
+        searchExpense : function()  { 
+        	var o = {}
+        	o.ds_master = this.expenseList
+        	log(o)
+				var param = {
+				                svcId:"reportApprvClubList",
+				                strUrl:"/ex/expense/report/reportApprvClubList", 
+				                inDs :  "" ,  
+				                param : o, 
+				                pCall : this.searchExpenseCallback, 
+				                pLoad : true          
+				            };
+				           ajaxReadJsonData(param);  	    
+							console.log("getReport")	    	
+				           log(param)
+				    
+			     },
+	    
+			     searchExpenseCallback : function(svcId, data) {
+			    	 this.expenseList = data.ds_master.data;
+			     }
+	    
+   },//method
+
+   mounted: function() {
+	   var ref = this;
+       this.$nextTick(function () {
+//     	   ref.searchExpense()
+              }); 
+	   
+
+    },
+}); // test
+
+
+Vue.component('report-club-list', { //동호회 문서=================================================================
+	data: function () {
+		return {
+			id : objId(),
+			refHeader : objId(),
+			refMng: objId(),
+			refFile: objId(),			
+			reportFiles :[],
+			
+			Report : [],
+	        reportNo : '',
+	        reportTp : '',
+	        reportTitle : '',
+	        reportRmk : '',
+	        paySumAmt : '',
+	        expenseList:[],
+	        
+	        
+	        
+	        
+
+		}
+		}, props: {pgmid : String ,subname:String, },
+		template:
+		'<div class="h-100">\
+		    <report-header-read-comp :ref="refHeader" v-show="false" title="true"></report-header-read-comp> \
+			<report-mng-read-comp :ref="refMng" v-show="true" >   </report-mng-read-comp> \
+			<div class="w-100 text-right f-maintheme f-subtitle">{{getSumAmt | numberformat("0,000") }}원</div> \
+					<div class="d-flex flex-wrap bg-light border">\
+						<div class="col-12 col-xl-12 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+					       <div class="col-1 py-2 px-0 text-center ">순번</div>\
+					       <div class="col-2 py-2 px-0 text-center border-left">코스트센터</div>\
+					       <div class="col-2 py-2 px-0 text-center border-left">비용항목</div>\
+					       <div class="col-2 py-2 px-0 text-center border-left">사용일</div>\
+					       <div class="col-2 py-2 px-0 text-center border-left">사원명</div>\
+					       <div class="col-3 py-2 px-0 text-center border-left">지급액</div>\
+					   </div> \
+			 	    </div>\
+					<div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in expenseList" >\
+						<div class="col-12 col-xl-12 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+					         <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+					         <div class="col-2 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+					         <div class="col-2 py-2 px-0 text-center border-left">{{item.EXPENSE_NM}}</div>\
+					         <div class="col-2 py-2 px-0 text-center border-left">{{item.RECEIPT_DT | dateformat("card-week")}}</div>\
+					         <div class="col-2 py-2 px-0 text-center border-left">{{item.EMP_NM}}</div>\
+					         <div class="col-3 py-2 px-0 text-center border-left">{{item.PAY_AMT | numberformat("0,000")}}</div>\
+						 </div> \
+		 	         </div> \
+				<report-file-comp :ref="refFile" v-show="true" readonly="true" >   </report-file-comp> \
+			</div> \
+	    </div>',
+		created () {
+			
+		},
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.expenseList.forEach(item => {  t = t + item.PAY_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+		methods : { 
+			// 필수함수
+			   initData : function() {  // 필수함수
+				   this.$refs[this.refHeader].initData();
+				   this.$refs[this.refMng].initData();
+				   this.$refs[this.refFile].initData();
+			   },
+			   setObj : function( o ) { // 필수함수
+				   this.expenseList = o;
+				   var arr = []
+				   this.expenseList.forEach( function (item) {
+					  arr.push({EXPENSE_NO : item.EXPENSE_NO});
+				   } );
+			       this.$refs[this.refFile].getFiles(arr);
+			   },   
+			   sendObj: function( o ) {  // 필수함수
+				   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+					return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+					    , ds_report : this.$refs[this.refHeader].getObj() 
+					, ds_files : this.reportFiles
+					}, this.$refs[this.refMng].getObj()   );
+				   },
+			   setReportTp : function( reporttp ) { // 필수함수
+				   this.$refs[this.refMng].searchMng(reporttp);
+				   this.reportTp = reporttp;
+				   this.reportTitle = reporttitle;
+				   this.$refs[this.refHeader].setTitle(this.reportTitle);
+			   },	
+			// 필수함수 end
+			
+			search : function( reportno ) { //필수함수
+	        // 컴포넌트 1개당 컨트롤러(서비스), mapper, xml 각 한개씩
+	        // url은 /컴포넌트명/함수명
+	          this.reportNo = reportno;
+	       // header : title, 내용, 첨부파일
+	          this.$refs[this.refHeader].search(this.reportNo);
+	          this.$refs[this.refMng].search(this.reportNo);
+	        //비용 파일 (리포포 파일X)
+	          this.$refs[this.refFile].search(this.reportNo);
+	        
+	          var param = {
+	        		  	svcId:"reportApprvClubList",
+		                strUrl:"/ex/expense/report/reportApprvClubList",
+		                inDs :  "" ,  
+		                param : {REPORT_NO : this.reportNo}, 
+		                pCall : this.getReportCallback, 
+		                pLoad : true          
+		            };
+		           ajaxReadJsonData(param);  	    
+					console.log("getReport")	    	
+		           log(param)
+		    
+	     },
+                      
+			    getReportCallback : function(svcId, data) {
+			    	   this.expenseList = data.ds_master.data
+			    	   this.$refs[this.refHeader].setAmt(this.getSumAmt)
+			    },  
+			
+	       procApprove: function(reportNo) {  // parent에서 승인시 이 함수 호출하므로, 추가작업(데이터저장 등)이 필요할 때 반드시 만들어 주세요.
+              	    	   
+	    	   // DB저장 필요할 때, 다음 이벤트 emit  
+	    	   // this.$emit('procApproved',response);  // response는 key, seq 등
+	       },	
+	       
+	       
+	       
+	       
+	       
+		},//method 
+		
+		mounted: function() { 
+	        var ref = this;
+	        
+	        this.$nextTick(function () {
+	               });   
+		},
+}); // 
+
+
+//상신용 비용리스트(결재화면)
+Vue.component('report-apprv-condolence-list', { // 경조금==================================================================
+    data: function () { 
+        return {
+                  //필수 변수
+        	      id : objId(),
+                  refHeader : objId(),
+              	  refMng : objId(),
+                  refFile: objId(),
+              	  
+                  //
+                  reportFiles : [],
+                  reportNo : '',
+                  reportTp : '',
+                  reportTpNm : '',
+                  
+                  expFiles : [],
+                  expenseList : [],
+                  reportMngList : [],
+                  expListCard : [],
+                  expListTravel : [],
+                  expListGas : [],
+                  expListToll : [],
+                  expListReceipt : [],
+                  expListEtax : [],
+                  expListPtax : [],
+                  expListEtc : [],
+                  
+                  reportTitle : '',
+                  reportRmk : '',
+                  paySumAmt : '',
+                  imgid: objId(),
+          }
+        },
+
+        props: {pgmid : String ,subname:String, ismobile : String  }, 
+        template:
+    		'<div class="h-100">\
+    		    <report-header-comp :ref="refHeader" v-show="false" title="true" ></report-header-comp> \
+    			<report-mng-comp :ref="refMng" v-show="false" >   </report-mng-comp> \
+    			<div class="w-100 text-right f-maintheme f-subtitle">{{getSumAmt | numberformat("0,000") }}원</div> \
+		    			<div class="d-flex flex-wrap bg-light border">\
+						   <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+						       <div class="col-1 py-2 px-0 text-center ">순번</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">비용항목</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">코스트센터</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">회사명</div>\
+						       <div class="col-2 py-2 px-0 text-center border-left">부서명</div>\
+						   </div> \
+						   <div class="col-12 col-xl-6 p-0 d-flex"> \
+						       <div class="col-3 py-2 px-0 text-center border-left">경조사일</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">경조대상자</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">경조사명</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">지급액</div>\
+						   </div> \
+				    </div>\
+					<div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in expenseList" >\
+							 <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+						         <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.EXPENSE_NM}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.com_name}}</div>\
+						         <div class="col-2 py-2 px-0 text-center border-left">{{item.dept_name}}</div>\
+							 </div> \
+				             <div class="col-12 col-xl-6 p-0 d-flex"> \
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.target_name}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.target_person}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.target_name}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.PAY_AMT | numberformat("0,000")}}</div>\
+						     </div> \
+			       </div> \
+    				<report-file-comp :ref="refFile" v-show="true" readonly="true" >   </report-file-comp> \
+    			</div> \
+    	    </div>',
+    	created () { 
+                    
+            },
+            computed: {
+                getSumAmt : function(){
+                    var t = 0 ;
+                    this.expenseList.forEach(item => {  t = t + item.PAY_AMT });
+                    return t;
+                }, // getSelectedExpTotal	
+            },
+       methods : {
+    	   initData: function() {  // 필수함수
+    		   this.$refs[this.refHeader].initData();
+    		   this.$refs[this.refMng].initData();
+    		   this.$refs[this.refFile].initData();
+    	   },
+    	   sendObj: function( o ) {  // 필수함수
+    		   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+    			return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+    			                     , ds_report : this.$refs[this.refHeader].getObj() 
+    			                     , ds_etcList : { data : this.expenseList, CHG_MSG : "비용항목에 변경된 데이터가 있습니다. 조회 후 다시 처리하세요."}
+    			                     , ds_files : this.reportFiles
+    			                     }, this.$refs[this.refMng].getObj()   );
+    			 
+    		   },	   
+    	   setObj : function( o ) { // 필수함수
+    		   this.expenseList = o;
+    	       
+               // 비용item 첨부파일
+    		   var arr = []
+    		   this.expenseList.forEach( function (item) {
+    			  arr.push({EXPENSE_NO : item.EXPENSE_NO});
+    		   } );
+    	       this.$refs[this.refFile].getFiles(arr);
+    	       
+    	       
+    	       this.searchExpense()
+    	   
+    	   },
+    	   
+    	   setReportTp : function( reporttp, reporttitle  ) { // 필수함수
+    		   this.$refs[this.refMng].searchMng(reporttp);
+    		   this.reportTp = reporttp;
+    		   this.reportTitle = reporttitle;
+    		   log('this.reportTitle');
+    		   log(this.reportTitle);
+    		   
+    		   
+    		   this.$refs[this.refHeader].setTitle(this.reportTitle);
+    	   },
+           fileClick : function(item, index) {
+           	 this.$refs.imgmodal.setUrl('/ec/common/syscommon/fileupload/downloadFile/'+ item.FILE_NO, item.FILE_TYPE);
+           	 this.$refs.imgmodal.showModal();
+           },
+           tmapClick : function(url) {
+           	 this.$refs.imgmodal.setUrl(url, 'PNG');
+           	 this.$refs.imgmodal.showModal();
+           },	
+    	    search : function( reportno ) { //필수함수
+    	        // 컴포넌트 1개당 컨트롤러(서비스), mapper, xml 각 한개씩
+    	        // url은 /컴포넌트명/함수명
+    	          log('search : function( reportno )');
+    	          this.reportNo = reportno;
+    	          log('this.$refs[this.refHeader].search(this.reportNo)');
+    	          log(this.reportNo);
+                  this.$refs[this.refHeader].search(this.reportNo);	          
+    	          
+    	           var param = {
+    	                   svcId:"getReportedList",
+    	                   strUrl:"/ex/expense/approve/getReportByNo",
+    	                   param : {REPORT_NO : this.reportNo}, //조회조건 부분만(전체는 에러 : 관리항목 input존재)
+    	                   pCall : this.getReportByNoCallback, 
+    	                   pLoad : true         
+    	               };            
+    	       //    ajaxReadJsonData(param);       
+    	        
+    	          var param = {
+                          svcId:"",
+                          strUrl:"/ex/expense/expensemst/getExpListByReportNo",    //전송 url    
+                          inDs :  "" ,  
+                          param : { REPORT_NO : this.reportNo },  
+                          pCall : this.getExpListByReportNoCallback, 
+                          pLoad : true,          
+                          };
+                  //        ajaxReadJsonData(param);  
+                                   
+       	          var param = {
+                             svcId:"",
+                             strUrl:"/ex/expense/expensemst/getExpFileListByReportNo",    //전송 url  
+                             inDs :  "" ,  
+                             param : { REPORT_NO : this.reportNo },  
+                             pCall : this.getExpFileListByReportNoCallback, 
+                             pLoad : true,          
+                             };
+                      //      ajaxReadJsonData(param);  
+                             
+                  var param = {
+                          svcId:"getReportFileByReportNo",
+                          strUrl:"/ex/expense/report/getReportFileByReportNo", 
+                          inDs :  "" ,  
+                          param : {REPORT_NO: this.reportNo}, 
+                          pCall : this.getReportFileByReportNoCallback, 
+                          pLoad : true          
+                      };
+                   //  ajaxReadJsonData(param);    
+                //             
+    	    },
+
+    	    getReportByNoCallback : function(svcId, data) {
+    	    	   this.reportTitle = data.ds_master.data[0].REPORT_TITLE;
+    	    	   this.reportRmk = data.ds_master.data[0].REPORT_RMK;
+    	    	   this.paySumAmt = data.ds_master.data[0].PAY_SUM_AMT;	
+    	    },
+            getExpFileListByReportNoCallback : function(svcId, data) {
+           	 this.expFiles = data["ds_master"]['data'];
+            },
+            getExpListByReportNoCallback : function(svcId, data) {
+            	log('getExpListByReportNoCallback : function(svcId, data)');
+                this.expenseList = [];
+                this.expenseList = data["ds_master"]['data'];
+                this.reportMngList = [];
+                this.reportMngList = data["ds_mng"]['data'];
+                
+                this.expListCard = this.expenseList.filter( function (item) { item.FILE_LISTS = JSON.parse( item.FILE_LIST );  return item.SOURCE_TP == '1'  });
+                
+                
+                this.expListTravel = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '3'  });
+                this.expListGas = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '4'  });
+                this.expListToll = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '6'  });
+                this.expListReceipt = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '2'  });
+                this.expListEtax = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == 'A'  });
+                this.expListPtax = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == 'B'  });
+                this.expListEtc = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP != '1' 
+                                                                           &&  item.SOURCE_TP != '2'
+                                                                           &&  item.SOURCE_TP != '3'
+                                                                           &&  item.SOURCE_TP != '4'
+                                                                           &&  item.SOURCE_TP != '6'
+                                                                           &&  item.SOURCE_TP != 'A'
+                                                                           &&  item.SOURCE_TP != 'B'                                                                              
+                });
+                
+                
+            }, 
+            
+            getReportFileByReportNoCallback : function(svcId, data) {
+            	this.reportFiles = data.ds_master.data;
+            },      
+            
+            
+            searchExpense : function()  { 
+            	var o = {}
+            	o.ds_master = this.expenseList
+            	log(o)
+    				var param = {
+				            		svcId:"reportApprvCondolenceList",
+					                strUrl:"/ex/expense/report/reportApprvCondolenceList",
+    				                inDs :  "" ,  
+    				                param : o, 
+    				                pCall : this.searchExpenseCallback, 
+    				                pLoad : true          
+    				            };
+    				           ajaxReadJsonData(param);  	    
+    							console.log("getReport")	    	
+    				           log(param)
+    				    
+    			     },
+    	    
+    			     searchExpenseCallback : function(svcId, data) {
+    			    	 this.expenseList = data.ds_master.data;
+    			     }
+    	    
+       },//method
+
+       mounted: function() {
+    	   var ref = this;
+           this.$nextTick(function () {
+//         	   ref.searchExpense()
+                  }); 
+    	   
+
+        },
+}); // test
+
+Vue.component('report-condolence-list', { //경조금 문서=================================================================
+	data: function () {
+		return {
+			id : objId(),
+			refHeader : objId(),
+			refMng: objId(),
+			refFile: objId(),			
+			reportFiles :[],
+			
+			Report : [],
+	        reportNo : '',
+	        reportTp : '',
+	        reportTitle : '',
+	        reportRmk : '',
+	        paySumAmt : '',
+	        expenseList:[],
+	        
+	        
+	        
+	        
+
+		}
+		}, props: {pgmid : String ,subname:String, },
+		template:
+		'<div class="h-100">\
+		    <report-header-read-comp :ref="refHeader" v-show="false" ></report-header-read-comp> \
+			<report-mng-read-comp :ref="refMng" v-show="false" >   </report-mng-read-comp> \
+			<div class="w-100 text-right f-maintheme f-subtitle">{{getSumAmt | numberformat("0,000") }}원</div> \
+						<div class="d-flex flex-wrap bg-light border">\
+						   <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+						       <div class="col-1 py-2 px-0 text-center ">순번</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">비용항목</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">코스트센터</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">회사명</div>\
+						       <div class="col-2 py-2 px-0 text-center border-left">부서명</div>\
+						   </div> \
+						   <div class="col-12 col-xl-6 p-0 d-flex"> \
+						       <div class="col-3 py-2 px-0 text-center border-left">경조사일</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">경조대상자</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">경조사명</div>\
+						       <div class="col-3 py-2 px-0 text-center border-left">지급액</div>\
+						   </div> \
+				    </div>\
+					<div class="d-flex flex-wrap border-bottom border-left border-right" v-for="(item,index) in expenseList" >\
+							 <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+						         <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.EXPENSE_NM}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.com_name}}</div>\
+						         <div class="col-2 py-2 px-0 text-center border-left">{{item.dept_name}}</div>\
+							 </div> \
+				             <div class="col-12 col-xl-6 p-0 d-flex"> \
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.target_name}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.target_person}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.target_name}}</div>\
+						         <div class="col-3 py-2 px-0 text-center border-left">{{item.PAY_AMT | numberformat("0,000")}}</div>\
+						     </div> \
+			    </div> \
+				<report-file-comp :ref="refFile" v-show="true" readonly="true" >   </report-file-comp> \
+			</div> \
+	    </div>',
+		created () {
+			
+		},
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.expenseList.forEach(item => {  t = t + item.PAY_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+		methods : { 
+			// 필수함수
+			   initData : function() {  // 필수함수
+				   this.$refs[this.refHeader].initData();
+				   this.$refs[this.refMng].initData();
+				   this.$refs[this.refFile].initData();
+			   },
+			   setObj : function( o ) { // 필수함수
+				   this.expenseList = o;
+				   var arr = []
+				   this.expenseList.forEach( function (item) {
+					  arr.push({EXPENSE_NO : item.EXPENSE_NO});
+				   } );
+			       this.$refs[this.refFile].getFiles(arr);
+			   },   
+			   sendObj: function( o ) {  // 필수함수
+				   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+					return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+					    , ds_report : this.$refs[this.refHeader].getObj() 
+					, ds_files : this.reportFiles
+					}, this.$refs[this.refMng].getObj()   );
+				   },
+			   setReportTp : function( reporttp ) { // 필수함수
+				   this.$refs[this.refMng].searchMng(reporttp);
+			   },	
+			// 필수함수 end
+			
+			search : function( reportno ) { //필수함수
+	        // 컴포넌트 1개당 컨트롤러(서비스), mapper, xml 각 한개씩
+	        // url은 /컴포넌트명/함수명
+	          this.reportNo = reportno;
+	       // header : title, 내용, 첨부파일
+	          this.$refs[this.refHeader].search(this.reportNo);
+			
+	        //비용 파일 (리포포 파일X)
+	          this.$refs[this.refFile].search(this.reportNo);
+	        
+	          var param = {
+	        		  	svcId:"reportApprvCondolenceList",
+		                strUrl:"/ex/expense/report/reportApprvCondolenceList", 
+		                inDs :  "" ,  
+		                param : {REPORT_NO : this.reportNo}, 
+		                pCall : this.getReportCallback, 
+		                pLoad : true          
+		            };
+		           ajaxReadJsonData(param);  	    
+					console.log("getReport")	    	
+		           log(param)
+		    
+	     },
+                      
+			    getReportCallback : function(svcId, data) {
+			    	   this.expenseList = data.ds_master.data
+			    	   this.$refs[this.refHeader].setAmt(this.getSumAmt)
+			    },  
+			
+	       procApprove: function(reportNo) {  // parent에서 승인시 이 함수 호출하므로, 추가작업(데이터저장 등)이 필요할 때 반드시 만들어 주세요.
+              	    	   
+	    	   // DB저장 필요할 때, 다음 이벤트 emit  
+	    	   // this.$emit('procApproved',response);  // response는 key, seq 등
+	       },	
+	       
+	       
+	       
+	       
+	       
+		},//method 
+		
+		mounted: function() { 
+	        var ref = this;
+	        
+	        this.$nextTick(function () {
+	               });   
+		},
+}); // 
+
+</script>
+   
+</body>
+</html>
+
+

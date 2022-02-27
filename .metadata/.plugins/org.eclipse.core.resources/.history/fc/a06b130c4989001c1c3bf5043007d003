@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id}, report_tp=${param.report_tp} , reqty=${param.reqty})}">
+<head>
+  <meta charset="utf-8" />
+</head>
+
+<body>
+  <section layout:fragment="content">
+
+   <form class="d-flex  flex-column h-100" th:id=${param.pgm_id}  >
+   
+   <ex-report-component-v1 ref="reportReq"  @saveapproved="saveApproved" :pgmid="pgmid" subname="bgtapprv" th:reporttp=${param.report_tp}  :apprvline = "apprvline"  detail="false">
+   </ex-report-component-v1>
+   
+   
+            <ex-report-component-v1 ref="receiptapprove"  @saveapproved="saveApproved" :pgmid="pgmid" subname="receiptapprove"  
+               :apprvline = "apprvline"  detail="false"     >
+        </ex-report-component-v1>
+   
+   
+   
+   				<div class="ec-grid-box-search ">
+                           <div class="ec-grid-lastrow border-bottom">
+                               <label class="col-lg-1  col-sm-2 ec-col-label-first-search justify-content-md-end required" style=" border:none">신청자</label>
+                               <div class="col-lg-2 col-sm-4 ec-col-input" style=" border:none">
+                                    <input type="text" name="REGR_ID" th:id="${param.pgm_id}+'regr_id'"  th:value="${session.g_userNm}" class="col form-control form-control-sm " readonly /> 
+                               </div>                           
+                               <label class="col-lg-1  col-sm-2 ec-col-label-first-search justify-content-md-end" style=" border:none">신청부서</label>
+                               <div class="col-lg-2 col-sm-4 ec-col-input" style=" border:none">
+                                    <input type="text" name="DEPT" th:id="${param.pgm_id}+'regr_dept_cd'"  th:value="${session.g_deptCd}"  class="col form-control form-control-sm " readonly/> 
+                               </div>                           
+                               <label class="col-lg-1  col-sm-2 ec-col-label-first-search justify-content-md-end" style=" border:none">문서번호</label>
+                               <div class="col-lg-2 col-sm-4 ec-col-input" style=" border:none">
+                                    <input type="text" name="REQ_RPT_NO" th:id="${param.pgm_id}+'REQ_RPT_NO'"  class="col form-control form-control-sm " readonly /> 
+                               </div>
+                           </div>
+                           <div class="ec-grid-lastrow">
+                        	 <label class="col-lg-1  col-sm-2 ec-col-label-first-search justify-content-md-end">예산반영월</label>
+                               <div class="col-lg-2 col-sm-4 ec-col-input">
+                                   <date-new-component-v1  ref="bdgt_ym" @changed="changeMonth" th:pgmid="${param.pgm_id}" subname="BDGT_YM"  required="true"  initval="today" format="YYYY-MM"></date-new-component>
+                               </div>
+                           
+                           
+                           </div>
+                </div>
+                           <!-- 에이유아이 그리드가 이곳에 생성됩니다. -->
+                    <div class="flex-shrink-1 flex-grow-1 h-100">
+                        <grid-crud ref="gridmaster" :columnlayout="columnlayout" :footerlayout="footerLayout" :pgmid="pgmid" subname="gridmaster"  :newitem="newgriditem" buttons="cd">
+                        	<template v-slot:left-button>
+    								<a class="btn border btn-xs" @click="getSapPoFmDerivClick"><span class="up" >예산부서&예산과목 가져오기</span></a>
+    								<a class="btn border btn-xs" @click="clickHeadEvent"><span class="up" >가용예산 조회</span></a>
+  							</template>
+                        </grid-crud> 
+                    </div>
+               <popup-gridcode ref="popupcostcenter"  :pgmid="pgmid"  pgmnm="코스트센터" subname="CCTR"  name="CCTR" searchname="작성자" :parentgrid="gridView" columnlayout="popupcostcenter"   tablename="CCTR"   codecol="CCTR_CD" namecol="CCTR_NM" ></popup-gridcode>
+               <popup-gridcode ref="popupacct"  :pgmid="pgmid"  pgmnm="계정명" subname="ACCT"  name="ACCT" searchname="계정명" :parentgrid="gridView" columnlayout="popupacct"   tablename="ACCT"   codecol="ACC_CD" namecol="ACC_NM" ></popup-gridcode>
+                <!-- 예산부서 -->
+               <popup-gridcode @selectcode="changeBgtDept" ref="popupbgtdept" url="/ec/sap/popup/code/searchSap"  :pgmid="pgmid" pgmnm="bgtdeptnm" subname="SAPBGTDEPT"  name="SAPBGTDEPT" searchname="예산부서" :parentgrid="gridView" columnlayout="popupsapbgtdept"   tablename="SAPBGTDEPT"   codecol="BDGT_DEPT_CD" namecol="BDGT_DEPT_NM"  searchrequired="true" mode="manual" ></popup-gridcode>
+			    <!-- 예산과목 -->
+			   <popup-gridcode ref="popupbgtacc" url="/ec/sap/popup/code/searchSap"  :pgmid="pgmid" pgmnm="bgtaccnm" subname="SAPBGTACC"  name="SAPBGTACC" searchname="예산과목" :parentgrid="gridView" columnlayout="popupsapbgtacc"   tablename="SAPBGTACC" codecl="A"  codecol="BDGT_ACC_CD" namecol="BDGT_ACC_NM"  searchrequired="true" mode="manual" ></popup-gridcode>          
+   </form>
+           
+	  	<!-- ================== BEGIN THIS PAGE JS ================== -->
+ 	<div th:insert="contents/ex/bgt/bgt-head-js :: js"></div>  
+   </section>
+
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+ 	
+      var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]', 
+//********************************************************************************************        
+          
+          data: {  pgmid : "[[${param.pgm_id}]]",
+        	  	   searchLimit : {},
+        	  	   clickCnt : Number,
+        	  	   currPageNo: Number,
+        	  	   searchStartId : {},
+        	  	   boardlist : [],
+        	  	   pageinfo : [],
+        	  	   pageno : [],
+        	  	   modalboard : [],
+        	  	   fileList : [],
+        	  	   NoResult : Boolean,
+        	  	   searchFlag : String,
+        	  	   board_tp : {BOARD_TP : "[[${param.board_tp}]]"},
+        	  	   isLoaded : Boolean
+        	  	   
+          },//data 
+          created () { //초기화
+        	  
+        	  this.boardlist = [
+        		  {ID : ""},
+        		  {BOARD_TITLE : ""},
+        		  {REGR_DH : ""},
+			      {FILE_YN: ""}
+        	  ];
+        	 
+        	  this.pageinfo = [
+ 				{TOT_CNT : ""},
+ 				{pageLimit : ""},
+ 				{blockLimit : ""},
+ 				{pageCnt : ""},
+ 				{blockCnt : ""}	
+        	  ] ; 
+        	  
+        	  this.pageno = [
+        		  {pageNo:""},
+        		  {startNo: 0},
+        		  {currBlockNo:""},
+        		  {nextBlockNo:""},
+        		  {nextBlockYN:null},
+        		  {prevBlockNo:""},
+        		  {prevBlockYN:null}
+        	  ]; 
+        	  
+        	  this.modalboard = [];        	  
+        	  this.fileList =[];       	  
+			  this.searchLimit = {};
+			  this.searchStartId = {};
+
+			  this.NoResult = false;
+			  this.clickCnt = 0;
+        	  this.currPageNo = 1;
+			  this.searchFlag = "";
+			  this.isLoaded = false;
+			  
+			  
+			  
+          }, // created       
+          methods : {  // ======================================================================================
+        
+                 
+             getPageInfo : function(searchFlag){
+				 
+            	 
+            	 
+            	 var searchLimit = 1000; // 키워드 검색 시 검색 limit 설정
+            	 
+            	 switch(searchFlag){
+            	 case 'search' : 
+            		 this.searchFlag = "search";
+            		 this.clickCnt = 0;
+            		 break;
+            	 case 'searchmore' :
+            		 this.searchFlag = "searchmore";
+            		 this.clickCnt += 1;
+            		 break;
+            	 case 'firstsearch' : 
+            		 this.searchFlag = "firstsearch";
+            		 searchLimit = null;
+            		 break;
+            	 }
+            	 
+           	 	 this.searchLimit = {searchLimit : searchLimit};
+            	 if (searchLimit != null)
+            	 	this.searchStartId = {searchStartId : this.clickCnt*searchLimit};
+            	 
+            	 
+            	 
+            	  var param = {
+                          svcId:"getPageInfo",
+                          strUrl:"/ec/ex/config/board/getPageInfo",   //전송 url    
+                          inDs :  "" ,  
+                          param : Object.assign(this.board_tp, this.searchStartId, this.searchLimit, serializeObjectX($('#[[${param.pgm_id}]]'))), 
+                          pCall : this.getPageInfoCallback, 
+                          pLoad : true          
+                      };
+                  		
+	            	  var searchKeyword = param.param.searchKeyword.trim();
+	            	  param.param.searchKeyword = searchKeyword;
+            	  
+	            	 // 검색어 없이 검색 버튼 누르기 == 전체조회
+	            	  if(searchKeyword == "" && searchFlag == "search" ) {
+	            		  this.clickCnt = 0;
+	            		  this.getPageInfo("firstsearch");
+	            		  return;
+	            	  }
+                      //트랜젝션 실행
+                      ajaxReadJsonData(param);
+                }, // end of getPageList */
+            	  	
+              getPageInfoCallback : function(svcId, data, errCd, msgTp, msgCd, msgText){
+            	
+            	 // 페이지당 limit, 블록당 limit 설정
+            	  var pageLimit = 10;
+            	  var blockLimit;
+            	  
+           		  if( $('#'+this.pgmid+'mobileFlag').val() == "mobile"){
+           			  blockLimit = 5;
+           		  } else {
+           			  blockLimit = 10;
+           		  };
+            	  
+           		  
+            	  var totalCnt = data["ds_master"]['data'].TOT_CNT; // 총 조회건 수
+            	  var pageCnt = Math.ceil(totalCnt / pageLimit);  // 총 페이지 개수    	  
+            	  var blockCnt = Math.ceil(pageCnt / blockLimit); // 총 블록 개수
+            	  this.pageinfo = [data["ds_master"]['data'],{pageLimit: pageLimit},{blockLimit: blockLimit},
+            		  				{pageCnt : pageCnt}, { blockCnt : blockCnt}]; 
+            	  
+            	 // 조회결과가 있는 경우에만 계속 진행
+            	  if (totalCnt == 0){
+            		  
+            		  	  this.NoResult = true;
+	            		  this.boardlist = [];
+	           	  		  this.pageinfo = [];
+		        	  	  this.pageno = [{pageNo:""},
+		                		  {startNo: 0},
+		                		  {currBlockNo:""},
+		                		  {nextBlockNo:""},
+		                		  {nextBlockYN:null},
+		                		  {prevBlockNo:""},
+		                		  {prevBlockYN:null}];
+		        	  	  this.modalboard = [];
+		        	  	  this.fileList = [];
+			  			  this.searchLimit = {};
+			  			  this.searchStartId = {};
+		  				  this.clickCnt = 0;
+	            		  return;
+            	  }
+
+            	 
+            	  this.NoResult = false;
+            	  this.makePageInfo();
+            	  
+              }, //getPageInfoCallback
+                    
+              makePageInfo : function(blockNo = 0){
+            	  
+            	  var totalCnt = Number(this.pageinfo[0]["TOT_CNT"]); 	  
+            	  var pageLimit = Number(this.pageinfo[1]["pageLimit"]);
+            	  var blockLimit = Number(this.pageinfo[2]["blockLimit"]);            	   
+            	  var pageCnt = Number(this.pageinfo[3]["pageCnt"]);           // 총 페이지 개수    	  
+            	  var blockCnt = Number(this.pageinfo[4]["blockCnt"]); // 총 블록 개수
+            	  
+            	  var whichBlock = ""; // 보여줄 화면이 첫조회화면? 이전(블록)? 다음(블록)? 인지
+            	  var startPageNo; //블록의 첫 페이지 번호 1, 11, 21 ...
+            	  
+            	 // 현재 블록 넘버로 whichBlock 세팅
+            	  if(blockNo == 0) {
+            		  startPageNo = 1;
+            		  whichBlock = "first";  
+            	  } else if (blockNo == this.pageno[0].prevBlockNo){
+            		  startPageNo = blockLimit*(blockNo-1)+1;  
+            		  whichBlock = "prev";
+            	  } else { 
+            		  startPageNo = blockLimit*(blockNo-1)+1; 
+            		  whichBlock = "next";
+            		  }
+            	
+            	 
+            	  this.pageno = []; // 페이지 정보 초기화
+            	  
+            	 // 블록의 모든 페이지 정보 만들기
+            	  for (i=startPageNo; i <= pageCnt ; i++){
+            			  this.pageno.push( {
+            					  pageNo: String(i) , 
+            					  startNo:totalCnt - pageLimit*(i-1), 
+            					  currBlockNo: Math.ceil(i/blockLimit),
+            					  nextBlockNo: (Math.ceil(i/blockLimit)+1 <= blockCnt) ? String(Math.ceil(i/blockLimit)+1) : null, 
+            					  nextBlockYN: (Math.ceil(i/blockLimit)+1 <= blockCnt) ? ">" : null,
+            					  prevBlockNo: (Math.ceil(i/blockLimit)-1 > 0) ? String(Math.ceil(i/blockLimit)-1) : null,
+            					  prevBlockYN: (Math.ceil(i/blockLimit)-1 > 0) ? "<" : null
+            					  });  
+            			 	
+	            		  if (this.pageno.length == blockLimit){
+	               		  	break;
+	            		  }
+            		  
+            	  }
+            	  
+            	  
+           		// 첫조회화면, 이전, 다음 버튼에 따라 첫 페이지 다르게 세팅 
+           		if(whichBlock === "next" || whichBlock === "first" ) {
+	           		this.searchButtonOnClick(this.pageno[0].pageNo);
+                } else {
+                	   this.searchButtonOnClick(this.pageno[blockLimit - 1].pageNo);
+	           		    };
+	           			
+              },
+              
+              searchButtonOnClick : function(pageNo = 1) {
+            	  this.currPageNo = pageNo; //현재 페이지(조회하려는)
+            	  var blockLimit = this.pageinfo[2].blockLimit;
+            	  var currBlockNo = this.pageno[0].currBlockNo;
+            	  
+            	  //해당 pageNo의 첫 게시글 id 구하기
+         		  var pageLimit = {"pageLimit" : Number(this.pageinfo[1]["pageLimit"])}; 
+         		  var pageIndex = pageNo - blockLimit*(currBlockNo-1) - 1;
+            	  var startNo = this.pageno[pageIndex].startNo;
+             	  var startId = {"startId" : Number(this.pageinfo[0]["TOT_CNT"]) - startNo};
+             	  
+             	  			var param = {
+                                 svcId:"search",
+                                 strUrl:"/ec/ex/config/board/searchUserBoardList",   //전송 url    
+                                 inDs :  "" ,  
+                                 param : Object.assign(this.board_tp, this.searchStartId,this.searchLimit,pageLimit,startId,serializeObjectX($('#[[${param.pgm_id}]]'))),  // { FR_DT : '20210101' , TO_DT : '20211231'  }
+                                 pCall : this.searchButtonOnClickCallback ,
+                                 pLoad : true          
+                             };
+         			
+ 			            	var searchKeyword = param.param.searchKeyword.trim();
+ 				            param.param.searchKeyword = searchKeyword;
+ 				            $('#'+this.pgmid+'searchKeyword').val(searchKeyword); 
+             			  
+                             //트랜젝션 실행
+                             ajaxReadJsonData(param);
+                             
+                       }, // end of searchButtonOnClick */
+               
+               
+               searchButtonOnClickCallback : function(svcId, data, errCd, msgTp, msgCd, msgText) { //******************************
+
+            	   this.boardlist = data["ds_master"]['data']; 
+               
+            	   this.isLoaded = true;
+                  },  // SearchButtonOnClickCallBack 
+              
+              clickBoardTitle :  function(seq) {
+            	  
+       		   var param = {
+       		             svcId:"search",
+       		             strUrl:"/ec/ex/config/board/search",    //전송 url  
+       		             param : {BOARD_SEQ : seq },
+       		             pCall : this.clickBoardTitleCallback, 
+       		             pLoad : true          
+       		             };
+       		             //트랜젝션 실행
+       		             ajaxReadJsonData(param);
+       		             var param = {
+       				             svcId:"search",
+       				             strUrl:"/ec/ex/config/board/searchfile",    //전송 url  
+       				             param :   {BOARD_SEQ : seq },
+       				             pCall : this.clickBoardFileCallback, 
+       				             pLoad : true          
+       				             };
+       				             //트랜젝션 실행
+       				             ajaxReadJsonData(param);
+       		             
+       	  	   },
+       	  	   
+       	  		clickBoardTitleCallback( s,  data){
+       	  		   
+       	  	  
+		        	 if (data['ds_search'].data.length == 0) {
+		        		 
+		        		 customAlert("","","관리자에 의해 삭제된 게시물입니다");
+		        		 
+		        	 } else {
+		        	 
+		       	  		$('#'+this.pgmid+'modal_BoardList').modal('show'); 
+		     		   
+		       	  		this.modalboard = data['ds_search'].data[0];
+		       	  		
+		      		    $('#'+this.pgmid + 'board_seq').val(this.modalboard.BOARD_SEQ); 
+		      		    $('#'+this.pgmid+ 'summernote').summernote('code',this.modalboard.BOARD_CONTENTS);
+		          	    $('#'+this.pgmid+ 'summernote').summernote('destroy');
+		        	 }
+		       },
+       	  	
+       	  	   clickBoardFileCallback( s,  data){
+       	     	  this.fileList = data.ds_master.data ;
+       	     	 
+       	       },
+       	       
+	       	   closeModal :  function() {
+	    		    
+	     		   this.fileList = [];
+	     	   },
+              
+          }, // end of methods
+
+          mounted: function() {
+        	  this.getPageInfo("firstsearch");
+        	  
+         	
+        	  
+       		    
+//**********************************************************************************************              
+             vueArr.push(this); 
+            },
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

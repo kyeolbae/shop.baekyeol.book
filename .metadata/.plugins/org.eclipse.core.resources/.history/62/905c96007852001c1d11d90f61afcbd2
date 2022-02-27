@@ -1,0 +1,17 @@
+package org.opentutorials.javatutorials.method;
+
+public class CarExample {
+
+	
+	
+	public static void main(String[] args) {
+		
+//		new Car();
+//		new Car("³ë¶û");
+		Car car = new Car("»¡°­",1500);
+		
+		System.out.println(car.color+car.cc);
+
+	}
+
+}

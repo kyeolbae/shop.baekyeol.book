@@ -1,0 +1,65 @@
+package com.ec.eframework.ex.sap;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.ec.eframework.lib.JsonDataMap;
+import com.ec.eframework.lib.MapSession;
+import com.ec.eframework.mapper.ex.sap.common.SapServiceMapper;
+
+/**
+ * 장부
+ */
+@Controller
+@RequestMapping("ec/exp/sap/sapslip")
+public class SapSlipController  {
+
+
+	/**
+	 * sap전표 페이지 호출 
+	 */
+	    @RequestMapping(value = "/page")
+	    public String page() {
+	
+	     return "contents/ex/sap/sap-slip";
+	    }
+	    
+	    @RequestMapping(value = "/m_page")
+	    public String m_page() {
+	
+	     return "contents/ex/sap/sap-slip";
+	    }
+
+	    
+	    // sap전표조회(테이블)
+	    @Autowired
+	    private SapServiceMapper sapServiceMapper;
+	    @RequestMapping(value = "/search" , produces = MediaType.APPLICATION_JSON_VALUE) // ec/exp/sap/sapslip/search"
+	    @ResponseBody
+	    public Map<String, Object>  search(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+	    
+	        paramMap.putAll((Map)new MapSession(session));
+	        return new JsonDataMap("ds_master",sapServiceMapper.getSapSlip(paramMap));    
+	    }   
+
+	    @RequestMapping(value = "/searchDetail" , produces = MediaType.APPLICATION_JSON_VALUE)
+	    @ResponseBody
+	    public Map<String, Object>  searchDetail(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+	    
+	        paramMap.putAll((Map)new MapSession(session));
+	        return new JsonDataMap("ds_master",sapServiceMapper.getSapSlipDetail(paramMap));    
+	    }   
+
+
+
+}
+

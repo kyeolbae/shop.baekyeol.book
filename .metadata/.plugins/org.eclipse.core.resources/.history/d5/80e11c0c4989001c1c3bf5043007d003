@@ -1,0 +1,162 @@
+/* 
+	-- 프로그램명 : 거래처, 거래처계좌 검색 (Business-Partner & Payment Account)
+	-- 날짜 : 2021.11.15 by hshwang
+	-- 수정 : 
+*/
+
+package com.ec.eframework.ex.sap.common;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.configurationprocessor.json.JSONException;
+import org.springframework.boot.configurationprocessor.json.JSONObject;
+import org.springframework.stereotype.Service;
+
+import com.ec.eframework.ex.common.HttpSapConnectionService;
+import com.ec.eframework.lib.P;
+import com.ec.eframework.mapper.ex.sap.common.SapServiceMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Service
+public class SapPoBPnPAService {
+	
+	@Autowired
+	private HttpSapConnectionService httpConnectionService;
+
+	@Autowired
+	private SapServiceMapper sapServiceMapper;
+	
+	private boolean CheckUrl(Map<String, Object> paramMap, String propKey ,Map<String, Object> result)  {
+//		P.ln("CheckUrl");
+		paramMap.put("URL_KEY", propKey);
+		String val =  sapServiceMapper.SapPoUrl(paramMap);
+		if (val.equals("")) {
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "URL 정보가 없습니다.");
+			P.ln("CheckUrl false");
+			return  false;	
+		}else {
+			paramMap.put("URL", val) ;
+		}
+		P.ln("CheckUrl true");
+		   return true;
+	}//	
+	private boolean Checkbukrs(Map<String, Object> paramMap, Map<String, Object> result)  {
+		P.ln("Check bukrs");
+		paramMap.put("CONFIG_KEY", "BUKRS");
+		String bukrs = sapServiceMapper.getSapPoConfig(paramMap);
+		if (bukrs == null || bukrs.equals("")) {
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "BURKS 정보가 없습니다.");
+			P.ln("Checkbukrs false");
+			return  false;	
+		}else {
+			paramMap.put("BUKRS", bukrs) ;
+		}
+		P.ln("Checkbukrs true");
+	      return true;
+	}//	
+	
+	// Config check
+	private boolean CheckConfigData(Map<String, Object> paramMap, Map<String, Object> result, String urlStr)  {
+		P.ln("CheckConfigData");
+		
+		if (!paramMap.containsKey("COMM_CL_CD")) {
+			P.ln("COMM_CL_CD IS NULL");
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "구분코드 부재");
+			return false;
+		}
+		
+		if (!(CheckUrl(paramMap,urlStr, result) && Checkbukrs(paramMap, result))) { 	//  API URL
+			P.ln("CheckConfigData return false");
+			return false;
+			}
+		P.ln("CheckConfigData return true");
+  	    return true;
+	}
+	
+	private JSONObject JSONObjectFactory(Map<String, Object> paramMap) throws JSONException  {
+		P.ln("JSONObjectFactory");
+		JSONObject json = new JSONObject();
+		json.put("I_KEYWORD_COMPANY", paramMap.get("BUKRS"));				// 회사코드
+		
+		if(paramMap.get("COMM_CL_CD").equals("BP")) {		//거래처검색
+			json.put("I_KEYWORD_PARTNER", paramMap.getOrDefault("SEARCH_VAL", ""));	// 거래처번호
+			json.put("I_KEYWORD_TAXNO", paramMap.getOrDefault("COND1", ""));	// 사업자번호
+			json.put("I_KEYWORD_NAME", paramMap.getOrDefault("COND2", ""));		// 거래처명칭
+			json.put("I_PARTNER_TYPE", "D");		// D: 고객 K :구매처
+		} else if(paramMap.get("COMM_CL_CD").equals("PA")) {		//거래처계좌검색
+			json.put("I_KEYWORD_PARTNER", paramMap.getOrDefault("SEARCH_VAL", ""));	// 거래처번호
+		}
+		P.ln(json.toString());
+		return json;
+	}
+	
+	// SAP 거래처, 거래처계좌 검색
+	public Map<String, Object> getSapPoBPnPA(Map<String, Object> paramMap) {
+		// 순서 중요	
+		Map<String, Object> result = new HashMap();
+		if (!(CheckConfigData(paramMap, result, "PO_GET_BPNPA"))) return result;
+		
+		try {			
+			JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, JSONObjectFactory(paramMap), "TOSAP"); // API 호출
+			
+//				 response 
+			JSONObject sub_jObject = jObject.getJSONObject("ES_RESULT");
+			if(sub_jObject.get("RETURN_CD").equals("S")) {
+				List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+				if(paramMap.get("COMM_CL_CD").equals("BP")) {		// 거래처 검색
+					if(jObject.has("BUSINESS_PARTNER")) {
+						List<Map<String, Object>> sub_list = httpConnectionService.getListMapFromJsonArray(jObject.getJSONArray("BUSINESS_PARTNER"));
+						for(int i=0;i<sub_list.size();i++) {
+							HashMap<String, Object> map = new HashMap();
+							Map<String, Object> sub_map = sub_list.get(i);
+							map.put("ID", i+1);
+							map.put("CODE", sub_map.get("Partner"));			// 거래처번호
+							map.put("NAME", sub_map.get("Name"));				// 거래처이름
+							map.put("REF1", sub_map.get("TAXNO_BIZ"));			//사업자번호
+							map.put("REF2", sub_map.get("FLAG_CUSTOMER"));		//지시자: 고객으로 사용
+							map.put("REF3", sub_map.get("FLAG_VENDOR"));		//지시자: 구매처로 사용
+							list.add(map);
+						}
+					}
+				} else if(paramMap.get("COMM_CL_CD").equals("PA")) {			// 거래처 계좌 검색
+					if (jObject.has("PAYMENT_ACCOUNT")) {
+						List<Map<String, Object>> sub_list = httpConnectionService.getListMapFromJsonArray(jObject.getJSONArray("PAYMENT_ACCOUNT"));
+						for(int i=0;i<sub_list.size();i++) {
+							HashMap<String, Object> map = new HashMap();
+							Map<String, Object> sub_map = sub_list.get(i);
+							map.put("ID", i+1);
+							map.put("CODE", sub_map.get("BVTYP"));		// 파트너은행
+							map.put("NAME", sub_map.get("BANKL"));		// 은행
+							map.put("REF1", sub_map.get("BANKN"));		//계좌번호
+							map.put("REF2", sub_map.get("KOINH"));		//예금주
+							list.add(map);
+						}
+					}
+				}
+				result.put("ITEMLIST", list);
+				result.put("RESULT" , "OK");
+				result.put("MSG" , sub_jObject.get("RETURN_MSG"));
+			} else {
+				result.put("RESULT" , "ERROR");
+				result.put("MSG" , sub_jObject.get("RETURN_MSG"));
+			}
+		} catch (JSONException | JsonProcessingException e) {
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "실행 도중 에러가 발생했습니다.");
+			e.printStackTrace();
+		} catch (Exception e) {  
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "실행 도중 에러가 발생했습니다.");
+			e.printStackTrace();
+		}
+		return result;
+	}
+	
+}

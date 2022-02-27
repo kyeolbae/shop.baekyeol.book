@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+  <meta charset="utf-8" />
+</head>
+
+<body>
+  <section layout:fragment="content">
+
+   <form class="d-flex  flex-column h-100" th:id=${param.pgm_id}  >
+   
+                          <!-- 에이유아이 그리드가 이곳에 생성됩니다. -->
+                    <div class="flex-shrink-1 flex-grow-1 h-100">
+                        <grid-crud ref="gridmaster" :columnlayout="columnlayout" :pgmid="pgmid" subname="gridmaster"  :newitem="newgriditem" buttons="cie"></grid-crud> 
+                    </div>
+                          <!-- 에이유아이 그리드가 이곳에 생성됩니다. -->
+                    <div class="flex-shrink-1 flex-grow-1 h-100">
+                        <grid-crud gridcaption="오피넷API"   ref="gridapi" :columnlayout="columnlayoutOpinet" :pgmid="pgmid" subname="gridapi"  buttons="q" @searchgridrow="searchOpinet"  ></grid-crud> 
+                    </div>                    
+   </form>
+           
+	  	<!-- ================== BEGIN THIS PAGE JS ================== -->
+ 	<div th:insert="contents/ex/config/gas-price-js :: js"></div>  
+   </section>
+
+</body>
+</html>

@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper namespace="com.ec.eframework.mapper.ex.expense.ApproveServiceMapper">
+
+<!--리포트 -->
+    
+    
+    <insert id="saveApproveLine" parameterType="java.util.List">
+		    DELETE FROM EXPENSE_APPRV_LINE_USER
+		    WHERE SUBMIT_ID = #{g_userId}
+		    AND PROCESS_APPRV_GRP = #{PROCESS_APPRV_GRP}
+		    AND COMPANY_CODE = #{g_comCd} ;
+		    
+		    <if test = "data != null and data.size > 0" >
+		    INSERT INTO
+		        EXPENSE_APPRV_LINE_USER(APPROVE_ID,
+										APPROVE_TP,
+										APPROVE_STEP,
+										COMPANY_CODE,
+										DEL_DH,
+										DEL_ID,
+										DEL_NM,
+										LINE_SEQ,
+										MOD_DH,
+										MOD_ID,
+										MOD_NM,
+										ORD,
+										PROCESS_APPRV_GRP,
+										REGR_DH,
+										REGR_ID,
+										REGR_NM,
+										SUBMIT_ID,
+										USE_YN)     
+		    VALUES
+		    <foreach collection="data" item="item" index="index"  separator=",">
+		        (#{item.APPROVE_ID}, 
+		         <if test="data.size == index+1">
+		          "3",
+		         </if> 
+		         <if test="data.size != index+1">
+		          "2",
+		         </if> 
+		          #{item.APPROVE_STEP}, 
+		           #{g_comCd}, null, null,null, NEXTVAL(APPRV_LINE_SEQ), null,null,null, #{index}+1
+		          ,#{PROCESS_APPRV_GRP}
+		          , REGR_DH()
+		          , #{g_userId}
+		          , #{g_userNm}
+		          , #{g_userId}
+		          , '1'
+		           )
+		    </foreach>
+		    </if>
+   </insert>
+    
+    
+    
+    
+        <insert id="insertApprove">
+        
+        
+        
+<!--              기존 건 취소 -->
+<!--              <if test='REPORT_NO != null  and  REPORT_NO != "" '  >  -->
+<!--                     UPDATE EXPENSE_APPROVE SET USE_YN = '1' -->
+<!--                     WHERE REPORT_NO = #{REPORT_NO} -->
+<!--                      AND COMPANY_CODE = #{g_comCd}; -->
+<!--              </if>    -->
+     
+     
+               <selectKey  resultType="long" keyProperty="APPROVE_SEQ" order="BEFORE">
+                    SELECT NEXTVAL(EXPENSE_SEQ);
+               </selectKey>
+               
+               
+  
+               
+               
+	        INSERT INTO EXPENSE_APPROVE(COMPANY_CODE,
+										REPORT_NO,
+										APPROVE_SEQ,
+										APPROVE_STEP,
+										APPROVE_ORDER,
+										APPROVE_TP,
+										APPROVE_ID,
+										REAL_APPROVE_ID,
+										REAL_APPROVE_NM,
+										REAL_DEPT_CD,
+										REAL_DEPT_NM,
+										APPROVE_YN,
+										APPROVE_DH,
+										USE_YN,
+										REGR_DH,
+										MOD_DH,
+										DEL_DH,
+										REGR_ID,
+										REGR_NM
+										
+										)
+	        VALUES (
+                                        #{g_comCd},
+                                        #{REPORT_NO},
+                                        #{APPROVE_SEQ},
+                                        #{APPROVE_STEP},
+                                        #{APPROVE_ORDER},
+                                        #{APPROVE_TP}, 
+                                        #{APPROVE_ID},
+                                        #{APPROVE_ID},
+                                        #{APPROVE_NAME},
+                                        #{DEPT_CD},
+                                        #{DEPT_NM},
+                                        <if test='APPROVE_TP == "1" '>
+                                        '1',
+                                        REGR_DH(),
+                                        </if>
+                                        <if test='APPROVE_TP != "1" '>
+                                        '0',
+                                        NULL,
+                                        </if>
+                                        '1' ,
+                                        REGR_DH(),
+                                        REGR_DH(),
+                                        NULL,
+                                        #{g_userId},
+                                        #{g_userNm}
+                                        )	   ;
+                                        
+<!--         call insertExpLog(#{g_userId},#{g_comCd},#{REPORT_NO},  'EXPENSE_APPROVE', concat('리포트[', #{REPORT_NO},' : '  ,#{APPROVE_SEQ} , ' ] 결재요청'));                                     -->
+	        
+    </insert>
+    
+    
+    <update id="procApprove">
+    
+        UPDATE EXPENSE_APPROVE 
+        SET  APPROVE_YN = '1', APPROVE_DH = REGR_DH(), MOD_DH = REGR_DH()
+        WHERE  APPROVE_SEQ =  #{APPROVE_SEQ};
+
+<!--      최종결재 -->
+			UPDATE EXPENSE_REPORT  
+			  SET APPROVE_STATUS = '4', 
+			      APPROVE_DH = REGR_DH(),
+			      APPROVE_ID = #{g_userId} ,
+			      TXT_REF1 =  #{TXT_REF1} ,
+			      TXT_REF2 =  #{TXT_REF2} 
+			WHERE REPORT_NO = #{REPORT_NO}
+			AND APPROVE_STATUS = '2'
+			AND #{APPROVE_SEQ} = (SELECT MAX(APPROVE_SEQ) FROM EXPENSE_APPROVE WHERE
+			REPORT_NO = #{REPORT_NO} )
+			; 
+        
+    
+<!--         <selectKey  resultType="long" keyProperty="LOG_NO" order="BEFORE"> -->
+<!--              SELECT NEXTVAL(EXPENSE_SEQ); -->
+<!--         </selectKey> -->
+
+                 <!-- LOG -->
+                call insertExpLog(#{g_userId},#{g_comCd},#{REPORT_NO},  'EXPENSE_APPROVE', concat('리포트[', #{REPORT_NO} , ' ] 승인'));          
+ 
+         INSERT INTO ADMIN_NOTICE(              
+                            COMPANY_CODE,
+                            SYSTEM_CL,
+                            CONTENT,
+                            SENDER,
+                            SENDTO,
+                            REGR_DH,
+                            READ_DH,
+                            TYPE) 
+                            VALUES (
+                        #{g_comCd},
+                        #{g_systemCl},
+                        CONCAT(#{g_userNm},'님이 결재문서[',#{REPORT_NO}, ']를 승인하였습니다.') ,
+                        #{g_userId},
+                        #{REGR_ID},
+                        REGR_DH(),
+                        null,
+                        '1');
+    
+    </update>    
+    
+    <update id="procReject">
+    
+        UPDATE /* procReject EXPENSE_REPORT 반려 */  EXPENSE_REPORT SET APPROVE_STATUS = '5'
+        WHERE  REPORT_NO = #{REPORT_NO}
+        AND APPROVE_STATUS = '2'; 
+        
+        UPDATE /* procReject EXPENSE_APPROVE 반려 */  EXPENSE_APPROVE SET USE_YN = '0' , APPROVE_YN='2' ,DEL_DH = REGR_DH()
+        WHERE  REPORT_NO = #{REPORT_NO};
+                    
+                   <!-- LOG -->
+                call insertExpLog(#{g_userId},#{g_comCd},#{REPORT_NO},  'EXPENSE_APPROVE', concat('리포트[', #{REPORT_NO} , ' ] 반려'));                  
+    </update> 
+    
+    
+    
+    <update id="rejectExpenseItem">
+    
+		<!-- 반려상태? -->
+        UPDATE EXPENSE_MST 
+        SET REPORT_NO = NULL
+        ,MOD_DH = REGR_DH()
+        WHERE  EXPENSE_NO = #{EXPENSE_NO}
+        AND EX_GET_APPROVE_STATUS(TO_NUMBER(#{EXPENSE_NO})) = '2' ;
+        
+        <!-- 반려사유 저장   -->
+                    
+        <!-- LOG -->
+        call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 반려,', #{MSG}));                  
+    </update> 
+    
+    
+    
+    
+    
+    <update id="procCancel">
+        <!--회수(상신 상태 인 것만) -->
+        
+        UPDATE  EXPENSE_REPORT 
+        SET APPROVE_STATUS = '6'
+        ,MOD_DH = REGR_DH()
+        WHERE  REPORT_NO = #{REPORT_NO}
+        AND APPROVE_STATUS = '2'; 
+        
+        UPDATE EXPENSE_APPROVE 
+        SET USE_YN = '0' 
+        , DEL_DH = REGR_DH()
+        , MOD_DH = REGR_DH()
+        WHERE  REPORT_NO = #{REPORT_NO};
+        
+        UPDATE EXPENSE_MST SET REPORT_NO = NULL
+        ,MOD_DH = REGR_DH()
+        WHERE  REPORT_NO = #{REPORT_NO};
+        
+        
+        call insertExpLog(#{g_userId},#{g_comCd},#{REPORT_NO},  'EXPENSE_APPROVE', concat('리포트[', #{REPORT_NO} , ' ] 회수'));    
+        
+    </update>     
+
+	<select id="getApproveList" resultType="HashMap">
+	
+		select * from ( SELECT  /* com.ec.eframework.mapper.ex.expense.ApproveServiceMapper.getApproveList 결재함 리포트 리스트 2021.01.01 by hcho, 21.10.28 수정 hcho */ 
+		      A.REPORT_NO, A.REPORT_TP ,REPORT_TITLE, REPORT_RMK, APPROVE_STATUS, 
+		               SUBMIT_ID, B.USER_NM AS SUBMIT_NM, SUBMIT_DH, 
+		               FC_EXPS_GET_SYSTEM_CODE_NM('EX_APPROVE_STATUS', A.APPROVE_STATUS, #{g_lang}) AS APPROVE_STATUS_NM 
+		           ,SUM(PAY_AMT) AS PAY_SUM_AMT, A.URGENCY_YN
+		           , COUNT(*) AS CNT
+		           , #{g_userId}  as LOGIN_ID
+		           , EX_GET_NEXT_APPROVAL_ID( A.REPORT_NO ) as APPROVAL_ID
+		           , EX_GET_NEXT_APPROVAL_NM( A.REPORT_NO ) as APPROVAL_NM
+		        FROM    EXPENSE_REPORT A , ADMIN_USER B, EXPENSE_MST C
+		        WHERE A.REPORT_NO = C.REPORT_NO
+		    AND A.REPORT_NO IN (
+		            SELECT REPORT_NO FROM EXPENSE_APPROVE 
+		            WHERE 1 = 1
+		            AND  APPROVE_ID =  #{g_userId} 
+		            AND COMPANY_CODE =  #{g_comCd}
+		            AND APPROVE_TP != '1' -- 기안 제외 
+		            AND USE_YN = '1' )
+		            AND A.USE_YN  = '1' AND C.USE_YN = '1'
+		            AND SUBMIT_ID = B.USER_ID
+             <if test='SUBMIT_ID != null and SUBMIT_ID != ""'  > 
+                     AND SUBMIT_ID = #{SUBMIT_ID}
+             </if>  
+             <!--  대기(내가 바로 결재해야 할 건) -->
+             <if test='APPROVE_STATUS == "2"'  > 
+                     AND EX_GET_NEXT_APPROVAL_ID( A.REPORT_NO )  = #{g_userId}
+             </if>          
+             <!--  진행(진행이나 내 단계가 아닐 때) -->   	            
+             <if test='APPROVE_STATUS == "7"'  > 
+                     AND EX_GET_NEXT_APPROVAL_ID( A.REPORT_NO )  != #{g_userId}
+                     AND APPROVE_STATUS = '2'
+             </if> 
+             <!--  최종결재건 -->         
+             <if test='APPROVE_STATUS == "4"'  > 
+                     AND APPROVE_STATUS = '4'
+             </if>    
+             <!--  보류 -->         
+             <if test='APPROVE_STATUS == "8"'  > 
+                    AND 1 != 1
+             </if>  
+             <!--  반려 -->         
+             <if test='APPROVE_STATUS == "5"'  > 
+                     AND APPROVE_STATUS = '5'
+             </if>               
+             <!--  조건 없을 시 조회불가 -->         
+             <if test='APPROVE_STATUS == null or APPROVE_STATUS == ""'  > 
+                     AND 1 != 1
+             </if>    
+             <if test='SEARCH_FR_DT != null or SEARCH_TO_DT != null'>   
+                AND SUBMIT_DH &gt;= REPLACE_DATE(#{SEARCH_FR_DT},'') AND SUBMIT_DH &lt;= CONCAT(REPLACE_DATE(#{SEARCH_TO_DT},'') ,'999999')
+             </if>
+		        GROUP BY A.REPORT_NO
+	union all
+		 SELECT  /* com.ec.eframework.mapper.ex.expense.ApproveServiceMapper.getApproveList 결재함 리포트 리스트 2021.01.01 by hcho, 21.10.28 수정 hcho */ 
+		      A.REPORT_NO,A.REPORT_TP, REPORT_TITLE, REPORT_RMK, APPROVE_STATUS, 
+		               SUBMIT_ID, B.USER_NM AS SUBMIT_NM, SUBMIT_DH, 
+		               FC_EXPS_GET_SYSTEM_CODE_NM('EX_APPROVE_STATUS', A.APPROVE_STATUS, #{g_lang}) AS APPROVE_STATUS_NM 
+		           ,SUM(BDGT_AMT) AS PAY_SUM_AMT, A.URGENCY_YN
+		           , COUNT(*) AS CNT
+		           , #{g_userId}  as LOGIN_ID
+		           , EX_GET_NEXT_APPROVAL_ID( A.REPORT_NO ) as APPROVAL_ID
+		           , EX_GET_NEXT_APPROVAL_NM( A.REPORT_NO ) as APPROVAL_NM
+		        FROM    EXPENSE_REPORT A , ADMIN_USER B, BDGT_MST C
+		        WHERE A.REPORT_NO = C.REPORT_NO
+		    AND A.REPORT_NO IN (
+		            SELECT REPORT_NO FROM EXPENSE_APPROVE 
+		            WHERE 1 = 1
+		            AND  APPROVE_ID =  #{g_userId} 
+		            AND COMPANY_CODE =  #{g_comCd}
+		            AND APPROVE_TP != '1' -- 기안 제외 
+		            AND USE_YN = '1' )
+		            AND A.USE_YN  = '1' 
+		            AND SUBMIT_ID = B.USER_ID
+             <if test='SUBMIT_ID != null and SUBMIT_ID != ""'  > 
+                     AND SUBMIT_ID = #{SUBMIT_ID}
+             </if>  
+             <!--  대기(내가 바로 결재해야 할 건) -->
+             <if test='APPROVE_STATUS == "2"'  > 
+                     AND EX_GET_NEXT_APPROVAL_ID( A.REPORT_NO )  = #{g_userId}
+             </if>          
+             <!--  진행(진행이나 내 단계가 아닐 때) -->   	            
+             <if test='APPROVE_STATUS == "7"'  > 
+                     AND EX_GET_NEXT_APPROVAL_ID( A.REPORT_NO )  != #{g_userId}
+                     AND APPROVE_STATUS = '2'
+             </if> 
+             <!--  최종결재건 -->         
+             <if test='APPROVE_STATUS == "4"'  > 
+                     AND APPROVE_STATUS = '4'
+             </if>    
+             <!--  보류 -->         
+             <if test='APPROVE_STATUS == "8"'  > 
+                    AND 1 != 1
+             </if>  
+             <!--  반려 -->         
+             <if test='APPROVE_STATUS == "5"'  > 
+                     AND APPROVE_STATUS = '5'
+             </if>               
+             <!--  조건 없을 시 조회불가 -->         
+             <if test='APPROVE_STATUS == null or APPROVE_STATUS == ""'  > 
+                     AND 1 != 1
+             </if>    
+             <if test='SEARCH_FR_DT != null or SEARCH_TO_DT != null'>   
+                AND SUBMIT_DH &gt;= REPLACE_DATE(#{SEARCH_FR_DT},'') AND SUBMIT_DH &lt;= CONCAT(REPLACE_DATE(#{SEARCH_TO_DT},'') ,'999999')
+             </if>
+		        GROUP BY A.REPORT_NO ) AA
+		        ORDER BY AA.SUBMIT_DH DESC
+	</select>
+
+	<select id="getApprovalReportList" resultType="HashMap">
+			 SELECT  /* com.ec.eframework.mapper.ex.expense.ApproveServiceMapper.getApprovalReportList */ 
+			 REPORT_TITLE, A.REPORT_NO, A.REPORT_RMK, A.APPROVE_DH, B.USER_NM, B.USER_ID
+			 FROM   EXPENSE_REPORT A, ADMIN_USER B
+			 WHERE A.REPORT_NO = #{REPORT_NO}
+			 AND A.REGR_ID = B.USER_ID
+	</select>
+
+	<select id="getApproveHist" resultType="HashMap">
+	 
+	        SELECT /* com.ec.eframework.mapper.ex.expense.ApproveServiceMapper.getApproveHist */ 
+	        A.REPORT_NO, A.APPROVE_SEQ,  A.APPROVE_ID, B.USER_NM, FC_EXPS_GET_SYSTEM_CODE_NM('EX_APPROVE_TP', A.APPROVE_TP, 'ko') APPROVE_TP_NM, A.APPROVE_TP,
+	        A.APPROVE_DH, EX_GET_APPROVAL_YN(A.COMPANY_CODE, A.REPORT_NO, A.APPROVE_ORDER ) AS APPROVAL, IFNULL(A.APPROVE_YN,'0') AS APPROVE_YN, A.REGR_ID, A.REGR_NM
+            ,B.EMAIL, C.EMAIL AS SUBMIT_EMAIL, A.APPROVE_STEP, FC_EXPS_GET_CODE_NM('EX_APPROVE_LINE_STEP', A.APPROVE_STEP, #{g_comCd}) AS APPROVE_STEP_NM 
+	        ,A.REAL_APPROVE_ID
+			,A.REAL_APPROVE_NM
+			,A.REAL_DEPT_CD
+			,A.REAL_DEPT_NM
+	        FROM EXPENSE_APPROVE A, ADMIN_USER B, ADMIN_USER C
+	        WHERE A.REPORT_NO =  #{REPORT_NO}
+	        AND A.APPROVE_ID = B.USER_ID
+	        AND    A.REGR_ID = C.USER_ID
+	        AND    A.COMPANY_CODE = #{g_comCd}
+	         AND A.USE_YN = '1'   -- 반려건 때문에 주석처리
+	        <if  test='is_mobile == "true" '  >   
+	        ORDER BY A.APPROVE_STEP ASC , A.APPROVE_ORDER  DESC 
+	        </if>
+	        <if  test='is_mobile == "false" '  >   
+	        ORDER BY A.APPROVE_STEP ASC , A.APPROVE_ORDER  ASC 
+	        </if>
+	        
+	</select>
+	
+	
+
+<!--     미결, 결재 미완료 리포트 리스트 조회  APPROVE_STATUS = '2' 진행중    '4'완료 ,'5'반려-->
+    <select id="getReportedList" resultType="HashMap">
+        SELECT * FROM (
+             SELECT  /* com.ec.eframework.mapper.ex.expense.ApproveServiceMapper.getReportedList */ 
+             A.REPORT_NO, EX_GET_NEXT_APPROVAL_NM(A.REPORT_NO) AS APPROVE_NM 
+             , EX_GET_NEXT_APPROVAL_ID( A.REPORT_NO ) as APPROVAL_ID
+             , EX_GET_NEXT_APPROVE_TP_NM(A.REPORT_NO, #{g_lang}) AS APPROVE_TP_NM
+             , FC_EXPS_GET_SYSTEM_CODE_NM('EX_APPROVE_STATUS', A.APPROVE_STATUS, #{g_lang}) AS APPROVE_STATUS_NM  
+             , A.REPORT_TITLE, A.REPORT_RMK, A.REPORT_TP, A.SUBMIT_DH
+             , COUNT(*) CNT, SUM(B.PAY_AMT) AS PAY_SUM_AMT
+             , #{g_userId} AS LOGIN_ID
+             , A.REGR_NM
+             , A.REGR_DEPT_NM
+			 FROM EXPENSE_REPORT A, EXPENSE_MST B
+			 WHERE A.SUBMIT_ID = #{g_userId}
+			 AND A.COMPANY_CODE = #{g_comCd}
+			 <if test='APPROVE_STATUS != "4"  '  > 
+			    AND (A.APPROVE_DH IS NULL OR A.APPROVE_DH ='')
+			 </if>
+             <if test='APPROVE_STATUS == "4" '  >   
+                AND APPROVE_DH &gt;= REPLACE_DATE(#{SEARCH_FR_DT},'') AND APPROVE_DH &lt;= CONCAT(REPLACE_DATE(#{SEARCH_TO_DT},'') ,'999999')
+             </if>		
+             <if test='APPROVE_STATUS == "5" '  >   
+                AND A.SUBMIT_DH &gt;= REPLACE_DATE(#{SEARCH_FR_DT},'') AND A.SUBMIT_DH &lt;= CONCAT(REPLACE_DATE(#{SEARCH_TO_DT},'') ,'999999')
+             </if>       	 
+			 <if test='APPROVE_STATUS != null and APPROVE_STATUS !="" '  >  
+			 AND A.APPROVE_STATUS = #{APPROVE_STATUS} -- 진행중
+			 </if>
+			 <if test='REPORT_NO != null and REPORT_NO !="" '  >  
+			 AND A.REPORT_NO = #{REPORT_NO} 
+			 </if>			 
+			 AND A.USE_YN = '1'
+			 AND A.REPORT_NO = B.REPORT_NO
+			 GROUP BY A.REPORT_NO
+union all
+             SELECT  /* com.ec.eframework.mapper.ex.expense.ApproveServiceMapper.getReportedList */ 
+             A.REPORT_NO, EX_GET_NEXT_APPROVAL_NM(A.REPORT_NO) AS APPROVE_NM 
+             , EX_GET_NEXT_APPROVAL_ID( A.REPORT_NO ) as APPROVAL_ID
+             , EX_GET_NEXT_APPROVE_TP_NM(A.REPORT_NO, #{g_lang}) AS APPROVE_TP_NM
+             , FC_EXPS_GET_SYSTEM_CODE_NM('EX_APPROVE_STATUS', A.APPROVE_STATUS, #{g_lang}) AS APPROVE_STATUS_NM  
+             , A.REPORT_TITLE, A.REPORT_RMK, A.REPORT_TP, A.SUBMIT_DH
+             , COUNT(*) CNT, SUM(B.BDGT_AMT) AS PAY_SUM_AMT
+             , #{g_userId} AS LOGIN_ID
+             , A.REGR_NM
+             , A.REGR_DEPT_NM
+			 FROM EXPENSE_REPORT A, BDGT_MST B
+			 WHERE A.SUBMIT_ID = #{g_userId}
+			 AND A.COMPANY_CODE = #{g_comCd}
+			 <if test='APPROVE_STATUS != "4"  '  > 
+			    AND (A.APPROVE_DH IS NULL OR A.APPROVE_DH ='')
+			 </if>
+             <if test='APPROVE_STATUS == "4" '  >   
+                AND APPROVE_DH &gt;= REPLACE_DATE(#{SEARCH_FR_DT},'') AND APPROVE_DH &lt;= CONCAT(REPLACE_DATE(#{SEARCH_TO_DT},'') ,'999999')
+             </if>		
+             <if test='APPROVE_STATUS == "5" '  >   
+                AND A.SUBMIT_DH &gt;= REPLACE_DATE(#{SEARCH_FR_DT},'') AND A.SUBMIT_DH &lt;= CONCAT(REPLACE_DATE(#{SEARCH_TO_DT},'') ,'999999')
+             </if>       	 
+			 <if test='APPROVE_STATUS != null and APPROVE_STATUS !="" '  >  
+			 AND A.APPROVE_STATUS = #{APPROVE_STATUS} -- 진행중
+			 </if>
+			 <if test='REPORT_NO != null and REPORT_NO !="" '  >  
+			 AND A.REPORT_NO = #{REPORT_NO} 
+			 </if>			 
+			 AND A.USE_YN = '1'
+			 AND A.REPORT_NO = B.REPORT_NO
+			 GROUP BY A.REPORT_NO			 
+			 ) AA
+			 ORDER BY SUBMIT_DH DESC
+			 
+			 
+			 
+			 
+			 
+			 
+    </select>
+
+    <select id="getReportByNo" resultType="HashMap">
+             SELECT  /* com.ec.eframework.mapper.ex.expense.ApproveServiceMapper.getReportByNo */ 
+             A.REPORT_NO, EX_GET_NEXT_APPROVAL_NM(A.REPORT_NO) AS APPROVE_NM 
+             , EX_GET_NEXT_APPROVAL_ID( A.REPORT_NO ) as APPROVAL_ID
+             , EX_GET_NEXT_APPROVE_TP_NM(A.REPORT_NO, #{g_lang}) AS APPROVE_TP_NM
+             , FC_EXPS_GET_SYSTEM_CODE_NM('EX_APPROVE_STATUS', A.APPROVE_STATUS, #{g_lang}) AS APPROVE_STATUS_NM  
+             , A.REPORT_TITLE, A.REPORT_RMK, A.REPORT_TP, A.SUBMIT_DH
+             , COUNT(*) CNT, SUM(ifnull(B.PAY_AMT,0)+ifnull(C.BDGT_AMT,0)) AS PAY_SUM_AMT
+             , #{g_userId} AS LOGIN_ID
+             , A.URGENCY_YN
+			 FROM EXPENSE_REPORT A 
+			 left outer join  EXPENSE_MST B
+			 on A.REPORT_NO = B.REPORT_NO
+			 and b.use_yn ='1'
+			 left outer join  bdgt_mst C
+			 on A.REPORT_NO = C.REPORT_NO
+			 WHERE A.COMPANY_CODE = #{g_comCd}
+			 AND A.REPORT_NO = #{REPORT_NO} 
+			 AND A.USE_YN = '1'
+			 GROUP BY A.REPORT_NO
+			 ORDER BY A.SUBMIT_DH DESC
+    </select>
+
+</mapper>

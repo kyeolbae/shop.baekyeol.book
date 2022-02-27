@@ -1,0 +1,325 @@
+package com.ec.eframework.ex.report;
+
+import java.util.ArrayList;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.ec.eframework.config.AppProperty;
+import com.ec.eframework.lib.JsonDataMap;
+import com.ec.eframework.lib.JsonResultMsgMap;
+import com.ec.eframework.lib.P;
+import com.ec.eframework.lib.MapSession;
+import com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper;
+import com.ec.eframework.notification.NotificationService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Controller
+@RequestMapping("/ex/expense/expensemst")
+public class ExpenseMstController {
+	@Autowired
+	private ExpenseMstService expenseMstService;
+	@Autowired
+	private ExpenseMstServiceMapper expenseMstServiceMapper;
+	
+	@Transactional
+	@ResponseBody
+	@RequestMapping(value = "/savePrivateUse", produces = MediaType.APPLICATION_JSON_VALUE)
+	public Map<String, Object>  savePrivateUse(@RequestBody Map paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+		// 사적 사용 update 
+		//1. inbox update , expens_no = null
+		//2. exp mst update
+		  paramMap.putAll((Map)new MapSession(session));
+		  expenseMstServiceMapper.savePrivateUse(paramMap);
+		
+		   return new JsonResultMsgMap(true, paramMap);
+		
+	} // saveReport
+	
+	@Transactional
+	@ResponseBody
+	@RequestMapping(value = "/saveCardSharedEmp", produces = MediaType.APPLICATION_JSON_VALUE)
+	public Map<String, Object>  saveCardSharedEmp(@RequestBody Map paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+		// 대리 비용청구
+		  paramMap.putAll((Map)new MapSession(session));
+		  expenseMstServiceMapper.saveCardSharedEmp(paramMap);
+		
+		   return new JsonResultMsgMap(true, paramMap);
+		
+	} // saveReport
+	
+	@Transactional
+	@ResponseBody
+	@RequestMapping(value = "/saveExpenseItem", produces = MediaType.APPLICATION_JSON_VALUE)
+	public Map<String, Object>  saveExpenseItem(@RequestBody Map paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+
+		 Map ret = expenseMstService.saveExpenseItem(paramMap, request, response, session);
+		 if (ret != null && ret.get("RESULT").toString().equals("OK")  ) {
+		   return new JsonResultMsgMap(true, paramMap);
+		 }
+		 return new JsonResultMsgMap(false, ret.get("MSG").toString());
+	} // saveReport
+	
+	@Transactional
+	@ResponseBody
+	@RequestMapping(value = "/deleteExpenseItem", produces = MediaType.APPLICATION_JSON_VALUE)
+	public Map<String, Object>  deleteExpenseItem(@RequestBody Map paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+		 
+		  Map ret = expenseMstService.deleteExpenseItem(paramMap,request,response,session );
+		
+			 if (ret != null ) {
+				 return new JsonResultMsgMap(true, ret.get("INDEX").toString(), "INDEX" );
+			 }
+			 return new JsonResultMsgMap(false);
+		 
+	} // deleteExpenseItem	
+	
+	
+	
+	@Autowired 
+	KafkaApproveService kafkaApproveService;
+	@Autowired 
+	NotificationService notificationService;
+	
+	@Autowired
+	ApproveApiService approveApiService;
+	// 상신
+	@ResponseBody
+	@RequestMapping(value = "/saveApprove", produces = MediaType.APPLICATION_JSON_VALUE)
+	public Map<String, Object>  saveApprove(@RequestBody Map paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+		
+		((Map)paramMap.get("ds_report")).get("REPORT_TP").toString() ;
+		
+		P.ln(paramMap.toString());
+		paramMap.putAll((Map)new MapSession(session));
+		paramMap.put("REPORT_TP", ((Map)paramMap.get("ds_report")).get("REPORT_TP").toString()  ); // 
+		paramMap.put("REPORT_NO", ((Map)paramMap.get("ds_report")).get("REPORT_NO").toString()  ); // 
+		paramMap.put("MOD_DH", ((Map)paramMap.get("ds_report")).getOrDefault("MOD_DH", "") ); // 	
+		P.ln("MOD_DH");
+		paramMap.put("BDGT_STAT", "10");
+		
+		
+		// 외부 api호출
+		// 1. 상신 전 sap req
+		paramMap.put("APPROVE_ACTION_CD", "10"); // 10 : 상신
+		Map map = approveApiService.callReportIfApi(paramMap, session);
+		
+		if (!map.get("ErrorCode").toString().equals("0")) {
+			return map; // JsonResultMsgMap(false); 리턴됨
+		}
+		// end of "1."
+		P.ln("po리턴값");
+		P.ln(map.toString());
+		//{"ES_RESULT":{"RETURN_CD":"S","RETURN_MSG":""},"ES_ITEM":[{"BUKRS":1000,"GJAHR":2021,"REQDOC":75284,"REQTY":"A1"}]}
+		//{"ES_RESULT":{"RETURN_CD":"S","RETURN_MSG":""},"ES_ITEM":{"BUKRS":"","GJAHR":"0000","REQDOC":"","REQTY":"","DOCNR_BG":"","DOCNR_RS":""}}
+		//{"ES_RESULT":{"RETURN_CD":"S","RETURN_MSG":""},"ES_ITEM":{"BUKRS":1000,"GJAHR":2021,"REQDOC":75284,"REQTY":"A1"}}
+		// {"ES_RESULT":{"RETURN_CD":"S","RETURN_MSG":""},"ES_ITEM":{"BUKRS":1000,"GJAHR":2021,"REQDOC":75285,"REQTY":"A2"}}
+		// DOCNR_BG
+		// DOCNR_RS
+		
+		paramMap.put("TXT_REF1", "DOCNR_BG");
+		paramMap.put("TXT_REF2", "DOCNR_RS");
+		
+		// 여기까지 sap po end ==================================================
+		
+		Map result = expenseMstService.saveApprove(paramMap, request, response, session) ; 
+		P.ln(result.toString());
+		if ( result.get("RESULT").toString().equals("OK")   ) { // report, report_mng, 파일 , 결재선, expense update ...
+			
+   		 try {
+				Map sessionMap = new MapSession(session);
+				paramMap.putAll(sessionMap);
+				
+				ArrayList<Map> list = (ArrayList<Map>)((Map)paramMap.get("ds_appvline")).get("data");
+				P.ln("(1)메일 =================================");
+				kafkaApproveService.sendToApproveLine(paramMap,session ); // 결재요청 메일 보내기 , 직전 1개만보내야됨.
+				
+				// (2)모바일 알림 ============================
+				String msg = "[제목] " +  ((Map)((Map)paramMap.get("ds_report")).get("data")).get("REPORT_TITLE").toString();
+				notificationService.sendMobileNotification(list.get(1).get("APPROVE_ID").toString(),
+						                                   paramMap.get("g_userNm").toString()+  "님으로부터 결재요청 문서 도착",
+				                                           "",
+				                                           msg,
+				                                           paramMap
+				                                           );
+				
+			} catch (JsonProcessingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}			
+   		P.ln("xxxxxxxxxxxxxxxxx");
+   		P.ln(paramMap.toString());
+			 return new JsonResultMsgMap( true , ((Map)paramMap.get("ds_report")).toString() );
+			
+		 }else {
+			 P.ln("yyyyyyyyyyyyyyyyyy");
+		      return new JsonResultMsgMap(false,result.get("MSG").toString());
+		 }
+	} // saveApprove	
+	
+	@Transactional
+	@ResponseBody
+	@RequestMapping(value = "/setReportExp", produces = MediaType.APPLICATION_JSON_VALUE)
+	public Map<String, Object>  setReportExp(@RequestBody Map paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+		
+		paramMap.putAll((Map)new MapSession(session));
+		
+		String c = paramMap.get("CHECKED").toString();
+		if (c.equals("true")) {
+			expenseMstServiceMapper.provExpToReport(paramMap);
+			
+		}else {
+			expenseMstServiceMapper.ceaseExpToReport(paramMap);
+		}
+			 return new JsonResultMsgMap(true);
+	} // saveReportToExpense	
+
+    @RequestMapping(value = "/getOcrImgByEvidNo" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody  // /ex/expense/expensemst/getExpenseFilesByNo
+    public Map<String, Object>  getOcrImgByEvidNo(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master", expenseMstServiceMapper.getOcrImgByEvidNo(paramMap));
+    } // getExpListByReportNo
+    
+    //getExpFileListByReportNo
+    @RequestMapping(value = "/getExpFileListByReportNo" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody  // /ex/expense/expensemst/getExpenseFilesByNo
+    public Map<String, Object>  getExpFileListByReportNo(@RequestBody Map<String, Object> paramMap,HttpServletRequest request, HttpSession session) {
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master", expenseMstServiceMapper.getExpFileListByReportNo(paramMap));    
+    } // getExpFileListByReportNo
+    
+    @RequestMapping(value = "/getExpenseFilesByNos" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody  
+    public Map<String, Object>  getExpenseFilesByNos(@RequestBody Map<String, Object> paramMap,HttpServletRequest request, HttpSession session) {
+        P.ln(paramMap.toString());
+    	paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master", expenseMstServiceMapper.getExpenseFilesByNos(paramMap));    
+    } // getExpenseFilesByNo  
+    
+    
+    @RequestMapping(value = "/getExpenseFilesByNo" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody  // /ex/expense/expensemst/getExpenseFilesByNo
+    public Map<String, Object>  getExpenseFilesByNo(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master", expenseMstServiceMapper.getExpenseFilesByNo(paramMap));    
+    } // getExpenseFilesByNo
+    
+    @RequestMapping(value = "/getFilesByGroupNo" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody  // /ex/expense/expensemst/getExpenseFilesByNo
+    public Map<String, Object>  getFilesByGroupNo(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+        paramMap.putAll((Map)new MapSession(session));
+        P.ln(paramMap.toString());
+        return new JsonDataMap("ds_master", expenseMstServiceMapper.getFilesByGroupNo(paramMap));    
+    } // getFilesByGroupNo
+	
+    @RequestMapping(value = "/getExpListByReportNo" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  getExpListByReportNo(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+        paramMap.putAll((Map)new MapSession(session));
+        JsonDataMap ret = new JsonDataMap("ds_master", expenseMstServiceMapper.getExpListByReportNo(paramMap)); 
+        ret.setJsonDataMap("ds_mng", expenseMstServiceMapper.getReportMngListByReportNo(paramMap));
+        return ret; 
+        
+    } // getExpListByReportNo	
+    
+    
+    @RequestMapping(value = "/getReportMngListByReportNo" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  getReportMngListByReportNo(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_mng", expenseMstServiceMapper.getReportMngListByReportNo(paramMap)); 
+        
+    } // getReportMngVals	
+	
+    @RequestMapping(value = "/getExpAllList" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  getExpAllList(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+    
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master", expenseMstServiceMapper.getExpAllList(paramMap));    
+    } // getExpAllList	
+    
+    @RequestMapping(value = "/getMngList" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  getMngList(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+    
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master", expenseMstServiceMapper.getMngList(paramMap));    
+    } // getMngList	
+    
+    @RequestMapping(value = "/getExpMngList" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  getExpMngList(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+    
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master", expenseMstServiceMapper.getExpMngList(paramMap));    
+    } // getMngList	    
+   
+    @RequestMapping(value = "/getExpMngLists" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  getExpMngLists(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+    
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master", expenseMstServiceMapper.getExpMngLists(paramMap));    
+    } // getMngList	
+    
+	@Autowired
+	AppProperty appProperty;
+    
+    @RequestMapping(value = "/getTollList" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  getTollList(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+    
+        paramMap.putAll((Map)new MapSession(session));
+        paramMap.put("ENC_KEY", appProperty.getEncKey());
+
+        return new JsonDataMap("ds_master", expenseMstServiceMapper.getTollList(paramMap));    
+    } // getTollList	
+    @RequestMapping(value = "/getGpsList" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  getGpsList(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+    
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master", expenseMstServiceMapper.getGpsList(paramMap));    
+    } // getTollList	
+    @RequestMapping(value = "/getSplitedExpenseList" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  getSplitedExpenseList(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+    
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master", expenseMstServiceMapper.getSplitedExpenseList(paramMap));    
+    } // getMngList	     
+  
+    
+    //리포트의 관리항목 get
+    @RequestMapping(value = "/getReportMng" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  getReportMng(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+    
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master", expenseMstServiceMapper.getReportMng(paramMap));    
+    } // getMngList	   
+    
+    //리포트의 관리항목 get
+    @RequestMapping(value = "/getReportConfig" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  getReportConfig(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+    
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master", expenseMstServiceMapper.getReportConfig(paramMap));    
+    } // getMngList	   
+}

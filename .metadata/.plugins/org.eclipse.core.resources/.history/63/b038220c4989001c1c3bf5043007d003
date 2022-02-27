@@ -1,0 +1,384 @@
+/* 
+	-- 프로그램명 : 프레임웍 / 기웅 데이터 SAP 저장
+	-- 날짜 : 2021.09.30 by hshwang
+	-- 수정 : 2021.10.01 by hshwang (response 추가)
+	-- 수정 : 2021.10.07 by hshwang (URL, CONFIG 불러오기 추가)
+	-- 수정 : 2021.10.18 by hshwang (전가세금계산서, 현금영수증 SAP 전송, 삭제 기능 추가)
+	-- 수정 : 2021.10.21 by hshwang (HttpConnectionService 추가)
+	-- 수정 : 2021.11.04 by hshwang (return data 수정)
+	-- 수정 : 2021.11.10 by hshwang (DATA 전송 갯수 LIMIT 적용)
+*/
+package com.ec.eframework.ex.datahub;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.configurationprocessor.json.JSONArray;
+import org.springframework.boot.configurationprocessor.json.JSONObject;
+import org.springframework.stereotype.Service;
+
+import com.ec.eframework.ex.common.HttpSapConnectionService;
+import com.ec.eframework.lib.P;
+import com.ec.eframework.mapper.ex.datahub.KwichubToSapServiceMapper;
+import com.ec.eframework.mapper.ex.sap.common.SapServiceMapper;
+
+@Service
+public class KwichubToSapService {
+	
+	@Autowired 
+	private HttpSapConnectionService httpConnectionService;
+
+	@Autowired
+	private KwichubToSapServiceMapper kwichubToSapServiceMapper;
+	@Autowired
+	private SapServiceMapper sapServiceMapper;
+	
+	private boolean CheckUrl(Map<String, Object> paramMap, String propKey ,Map<String, Object> result)  {
+//		P.ln("CheckUrl");
+		paramMap.put("URL_KEY", propKey);
+		String val =  sapServiceMapper.SapPoUrl(paramMap);
+		if (val.equals("")) {
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "URL 정보가 없습니다.");
+			P.ln("CheckUrl false");
+			return  false;	
+		}else {
+			paramMap.put("URL", val) ;
+		}
+		P.ln("CheckUrl true");
+		   return true;
+	}//	
+//	
+	private boolean CheckSendCnt(Map<String, Object> paramMap, Map<String, Object> result)  {
+//		P.ln("CheckUrl");
+		int cnt =  sapServiceMapper.SapSendCnt(paramMap);
+		if (cnt == 0) {
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "데이터 제한 정보가 없습니다.");
+			P.ln("CheckSendCnt false");
+			return  false;	
+		}else {
+			paramMap.put("SEND_CNT", cnt) ;
+		}
+		P.ln("CheckSendCnt true");
+		   return true;
+	}//	
+	
+	// Config check
+	public boolean CheckConfigData(Map<String, Object> paramMap, Map<String, Object> result, String urlStr)  {
+		P.ln("CheckConfigData");
+		if (!(CheckUrl(paramMap, urlStr, result))) { 	//  API URL
+			P.ln("CheckConfigData return false");
+			return false;
+			}
+		P.ln("CheckConfigData return true");
+  	    return true;
+	}
+	
+	// 카드기본정보 sap 저장
+	public Map<String, Object> khCardMstListToSap(Map<String, Object> paramMap) {
+		// 순서 중요		
+		Map<String, Object> result = new HashMap();
+		int totalCnt = kwichubToSapServiceMapper.getCardListCnt(paramMap);
+		if(totalCnt > 0) {
+			if (!(CheckConfigData(paramMap, result, "PO_CARD_LIST" ) && CheckSendCnt(paramMap, result))) return result;
+			int sendCnt = 0;
+			try {
+				do {
+					paramMap.put("CRRCNT", sendCnt);
+					JSONObject json = new JSONObject();
+					JSONArray jArray = new JSONArray(kwichubToSapServiceMapper.getCardMstrList(paramMap));
+					json.put("ZFIT30015", jArray);
+					
+					JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, json, "TOSAP"); // API 호출
+				
+//			 	response 
+					P.ln(jObject.toString());
+					jObject = jObject.getJSONObject("ES_RESULT");
+					if (jObject.get("RETURN_CD").equals("S")) {
+						sendCnt += jArray.length();
+						P.ln(jArray.length());
+						P.ln(sendCnt + " / " + totalCnt);
+						result.put("RESULT" , "OK");
+						result.put("MSG" , jObject.get("RETURN_MSG").toString());
+					} else { // 에러
+						result.put("RESULT" , "ERROR");
+						result.put("MSG" , "에러 : " +jObject.get("RETURN_MSG").toString()+" (" + sendCnt + "건 전송완료)");
+						return result;
+					} // if
+				} while(sendCnt < totalCnt);
+			} catch (Exception e) {  
+				result.put("RESULT" , "ERROR");
+				result.put("MSG" , "실행 도중 에러가 발생했습니다.");
+				e.printStackTrace();
+			}
+		} else {
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "전송할 데이터가 없습니다.");
+		}
+		return result;
+	}
+	
+	// 카드매입내역 sap 저장
+	public Map<String, Object> khCardAcquListToSap(Map<String, Object> paramMap) {
+		// 순서 중요		
+		Map<String, Object> result = new HashMap();
+		int totalCnt = kwichubToSapServiceMapper.getCardAcqCnt(paramMap);
+		if(totalCnt > 0) {
+			if (!(CheckConfigData(paramMap, result, "PO_ACQU_LIST" ) && CheckSendCnt(paramMap, result))) return result;
+			int sendCnt = 0;
+			try {
+				do {
+					paramMap.put("CRRCNT", sendCnt);
+					JSONObject json = new JSONObject();
+					JSONArray jArray = new JSONArray(kwichubToSapServiceMapper.getCardAcquList(paramMap));
+					json.put("ZFIT30012", jArray);
+					JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, json, "TOSAP"); // API 호출
+				
+//			 	response 
+					P.ln(jObject.toString());
+					jObject = jObject.getJSONObject("ES_RESULT");
+					if (jObject.get("RETURN_CD").equals("S")) {
+						sendCnt += jArray.length();
+						P.ln(jArray.length());
+						P.ln(sendCnt + " / " + totalCnt);
+						result.put("RESULT" , "OK");
+						result.put("MSG" , jObject.get("RETURN_MSG").toString());
+					} else { // 에러
+						result.put("RESULT" , "ERROR");
+						result.put("MSG" , "에러 : " +jObject.get("RETURN_MSG").toString()+" (" + sendCnt + "건 전송완료)");
+						return result;
+					} // if
+				} while(sendCnt < totalCnt);
+			} catch (Exception e) {  
+				result.put("RESULT" , "ERROR");
+				result.put("MSG" , "실행 도중 에러가 발생했습니다.");
+				e.printStackTrace();
+			} 
+		} else {
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "전송할 데이터가 없습니다.");
+		}
+		return result;
+	}
+	
+	// 카드승인내역 sap 저장
+	public Map<String, Object> khCardApprListToSap(Map<String, Object> paramMap) {
+		// 순서 중요		
+		Map<String, Object> result = new HashMap();
+		int totalCnt = kwichubToSapServiceMapper.getCardApprCnt(paramMap);
+		if(totalCnt > 0) {
+			if (!(CheckConfigData(paramMap, result, "PO_APPR_LIST" ) && CheckSendCnt(paramMap, result))) return result;
+			int sendCnt = 0;
+			try {
+				do {
+					paramMap.put("CRRCNT", sendCnt);
+					JSONObject json = new JSONObject();
+					JSONArray jArray = new JSONArray(kwichubToSapServiceMapper.getCardApprList(paramMap));
+					json.put("ZFIT30011", jArray);
+					JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, json, "TOSAP"); // API 호출
+					
+//			 	response 
+					P.ln(jObject.toString());
+					jObject = jObject.getJSONObject("ES_RESULT");
+					if (jObject.get("RETURN_CD").equals("S")) {
+						sendCnt += jArray.length();
+						P.ln(jArray.length());
+						P.ln(sendCnt + " / " + totalCnt);
+						result.put("RESULT" , "OK");
+						result.put("MSG" , jObject.get("RETURN_MSG").toString());
+					} else { // 에러
+						result.put("RESULT" , "ERROR");
+						result.put("MSG" , "에러 : " +jObject.get("RETURN_MSG").toString()+" (" + sendCnt + "건 전송완료)");
+						return result;
+					} // if
+				} while(sendCnt < totalCnt);
+			} catch (Exception e) {  
+				result.put("RESULT" , "ERROR");
+				result.put("MSG" , "실행 도중 에러가 발생했습니다.");
+				e.printStackTrace();
+			} 
+		} else {
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "전송할 데이터가 없습니다.");
+		}
+		return result;
+	}
+	
+	// 카드청구내역 sap 저장
+	public Map<String, Object> khCardBillListToSap(Map<String, Object> paramMap) {
+		// 순서 중요		
+		Map<String, Object> result = new HashMap();
+		int totalCnt = kwichubToSapServiceMapper.getCardBillCnt(paramMap);
+		if(totalCnt > 0) {
+			if (!(CheckConfigData(paramMap, result, "PO_BILL_LIST" ) && CheckSendCnt(paramMap, result))) return  result;
+			int sendCnt = 0;
+			try {
+				do {
+					paramMap.put("CRRCNT", sendCnt);
+					JSONObject json = new JSONObject();
+					JSONArray jArray = new JSONArray(kwichubToSapServiceMapper.getCardBillList(paramMap));
+					json.put("ZFIT30013", jArray);
+					JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, json, "TOSAP"); // API 호출
+				
+//			 	response 
+					P.ln(jObject.toString());
+					jObject = jObject.getJSONObject("ES_RESULT");
+					if (jObject.get("RETURN_CD").equals("S")) {
+						sendCnt += jArray.length();
+						P.ln(jArray.length());
+						P.ln(sendCnt + " / " + totalCnt);
+						result.put("RESULT" , "OK");
+						result.put("MSG" , jObject.get("RETURN_MSG").toString());
+					} else { // 에러
+						result.put("RESULT" , "ERROR");
+						result.put("MSG" , "에러 : " +jObject.get("RETURN_MSG").toString()+" (" + sendCnt + "건 전송완료)");
+						return result;
+					} // if
+				} while(sendCnt < totalCnt);
+			} catch (Exception e) {  
+				result.put("RESULT" , "ERROR");
+				result.put("MSG" , "실행 도중 에러가 발생했습니다.");
+				e.printStackTrace();
+			} 
+		} else {
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "전송할 데이터가 없습니다.");
+		}
+		return paramMap;
+	}
+	
+	// 카드기본정보 sap 저장
+	public Map<String, Object> khCardLimitListToSap(Map<String, Object> paramMap) {
+		// 순서 중요		
+		Map<String, Object> result = new HashMap();
+		int totalCnt = kwichubToSapServiceMapper.getCardLimitCnt(paramMap);
+		if(totalCnt > 0) {
+			if (!(CheckConfigData(paramMap, result, "PO_LIMIT_LIST" ) && CheckSendCnt(paramMap, result))) return  result;
+			int sendCnt = 0;
+			try {
+				do {
+					paramMap.put("CRRCNT", sendCnt);
+					JSONObject json = new JSONObject();
+					JSONArray jArray = new JSONArray(kwichubToSapServiceMapper.getCardLimitList(paramMap));
+					json.put("ZFIT30014", jArray);
+					JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, json, "TOSAP"); // API 호출
+				
+//			 	response 
+					P.ln(jObject.toString());
+					jObject = jObject.getJSONObject("ES_RESULT");
+					if (jObject.get("RETURN_CD").equals("S")) {
+						sendCnt += jArray.length();
+						P.ln(jArray.length());
+						P.ln(sendCnt + " / " + totalCnt);
+						result.put("RESULT" , "OK");
+						result.put("MSG" , jObject.get("RETURN_MSG").toString());
+					} else { // 에러
+						result.put("RESULT" , "ERROR");
+						result.put("MSG" , "에러 : " +jObject.get("RETURN_MSG").toString()+" (" + sendCnt + "건 전송완료)");
+						return result;
+					} // if
+				} while(sendCnt < totalCnt);
+			} catch (Exception e) {  
+				result.put("RESULT" , "ERROR");
+				result.put("MSG" , e.getMessage());
+				e.printStackTrace();
+			} 
+		} else {
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "전송할 데이터가 없습니다.");
+		}
+		return result;
+	}
+	
+	// 전자세금계산서 SAP 저장
+		public Map<String, Object> khETaxListToSap(Map<String, Object> paramMap) {
+			// 순서 중요		
+			Map<String, Object> result = new HashMap();
+			int totalCnt = kwichubToSapServiceMapper.getETaxCnt(paramMap);
+			if(totalCnt > 0) {
+				if (!(CheckConfigData(paramMap, result, "PO_ETAX_LIST" ) && CheckSendCnt(paramMap, result))) return result;
+				int sendCnt = 0;
+				try {
+					do {
+						paramMap.put("CRRCNT", sendCnt);
+						JSONObject json = new JSONObject();
+						JSONArray jArray = new JSONArray(kwichubToSapServiceMapper.getETaxList(paramMap));
+						json.put("IT_HEAD", jArray);
+						JSONArray sub_jArray = new JSONArray(kwichubToSapServiceMapper.getETaxItemList(paramMap));
+						json.put("IT_ITEM", sub_jArray);
+						JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, json, "TOSAP"); // API 호출
+					
+//				 			response 
+						P.ln(jObject.toString());
+						jObject = jObject.getJSONObject("ES_RESULT");
+						if (jObject.get("RETURN_CD").equals("S")) {
+							sendCnt += jArray.length();
+							P.ln("IT_HEAD CNT : " + jArray.length());
+							P.ln("IT_ITEM CNT : " + sub_jArray.length());
+							P.ln(sendCnt + " / " + totalCnt);
+							result.put("RESULT" , "OK");
+							result.put("MSG" , jObject.get("RETURN_MSG").toString());
+							result.put("TOTAL", sendCnt);
+						} else { // 에러
+							result.put("RESULT" , "ERROR");
+							result.put("MSG" , "에러 : " +jObject.get("RETURN_MSG").toString()+" (" + sendCnt + "건 전송완료)");
+							return result;
+						} // if
+					} while(sendCnt < totalCnt);
+				} catch (Exception e) {  
+					result.put("RESULT" , "ERROR");
+					result.put("MSG" , "실행 도중 에러가 발생했습니다.");
+					e.printStackTrace();
+				} 
+			} else {
+				result.put("RESULT" , "ERROR");
+				result.put("MSG" , "전송할 데이터가 없습니다.");
+			}
+			return result;
+		}
+		
+		// 현금영수증 SAP 저장
+		public Map<String, Object> khCashListToSap(Map<String, Object> paramMap) {
+			// 순서 중요		
+			Map<String, Object> result = new HashMap();
+			int totalCnt = kwichubToSapServiceMapper.getCashListCnt(paramMap);
+			if(totalCnt > 0) {
+				if (!(CheckConfigData(paramMap, result, "PO_CASH_LIST" ) && CheckSendCnt(paramMap, result))) return result;
+				int sendCnt = 0;
+				try {
+					do {
+						paramMap.put("CRRCNT", sendCnt);
+						JSONObject json = new JSONObject();
+						JSONArray jArray = new JSONArray(kwichubToSapServiceMapper.getCashList(paramMap));
+						json.put("IT_HEAD", jArray);
+						JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, json, "TOSAP"); // API 호출
+						
+//				 	response 
+						P.ln(jObject.toString());
+						jObject = jObject.getJSONObject("ES_RESULT");
+						if (jObject.get("RETURN_CD").equals("S")) {
+							sendCnt += jArray.length();
+							P.ln(jArray.length());
+							P.ln(sendCnt + " / " + totalCnt);
+							result.put("RESULT" , "OK");
+							result.put("MSG" , jObject.get("RETURN_MSG").toString());
+						} else { // 에러
+							result.put("RESULT" , "ERROR");
+							result.put("MSG" , "에러 : " +jObject.get("RETURN_MSG").toString()+" (" + sendCnt + "건 전송완료)");
+							return result;
+						} // if
+					} while(sendCnt < totalCnt);
+				} catch (Exception e) {  
+					result.put("RESULT" , "ERROR");
+					result.put("MSG" , "실행 도중 에러가 발생했습니다.");
+					e.printStackTrace();
+				} 
+			} else {
+				result.put("RESULT" , "ERROR");
+				result.put("MSG" , "전송할 데이터가 없습니다.");
+			}
+			return result;
+		}
+}

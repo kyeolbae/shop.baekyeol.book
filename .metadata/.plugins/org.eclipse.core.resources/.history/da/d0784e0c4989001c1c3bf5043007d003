@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+ 
+      var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************        
+          
+          data: {  pgmid : "[[${param.pgm_id}]]",
+                   columnlayout : [],
+                   columnlayout1 : [],
+                   newgriditem : {USE_YN:"1"},
+                   newgriditem1 : {},
+                   gridView : '',
+                   report_tp : '',
+                   report_tp_nm : '',
+                   
+                   gridView1:{},
+          },//data
+          created () { //초기화================================================================
+                //그리드 초기화
+                initGridDropDownBox("APPROVE_LINE_TP","/common/syscommon/selectSystemCommonCode", auiDropDownCallBack,{ COMM_CL_CD:"EX_APPRV_LINE_TP" }); // 비용항목구분
+                initGridDropDownBox("PROCESS_APPRV_GRP","/common/syscommon/selectToCommonDropBox", auiDropDownCallBack,{ COMM_CL_CD:"EX_COM_APPRV_GRP" }); // 비용항목구분
+                initGridDropDownBox("INPUT_FORMAT_CD","/common/syscommon/selectSystemCommonCode", auiDropDownCallBack,{ COMM_CL_CD:"IN_FMT" }); 
+                this.columnlayout =   
+                   [    
+		    		   {dataField : "undefined",headerText : "관리항목",width: 140,  renderer : {type : "ButtonRenderer",labelText : "등록",onclick : this.clickMngOpen}},
+
+                	   
+                	   {dataField : "REPORT_TP",   headerText : "<span class='text-danger'>*</span>보고서유형코드", editable : true, style : "aui_col_center", editRenderer : { maxlength : 10, onlyNumeric : true},width: 120, filter : { showIcon : true}},
+                	   {dataField : "REPORT_TP_NM",   headerText : "보고서유형명", editable : true, width: 140, filter : { showIcon : true}},
+                	   {dataField : "REPORT_TITLE",   headerText : "보고서제목", width: 150, editable : true,filter : { showIcon : true}},
+                	   {dataField : "APPROVE_LINE_TP",   headerText : "결재선유형",  width: 120, editable : true, editRenderer : gridDropdownRenderer['APPROVE_LINE_TP'], labelFunction : auiDrodownLabelFunction ,filter : { showIcon : true}},
+                	   {dataField : "PROCESS_APPRV_GRP",   headerText : "업무유형결재그룹", width: 120, editable : true,editRenderer : gridDropdownRenderer['PROCESS_APPRV_GRP'], labelFunction : auiDrodownLabelFunction ,filter : { showIcon : true}},
+                	   {dataField : "SELF_APPRV_YN",   headerText : "본인전결가능", editable : true, width: 120, renderer : auiCheckboxRenderer(), filter : { showIcon : true}},
+                	   {dataField : "CHG_APPRV_YN",   headerText : "결재자변경가능",editable : true,  width: 120, renderer : auiCheckboxRenderer(), filter : { showIcon : true}},
+                	   {dataField : "REMARK",   headerText : "설명",editable : true,  width: 180, filter : { showIcon : true}},
+                	   {dataField : "USE_YN",   headerText : "사용여부",editable : true,  width: 80, renderer : auiCheckboxRenderer(),filter : { showIcon : true}},
+                	   {dataField : "REGR_DH",   headerText : "등록일시",editable : false,  width: 160, filter : { showIcon : true}},
+                	   {dataField : "REGR_ID",   headerText : "등록자",editable : false,  width: 120, filter : { showIcon : true}},
+                	   {dataField : "MOD_DH",   headerText : "변경일시",editable : false,  width: 160, filter : { showIcon : true}},
+                	   {dataField : "MOD_ID",   headerText : "변경자",editable : false,  width: 120, filter : { showIcon : true}},
+
+                	   ] ;//columnlayout
+                	   
+                	   
+                	   this.columnlayout1 =   
+                           [    
+                        	   {dataField : "USE_YN",   headerText : "사용여부",editable : true,  width: 80, renderer : auiCheckboxRenderer()},
+                        	   {dataField : "ORD",   headerText : "정렬순번", width: 80, editable : true},
+                        	   {dataField : "MUST_YN",   headerText : "필수여부",  width: 80, renderer : auiCheckboxRenderer(), editable : true},
+                        	   {dataField : "MNG_CD",   headerText : "관리항목코드", editable : false, width: 80},
+                        	   {dataField : "MNG_NM",   headerText : "관리항목명", editable : false, style : "aui_col_left", editRenderer : { maxlength : 10, onlyNumeric : true},width: 120},
+                        	   {dataField : "INPUT_FORMAT_CD",   headerText : "입력형식", editable : true, width: 150 , editRenderer : gridDropdownRenderer['INPUT_FORMAT_CD'], labelFunction : auiDrodownLabelFunction},
+                        	   
+
+                        	   ] ;//columnlayout1
+                	   
+                	   
+                  
+          }, // created       
+          methods : {  // ======================================================================================
+        	  
+        	  clickMngOpen : function (rowIndex, columnIndex, value, item ) {
+        		  this.report_tp =  item.REPORT_TP;
+        		  this.report_tp_nm =  item.REPORT_TP_NM;
+        		  $('#'+this.pgmid+'modal_form_report' ).modal('show');  
+        		  
+        		   this.$refs.griddetail.setGridData([]);
+        		  
+        	  },
+        	  
+                  
+        	  
+        	  
+              searchButtonOnClick : function() {
+              
+                            var param = {
+                                svcId:"search",
+                                strUrl:"/ec/ex/config/reporttype/searchReportType",   //전송 url    
+                                inDs :  "" ,  
+                                param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+                                pCall : this.searchButtonOnClickCallBack, 
+                                pLoad : true          
+                            };
+                            //트랜젝션 실행
+                            ajaxReadJsonData(param);
+                      }, // end of searchButtonOnClick
+                      
+                      
+                      searchButtonOnClickCallBack: function(svcId, data) {
+                    	  if(data["ds_master"]['data'].length >= 0) {
+                    	  this.$refs.gridmaster.setGridData(data["ds_master"]['data']);
+                    	  }
+                      },
+                      
+                      getReportDetail : function() {         
+                    	  var param = {
+                                  svcId:"getReportDetail",
+                                  strUrl:"/ec/ex/config/reporttype/getReportDetail",   //전송 url    
+                                  inDs :  "" ,  
+                                  param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+                                  pCall : this.getReportDetailCallBack, 
+                                  pLoad : true          
+                              };
+                              //트랜젝션 실행
+                              ajaxReadJsonData(param);
+            },
+            
+            
+            getReportDetailCallBack: function(svcId, data) {
+            	this.$refs.griddetail.setGridData(data["ds_master"]['data']);
+            },
+            
+            saveReportDetail: function() {
+            	
+            	// 그리드 필수항목 체크
+                if (auiValidateGridData(this.gridView1, ["ORD"] ) == false){
+                     return;
+                }
+            	
+            	var    ds_master = getCRUDdata(this.gridView1);
+            	
+            	if (ds_master['data'].length == 0) {
+		             customAlert('','알림','변경된 데이터가 없습니다.');
+		        	return;
+		    	}
+            	 this.saveReportDetailCallback();
+            	 
+            },
+            	 saveReportDetailCallback: function(svcId, data) {
+            		 
+                 	saveColumnLayout(this.gridView1);
+					
+                 	 // 저장할 데이터 만들기
+                 	 var    ds_data = {};
+     			    ds_data['ds_master'] = getCRUDdata(this.gridView1);
+     			   
+     			    if(!ds_data){ return; }
+     			   var param = {
+     			          svcId:"saveReportDetail",
+     			          strUrl:"/ec/ex/config/reporttype/saveReportDetail", 
+     			          param : ds_data,
+     			          pCall : this.saveReportDetailCallbackBack,  
+     			          pLoad : true
+     			      };
+     			          //트랜젝션 실행
+     			          ajaxReadJsonData(param);
+            	 },
+            	 
+            	 saveReportDetailCallbackBack: function(svcId, data) {
+            		 this.getReportDetail(); // 재조회  
+                     saveGritter();
+            	 },
+            	 
+				 
+            
+              saveButtonOnClick : function() {
+                            // 그리드 필수항목 체크
+                             if (auiValidateGridData(this.gridView, ["REPORT_TP" ,"REPORT_TP_NM","REPORT_TITLE","APPROVE_LINE_TP","PROCESS_APPRV_GRP" ] ) == false){
+                                  return;
+                             }
+                            
+                            // 변경된 데이터가 있는지 없는지 체크
+                            var    ds_master = getCRUDdata(this.gridView);
+                            if (ds_master['data'].length == 0 ) {
+                                customAlert('','','변경된 데이터가 없습니다.');
+                                return;
+                            }
+                            // Confirmation dialog, 시스템 설정에 따라 보이고 안보이고
+                            bootboxSaveConfirm(this);             
+              },  //saveButtonOnClick
+              
+              saveButtonOnClickCallback(){
+                
+                   saveColumnLayout(this.gridView);
+                
+                // 저장할 데이터 만들기
+                var    ds_master = {};
+                ds_master['ds_master'] = getCRUDdata(this.gridView);
+                
+                
+                var param = {
+                    svcId:"save", 
+                    strUrl: "/ec/ex/config/reporttype/saveReportType",   //전송 url 
+                    inDs : {
+                        ds_master:ds_master
+                    },
+                    param : ds_master,        // 전송할 파라미터
+                    pCall : this.saveButtonOnClickCallbackBack, 
+                    pLoad : true          // 로딩이미지 노출 여부  
+                };
+
+                //트랜젝션 실행
+                ajaxReadJsonData(param); 
+            }, //   saveButtonOnClickCallback         
+              
+            
+            saveButtonOnClickCallbackBack: function(svcId, data) {
+            	this.searchButtonOnClick(); // 재조회  
+                saveGritter();
+            },
+            
+                    
+          }, // end of methods
+
+          mounted: function() {
+             var ref = this;
+             this.$nextTick(function () {
+                   ref.gridView = ref.$refs.gridmaster.myGridID;
+                   ref.gridView1 = ref.$refs.griddetail.myGridID;
+                   // pk컬럼(신규는 가능, update불가)
+                   auiSetAddedRowEnabledCell(ref.gridView,['REPORT_TP']);
+              });
+//**********************************************************************************************              
+             vueArr.push(this);
+            },
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

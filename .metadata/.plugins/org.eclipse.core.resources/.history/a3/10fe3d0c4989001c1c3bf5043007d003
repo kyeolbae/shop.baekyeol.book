@@ -1,0 +1,375 @@
+<!-- 
+	-- 프로그램명 : 비용관리 / 증빙이미지-이미지보관함
+	-- 날짜 : 2021.07.29 by hshwang
+	-- 수정 : 2021.08.19 by hshwang (saveCardSharedEmp, cancelSharedEmp, simultaneityControl 추가)
+	-- 수정 : 2021.12.07 by hshwang (gallary devide 수정)
+-->
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+
+    var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************        
+          
+          data: {  pgmid : "[[${param.pgm_id}]]",
+        	  imglist : [],
+        	  curImg : {},
+        	  curExpense : {},
+        	  curReport : {},
+        	  curItem : {},
+        	  columnlayout : [],
+              gridView : '',
+              girdProps : {},
+              viewType : "box",
+              isBox : true,
+              isGrid : false,
+                   
+          },//data    
+          created () { //초기화================================================================
+        	  this.girdProps = { wordWrap : true, showTooltip : true};
+        	  this.columnlayout =   
+                  [   
+                      {dataField : "BE_SHARED_YN",   headerText : "BE_SHARED_YN",  width: 100, renderer : auiCheckboxRenderer() , style : "aui_col_center",  },
+                      {dataField : "EXPENSE_NO",   headerText : "EXPENSE_NO",  width: 100, style : "aui_col_center",  },
+                      {dataField : "REPORT_NO",   headerText : "REPORT_NO",  width: 100, style : "aui_col_center",  },
+                      {dataField : "FILE_NO",   headerText : "FILE_NO",  width: 220, style : "aui_col_center",  },
+                      {dataField : "FILE_KIND",   headerText : "FILE_KIND",  width: 100, style : "aui_col_center",  },
+                      {dataField : "SOURCE",   headerText : "SOURCE",  width: 100, style : "aui_col_center",  },
+                      {dataField : "ORG_FILE_NAME",   headerText : "ORG_FILE_NAME",  width: 180, style : "aui_col_center",  },
+                      {dataField : "GROUP_NO",   headerText : "GROUP_NO",  width: 100, style : "aui_col_center",  },
+                      {dataField : "FILE_SIZE",   headerText : "FILE_SIZE",  width: 100, style : "aui_col_center",  },
+                      {dataField : "OCR_YN",   headerText : "OCR_YN",  width: 80,renderer : auiCheckboxRenderer() , style : "aui_col_center",  },
+                      {dataField : "REGR_DH",   headerText : "REGR_DH",  width: 120, style : "aui_col_center",  },
+                      {dataField : "FILE_OWNER_TP",   headerText : "FILE_OWNER_TP",  width: 130, style : "aui_col_center",  },
+                      {dataField : "FILE_OWNER_YN",   headerText : "FILE_OWNER_YN",  width: 100,  renderer : auiCheckboxRenderer() ,style : "aui_col_center",  },
+                      {dataField : "REGR_ID",   headerText : "REGR_ID",  width: 100, style : "aui_col_center",  },
+                      {dataField : "SHARED_ID",   headerText : "SHARED_ID",  width: 100, style : "aui_col_center",  },
+                      {dataField : "NAME",   headerText : "NAME",  width: 100, style : "aui_col_center",  },
+                      {dataField : "SHARED_EMP_NAME",   headerText : "SHARED_EMP_NAME",  width: 140, style : "aui_col_center",  },
+                      {dataField : "MOD_DH",   headerText : "MOD_DH",  width: 120, style : "aui_col_center",  },
+                      {dataField : "EXPENSE_MOD_DH",   headerText : "EXPENSE_MOD_DH",  width: 140, style : "aui_col_center",  },
+                      {dataField : "DEL_DH",   headerText : "DEL_DH",  width: 100, style : "aui_col_center",  },
+                      {dataField : "DEL_ID",   headerText : "DEL_ID",  width: 100, style : "aui_col_center",  },
+
+                      ] ;//columnlayout
+        	  
+        	  
+        	  this.columnlayoutOcrItems =   
+                  [   
+                      {dataField : "RECEIPT_ITEM_NM",   headerText : "품목명",  width: 120, style : "aui_col_left",},
+                      {dataField : "RECEIPT_ITEM_CNT",   headerText : "수량",  width: 60, style : "aui_col_center",  },
+                      {dataField : "RECEIPT_ITEM_PRICE",   headerText : "금액",  width: 80, style : "aui_col_right",dataType : "numeric",formatString : "#,###"},
+                      
+                ] ;//columnlayouttoll 
+                  
+          }, // created  
+          
+		  computed: {
+			  
+		  }, // computed
+          methods : {  // ======================================================================================
+        	  clickModal: function(item) {
+        	     this.$refs.gallerymodal.showmodal();
+        	  },
+        	  ocrClick : function(item) {
+        		  this.curImg = item;
+        		  
+        		  this.curItem = {};
+                  this.curItem.TYPE = "EXPIMG_OCR";
+                  this.curItem.SOURCE_TP_NM = "영수증 OCR";
+                  this.curItem.PRIVATE_YN = "1";
+                  this.curItem.APPROVE_STATUS = "1";
+                  this.curItem.EXPENSE_NO = "";
+                  this.curItem.REPORT_NO = "";
+        		  
+                  var param = {
+                          svcId:"search",
+                          strUrl:"/ex/exp/expimg/ocrSearch",   //전송 url    
+                          inDs :  "" ,  
+                          param : item, 
+                          pCall : this.ocrClickCallback, 
+                          pLoad : true          
+                      };
+                      //트랜젝션 실행
+                      ajaxReadJsonData(param);
+        	  },
+        	  ocrClickCallback : function(s, data) {
+        		  var o = data.ds_master.data;
+        		  $('#'+this.pgmid+'PAYMENT_DATE').val(o.PAYMENT_DATE);
+        		  $('#'+this.pgmid+'PAYMENT_TIME').val(o.PAYMENT_TIME);
+         		  $('#'+this.pgmid+'STORE_NAME').val(o.STORE_NAME);
+         		  $('#'+this.pgmid+'STORE_BIZNUM').val(o.STORE_BIZNUM);
+         		  $('#'+this.pgmid+'STORE_ADDRESS').val(o.STORE_ADDRESS);
+         		  $('#'+this.pgmid+'TOTAL_PRICE').val(o.TOTAL_PRICE);
+         		  $('#'+this.pgmid+'PAYMENT_CARD_NO').val(o.PAYMENT_CARD_NO);
+        		  $('#'+this.pgmid+'PAYMENT_CONFIRM_NO').val(o.PAYMENT_CONFIRM_NO);
+        		  
+        		  this.$refs.gridOcrItems.setGridData(data.ds_detail.data);
+        	  },
+        	  
+        	  clickExpDetailLog : function() {
+                  var arr = [this.curItem.EXPENSE_NO, this.curItem.REPORT_NO];
+                  this.$refs.expLog.getLog( arr );
+              },
+        	  
+        	  infoClick : function(item) {
+            	  this.curImg = item;
+            	  this.curExpense = {};
+            	  this.curReport ={};
+        		  
+        		  if (isEmpty(this.curImg.EXPENSE_NO)) {
+            		  return false;
+            	  }
+                  var param = {
+                          svcId:"search",
+                          strUrl:"/ex/exp/expimg/infoSearch",   //전송 url    
+                          inDs :  "" ,  
+                          param : item, 
+                          pCall : this.infoClickCallback, 
+                          pLoad : true          
+                      };
+                      //트랜젝션 실행
+                      ajaxReadJsonData(param);
+        	  },
+        	  infoClickCallback : function(svc , data) {
+        		  this.curExpense = data.ds_expense.data;
+        			  
+        		  if(!isEmpty(this.curExpense.REPORT_NO)) {
+        			  this.curReport = data.ds_report.data;
+        		  }
+        	  },
+        	  
+        	  //동시성 제어
+        	  simultaneityControl : function(item) {
+        		  if(!isEmpty(item.FILE_OWNER_TP)) {
+        			  customAlert("", "" ,"사용중인 파일입니다");
+        			  return false;
+        		  }
+        		  
+        		  var param = {
+                          svcId:"simultaneityControl",
+                          strUrl:"/ex/exp/expimg/simultaneityControl",   //전송 url    
+                          inDs :  "" ,  
+                          param : item, 
+                          pCall : this.deleteClick, 
+                          pLoad : true          
+                      };
+                      //트랜젝션 실행
+                      ajaxReadJsonData(param);
+        	  },
+        	  
+        	  deleteClick : function(svcId, data) {
+        		  var itemChecked = data.ds_master.data
+        		  if(itemChecked.RESULT == "ERROR") {
+        			  log('동시성 체크 : 재조회 요망');
+        			  customAlert("", "", "변경된 사항이 있습니다. 재조회 후 진행해주세요.")
+        			  return null;
+        		  }
+        		  	log('동시성 체크 : 진행 가능');
+        		  bootboxDeleteConfirm(this.deleteClickCall, itemChecked);
+        	  }, 
+        	  deleteClickCall : function(item) {
+        		  console.log('deleteClickCall');
+        		  fileMoveToTrash(item.FILE_NO, this.deleteClickCallback);
+        	  }, 	  
+        	  deleteClickCallback : function() {
+        		  //재조회
+        		  customAlert("", "", "삭제 되었습니다.");
+        		  this.searchButtonOnClick();
+        	  }, 
+        	  
+        	  onImgLoad : function() {
+        	      log('onImgLoad');
+        	  },
+        	searchButtonOnClick : function() {
+        		var o = {};
+        		o.USE_YN = '1';
+
+                  var param = {
+                      svcId:"search",
+                      strUrl:"/ex/exp/expimg/search",   //전송 url    
+                      inDs :  "" ,  
+                      param : Object.assign(serializeObjectX($('#[[${param.pgm_id}]]')), o), 
+                      pCall : this.searchButtonOnClickCallback, 
+                      pLoad : true          
+                  };
+                  //트랜젝션 실행
+                  ajaxReadJsonData(param);
+            }, // end of searchButtonOnClick
+            searchButtonOnClickCallback : function(s, data) {
+            	
+            	this.imglist = [];
+            	this.imglist = data.ds_master.data;
+               	var ref = this;
+               	
+		         this.$nextTick( function() {     	
+		      	      var $grid = $('#'+ref.pgmid+ 'gallery').imagesLoaded( function() {
+		    	    	  log('onImgLoad imagesLoaded');
+		    	    	  
+		                  $('#'+ref.pgmid+ 'gallery').isotope('destroy')
+		    	    	  ref.handleIsotopesGallery()
+// 		                  $('#'+ref.pgmid+ 'gallery').isotope({
+// 		                  	resizable: true,
+// 		          			masonry: { 
+// 		          				columnWidth: 4 
+// 		          			}
+// 		          		   }); 
+		    	    	});
+		      	      
+		      	});
+		         this.$refs.gridmaster.setGridData(data["ds_master"]['data']);
+            },
+            
+            //정산위임 저장
+            saveCardSharedEmp: function (isvalid, codeId, item) { 
+                
+				if (isEmpty(item.CODE) ) { 
+				    customAlert('','','취소되었습니다.');
+				    return false;
+				}
+				
+				var indexNo = codeId.replace(this.pgmid,"").replace("codeId", ""); //index 번호
+                var param = {
+                        svcId:"saveSharedEmp",
+                        strUrl:"/ex/exp/expimg/updateSharedEmp", 
+                        inDs :  "" ,
+                        param : { SHARED_ID : item.CODE , FILE_NO : this.imglist[indexNo].FILE_NO}, 
+                        pCall : this.saveCardSharedEmpCallback, 
+                        pLoad : true          
+                    };
+                    //트랜젝션 실행
+                  ajaxReadJsonData(param); 
+      	  },
+      	  saveCardSharedEmpCallback : function () { 
+      		  saveGritter();
+      		  this.searchButtonOnClick();
+      	  },
+      	  
+      	  //위임취소
+      	  cancelSharedEmp(item){
+      		var param = {
+                    svcId:"cancelSharedEmp",
+                    strUrl:"/ex/exp/expimg/updateSharedEmp", 
+                    inDs :  "" ,
+                    param : { SHARED_ID : "" , FILE_NO : item.FILE_NO}, 
+                    pCall : this.cancelSharedEmpCallback, 
+                    pLoad : true          
+                };
+                //트랜젝션 실행
+              ajaxReadJsonData(param);
+      	  },
+      	  cancelSharedEmpCallback : function () { 
+    		  saveGritter();
+    		  this.searchButtonOnClick();
+    	  },
+            
+            calculateDivider: function() {
+            	var dividerValue = 4;
+            	if ($('#'+this.pgmid+'gallery').width() <= 576) {
+            		dividerValue = 1;
+            	} else if ($('#'+this.pgmid+'gallery').width() <= 992) {
+            		dividerValue = 2;
+            	} else if ($('#'+this.pgmid+'gallery').width() <= 1200) {
+            		dividerValue = 3;
+            	}
+            	return dividerValue;
+            },
+            handleIsotopesGallery: function() {
+            	
+            	var container = $('#'+this.pgmid+'gallery');
+            	var dividerValue = this.calculateDivider();
+            	var containerWidth = $(container).width();
+            	log('containerWidth');log(containerWidth);
+            	var columnWidth = containerWidth / dividerValue;
+            	log('columnWidth');log(columnWidth);
+            	$(container).isotope({
+            		resizable: true,
+            		masonry: {
+            			columnWidth: columnWidth
+            		}
+            	});
+            	
+            	 var ref = this;
+            	$('#'+this.pgmid+'gallery').on('resize', function() {
+            		log('handleIsotopesGallery resize')
+            		var dividerValue = ref.calculateDivider();
+            		log(dividerValue);
+            		
+            		var containerWidth = $(container).width();
+            		var columnWidth = containerWidth / dividerValue;
+            		log(columnWidth)
+            		$(container).isotope({
+            			masonry: { 
+            				columnWidth: columnWidth 
+            			}
+            		});
+            	});  
+            	
+            	var $optionSets = $('#options .gallery-option-set'),
+            	$optionLinks = $optionSets.find('a');
+            	
+            	$optionLinks.click( function(){
+            		var $this = $(this);
+            		if ($this.hasClass('active')) {
+            			return false;
+            		}
+            		var $optionSet = $this.parents('.gallery-option-set');
+            		$optionSet.find('.active').removeClass('active');
+            		$this.addClass('active');
+            	
+            		var options = {};
+            		var key = $optionSet.attr('data-option-key');
+            		var value = $this.attr('data-option-value');
+            			value = value === 'false' ? false : value;
+            			options[ key ] = value;
+            		$(container).isotope( options );
+            		return false;
+            	});
+            	
+            }, // handleIsotopesGallery
+            
+          }, // end of methods
+          watch: {
+              viewType: function (newVal, oldVal) {
+                   if (newVal == "grid") {
+                       this.isGrid = true;this.isBox = false;
+                        this.$nextTick(function () {
+                            window.dispatchEvent(new Event('resize'));
+                        });
+                        
+                   }else if (newVal == "box") {
+                       this.isGrid = false;this.isBox = true;
+                       this.$nextTick(function () {
+                           window.dispatchEvent(new Event('resize'));
+                       });
+                   }
+              },
+          },
+          mounted: function() {
+        	  
+              var ref = this;
+              this.$nextTick(function () {
+           	     ref.handleIsotopesGallery();
+           	  ref.gridView = ref.$refs.gridmaster.myGridID;
+           	  
+           	$('#'+ref.pgmid+'midbtn1').append($('#'+ref.pgmid + 'toolbtn'));
+               });  
+        	  
+//**********************************************************************************************              
+             vueArr.push(this);
+            },
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

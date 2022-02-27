@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper
+	namespace="com.ec.eframework.mapper.ex.bgt.FwdServiceMapper">
+	
+	
+	   <select id="searchFwd" resultType="HashMap">
+
+        SELECT /* [com.ec.eframework.mapper.ex.bgt.BgtServiceMapper.searchBgt] */
+        ROW_NUMBER() OVER() AS ID,
+       	REPORT_NO,
+       	MOD_DH,
+       	APPROVE_STATUS,
+       	regr_nm( REGR_ID) as REGR_ID,
+       	REGR_DEPT_NM
+       	FROM EXPENSE_REPORT A
+        WHERE A.USE_YN = '1'
+        AND A.COMPANY_CODE = #{g_comCd}
+        AND A.REPORT_NO =  #{REPORT_NO};
+       </select>
+       
+	   <select id="searchFwdDetail" resultType="HashMap">
+
+        SELECT /* [com.ec.eframework.mapper.ex.bgt.BgtServiceMapper.searchBgtDetail] */
+        ROW_NUMBER() OVER() AS ID,
+       	A.REPORT_NO,
+       	A.BDGT_NO,
+       	A.BA_NM,
+       	A.BA_CD,
+       	A.BDGT_DEPT_NM,
+       	A.BDGT_DEPT_CD,
+       	A.BDGT_ACC_NM,
+       	A.BDGT_ACC_CD,
+       	A.CCTR_CD,
+       	A.ACC_CD,
+       	A.ACC_NM,
+       	A.BDGT_YM,
+       	A.RMK,
+       	A.BDGT_AMT,
+       	A.MOD_DH
+        FROM BDGT_MST A
+        WHERE A.COMPANY_CODE = #{g_comCd}
+        AND A.REPORT_NO =  #{REPORT_NO}
+        ORDER BY A.BDGT_NO DESC;
+       </select>
+       
+    
+	<insert id="insertFwd">
+		  
+        <selectKey  resultType="long" keyProperty="REPORT_NO" order="BEFORE">
+             SELECT NEXTVAL(EXPENSE_SEQ);
+        </selectKey>	 
+		  
+		INSERT /*
+		[com.ec.eframework.mapper.ex.bgt.BgtServiceMapper.insertBgt][]
+		*/
+		INTO EXPENSE_REPORT
+		(   REPORT_NO,
+			COMPANY_CODE,
+			REPORT_TITLE,
+			REPORT_TP,
+			APPROVE_STATUS,
+			SUBMIT_DH,
+			SUBMIT_ID,
+			USE_YN,
+			REGR_ID,
+            REGR_NM,
+            REGR_DEPT_NM,
+            MOBILE_YN,
+            REGR_DH
+			
+		) VALUES (
+            #{REPORT_NO},
+            #{g_comCd},
+             (SELECT REPORT_TITLE FROM EXPENSE_REPORT_TYPE WHERE COMPANY_CODE = #{g_comCd} AND REPORT_TP = #{REPORT_TP})  ,
+            #{REPORT_TP},
+            '1',
+            REGR_DH(),
+            #{g_userId},
+            '1' ,
+            #{g_userId},
+            #{g_userNm},
+            #{g_deptNm},
+            '',
+            REGR_DH()
+		);
+		
+	
+	</insert>
+	
+
+	<update id="updateFwd">
+	
+		UPDATE /*
+		[com.ec.eframework.mapper.ex.bgt.BgtServiceMapper.updateBgt][]
+		*/
+		 EXPENSE_REPORT
+		 SET USE_YN = '1'
+		WHERE REPORT_NO = #{REPORT_NO}
+		AND COMPANY_CODE =  #{g_comCd}
+		
+	</update>	
+	
+	<update id="deleteFwd">
+	
+		DELETE FROM BDGT_MST 
+		WHERE  COMPANY_CODE =  #{g_comCd}
+		AND REPORT_NO IN ( SELECT REPORT_NO FROM EXPENSE_REPORT 
+		                   WHERE REPORT_NO = #{REPORT_NO} AND APPROVE_STATUS = '1');
+	
+		UPDATE /* [com.ec.eframework.mapper.ex.bgt.BgtServiceMapper.deleteBgt][]  */
+		 EXPENSE_REPORT
+		 SET USE_YN = '0'
+		WHERE REPORT_NO = #{REPORT_NO}
+		AND COMPANY_CODE =  #{g_comCd}
+		AND APPROVE_STATUS = '1';
+		
+	</update>	
+	
+
+
+	<insert id="insertFwdDetail">
+	
+        <selectKey  resultType="long" keyProperty="BDGT_NO" order="BEFORE">
+             SELECT NEXTVAL(bgt_seq);
+        </selectKey>	
+	
+		INSERT /*
+		[com.ec.eframework.mapper.ex.bgt.BgtServiceMapper.insertBgtDetail][]
+		*/
+		INTO bdgt_mst
+		(   BDGT_NO	,
+			REPORT_NO	,
+			COMPANY_CODE	,
+			REF_YM	,
+			BDGT_YM	,
+			CCTR_CD	,
+			CCTR_NM	,
+			ACC_CD	,
+			ACC_NM	,
+			BDGT_DEPT_CD	,
+			BDGT_DEPT_NM	,
+			BA_CD	,
+			BA_NM	,
+			BDGT_ACC_CD	,
+			BDGT_ACC_NM	,
+			BDGT_AMT	,
+			RMK	,
+			REGR_DH	,
+			MOD_DH	,
+			REGR_ID	,
+			MOD_ID	,
+			REGR_NM	,
+			MOD_NM	,
+			REGR_DEPT_CD
+			REQTY
+			
+			
+		) VALUES (
+            #{BDGT_NO}	,
+			#{REPORT_NO}	,
+			#{g_comCd}	,
+			SUBSTRING( #{REF_YM}, 1, 6 )	,
+			SUBSTRING( #{BDGT_YM}, 1, 6 )	,
+			#{CCTR_CD}	,
+			#{CCTR_NM}	,
+			#{ACC_CD}	,
+			#{ACC_NM}	,
+			#{BDGT_DEPT_CD}	,
+			#{BDGT_DEPT_NM}	,
+			#{BA_CD}	,
+			#{BA_NM}	,
+			#{BDGT_ACC_CD}	,
+			#{BDGT_ACC_NM}	,
+			#{BDGT_AMT},
+			#{RMK}	,
+			REGR_DH()	,
+			''	,
+			#{g_userId}	,
+			''	,
+			#{g_userNm}	,
+			''	,
+			#{g_dept_Cd}	,
+			#{REQTY}
+			
+
+		);
+		
+	</insert>	
+
+	<update id="updateFwdDetail">
+	
+		UPDATE /* [com.ec.eframework.mapper.ex.bgt.BgtServiceMapper.updateBgtDetail][] */
+		BDGT_MST
+		SET BDGT_DEPT_NM = #{BDGT_DEPT_NM},
+		BDGT_DEPT_CD = #{BDGT_DEPT_CD},
+		BDGT_ACC_NM = #{BDGT_ACC_NM},
+		BDGT_ACC_CD = #{BDGT_ACC_CD},
+		ACC_CD = #{ACC_CD},
+		ACC_NM = #{ACC_NM},
+		BDGT_YM = SUBSTRING( #{BDGT_YM}, 1, 6 )	,
+		REF_YM = SUBSTRING( #{REF_YM}, 1, 6 )	,
+		BDGT_AMT = #{BDGT_AMT},
+		RMK = #{RMK},
+		BA_NM = #{BA_NM},
+		BA_CD = #{BA_CD},
+		MOD_DH = REGR_DH(),
+		MOD_ID = #{g_userId},
+		MOD_NM = #{g_userNm}
+		WHERE REPORT_NO = #{REPORT_NO}
+		AND BDGT_NO = #{BDGT_NO}
+		AND COMPANY_CODE =  #{g_comCd}
+		
+	</update>	
+	
+	
+	<delete id="deleteFwdDetail">
+	
+		DELETE /*
+		[com.ec.eframework.mapper.ex.bgt.BgtServiceMapper.deleteBgtDetail][]
+		*/
+		FROM BDGT_MST
+		WHERE REPORT_NO = #{REPORT_NO}
+		AND BDGT_NO = #{BDGT_NO}
+		AND COMPANY_CODE =  #{g_comCd};
+		
+	</delete>	
+	
+			<update id="updateBgtDetail2">
+	
+		UPDATE 
+		BDGT_MST
+		SET 
+		REF_YM = SUBSTRING( #{REF_YM}, 1, 6 )
+		WHERE REPORT_NO = #{REPORT_NO}
+		AND COMPANY_CODE =  #{g_comCd}
+		
+	</update>	
+
+  
+    
+</mapper>

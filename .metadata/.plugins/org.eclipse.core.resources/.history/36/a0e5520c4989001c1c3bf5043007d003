@@ -1,0 +1,623 @@
+<!-- 
+  -- 프로그램명 : 비용승인 
+  -- 날짜 : 2020.01.01 by hcho
+  -- 수정 : 2020.01.01 by hcho (기안자, 다음 결재자 표기 수정)
+  -- 수정 : 2020.08.06 by hcho (결재차수 적용)
+-->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+	<meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+ 
+	  var [[${param.pgm_id}]] = new Vue({
+		  el:  '#[[${param.pgm_id}]]',
+		  data: {  pgmid : "[[${param.pgm_id}]]",
+// 			       reportList : [],
+			       approveList : [],
+			       approveItem : {},
+			       selectedReport : {},
+                   selectedIndex : undefined,
+			       expenseList : [],
+			       expAllList : [],
+			       approveHist : [], // 결재라인
+			       approveHists : [], // 결재라인 차수
+			       user_id : '',
+			       reportFiles : [],
+			       reportMngList : [], // 관리항목
+			       isMy : false, // 내문서
+			       
+                  // 유형별 비용리스트
+	                  expListCard : [],
+	                  expListTravel : [],
+	                  expListGas : [],
+	                  expListToll : [],
+	                  expListReceipt : [],
+	                  expListEtax : [],
+	                  expListPtax : [],
+	                  expListEtc  : [],  
+	                  
+	                  expFiles  : [],  
+	                  
+	                  docTypes : [], // 진행중, 완료, 반려
+	                   approveStatus : '2', // 초기 상신
+	                   myApprovalItem : {}, 
+	                  expenseItem : {},
+	                  
+	                  
+	                  
+	                  
+			       
+		  },//data
+		  created () { //초기화================================================================
+			    //그리드 초기화
+			     this.docTypes.push({label:'대기', value : '2', 'default':'true'});
+			     this.docTypes.push({label:'진행', value : '7'}); // 완료, 대기, 보류, 반려 제외 ** 최종 결재전인 건중 내가 결재한 건 제외
+// 			     this.docTypes.push({label:'보류', value : '8'}); // 보류
+			     this.docTypes.push({label:'완료', value : '4'});
+			     this.docTypes.push({label:'반려', value : '5'});
+				
+		  }, // created		  
+		  methods : {  // ======================================================================================
+			  
+			  
+             getExpFileListByReportNoCallback : function(svcId, data) {
+            	 this.expFiles = data["ds_master"]['data'];
+              },
+              to_number : function (str) {   
+                  return to_number(str);
+              },
+			  clickDocTypeBtn: function (btn) {   
+			      this.approveStatus = btn.value;
+			      this.searchButtonOnClick();
+			  },
+              closeModal : function () {   
+            	  // 모달 닫히면 모달 내용 초기화
+                  this.expListCard = [];
+                  this.expListTravel = [];
+                  this.expListGas = [];
+                  this.expListToll = [];
+                  this.expListReceipt = [];
+                  this.expListEtax = [];
+                  this.expListPtax = [];
+                  this.expListEtc  = [];
+                  this.approveHist = [];
+                  this.approveHists = [];
+                  this.reportFiles = [];
+              },
+             
+              clickPrev : function() {
+                  if (this.selectedIndex > 0) {
+                     this.selectedIndex = this.selectedIndex - 1;
+                     this.reportListClick(this.approveList[this.selectedIndex],this.selectedIndex);
+                     
+                  }
+               },         
+               clickNext : function() {
+                   if (this.selectedIndex < this.approveList.length-1) {
+                      this.selectedIndex = this.selectedIndex + 1;
+                      this.reportListClick(this.approveList[this.selectedIndex],this.selectedIndex);
+                   }
+               }, 
+			  printButtonOnClick  : function() {
+				  var data = $('#'+this.pgmid+'printform').html();
+				  var head = $('head').html();
+				  var mywindow = window.open("","Print","left=0, height=1000,width=1200");
+				  mywindow.document.open();
+				  mywindow.document.write('<html>'+ head);
+			//	  mywindow.document.write('<body onload="window.print(); ">');
+		  	      mywindow.document.write('<body ">');
+				  mywindow.document.write(data);
+				  mywindow.document.write('</body></html>');
+				  mywindow.focus(); 
+				  mywindow.document.close();
+				 
+				 setTimeout(function(){mywindow.print();}, 2000);
+					 return true;
+			  }, // printButtonOnClick
+			  toggleReportSidebar : function() {
+				  $('#'+this.pgmid+'reportSidebar').toggleClass('d-none d-flex');
+				  $('#'+this.pgmid+'expenseDetail').toggleClass('col-12');
+				  $('#'+this.pgmid+'expenseDetail').toggleClass('col-8 col-lg-8 ');
+				  $('#'+this.pgmid+'reportSidebarToggleBtn').find('i').toggleClass('fa-angle-double-left fa-angle-double-right');
+			  },
+
+			  //결재
+			  clickApprove : function(item, index) {
+				  
+                  this.approveItem = item;
+                  log("clickApprove");
+                  log(item);
+                  log(index);
+                  
+                  
+                  this.clickApproveCallback();
+                
+              }, // clickExpenseDetail  
+              
+              clickApproveCallback: function() {
+                  var param = {
+                          svcId:"procApprove",
+                          strUrl:"/ex/expense/approve/procApprove", 
+                          inDs :  "" ,  
+                          param : Object.assign(this.approveItem, this.selectedReport), 
+                          pCall : this.tranCallBack, 
+                          pLoad : true          
+                      };
+                      //트랜젝션 실행
+                      ajaxReadJsonData(param);
+              },
+              //반려
+              clickReject : function(item, index) {
+                  this.approveItem = item;
+                  this.clickRejectCallback();
+                
+              }, // clickExpenseDetail      
+              clickRejectCallback : function() {
+                  var param = {
+                          svcId:"procReject",
+                          strUrl:"/ex/expense/approve/procReject", 
+                          inDs :  "" ,  
+                          param : Object.assign(this.approveItem, this.selectedReport),  
+                          pCall : this.tranCallBack, 
+                          pLoad : true
+                      };
+                  
+                      //트랜젝션 실행
+                      ajaxReadJsonData(param);            	  
+              },
+              //보류
+              clickHold : function(item, index) {
+                  this.approveItem = item;
+                  customPrompt('','메모',this.clickHoldCallback,'');
+                
+              }, // clickExpenseDetail      
+              clickHoldCallback : function() {
+                  var param = {
+                          svcId:"procReject",
+                          strUrl:"/ex/expense/approve/procHold", 
+                          inDs :  "" ,  
+                          param : this.approveItem,  
+                          pCall : this.tranCallBack, 
+                          pLoad : true          
+                      };
+                      //트랜젝션 실행
+                     // ajaxReadJsonData(param);                
+              },        
+              //회수
+              clickCancel : function(item, index) {
+                  var param = {
+                          svcId:"procCancel",
+                          strUrl:"/ex/expense/approve/procCancel", 
+                          inDs :  "" ,  
+                          param : item, 
+                          pCall : this.tranCallBack, 
+                          pLoad : true          
+                      };
+                      //트랜젝션 실행
+                      ajaxReadJsonData(param);
+                
+              }, // clickCancel                    
+              fileClick : function(item, index) {
+                  // this.$refs.imgmodal.setType('img');
+                  
+                   this.$refs.imgmodal.setUrl('/ec/common/syscommon/fileupload/downloadFile/'+ item.FILE_NO, item.FILE_TYPE);
+                   this.$refs.imgmodal.showModal();
+              },  
+            tmapClick : function(url) {
+	        	// this.$refs.imgmodal.setType('img');
+	        	 this.$refs.imgmodal.setUrl(url, 'PNG');
+	        	 this.$refs.imgmodal.showModal();
+	        },		  
+			  reportListClick : function(item, index) {
+				  
+				  this.selectedIndex = index;
+				  this.selectedReport = item;
+				  this.getExpListByReportNo(item); // 비용리스트
+				  this.getApproveHist(item); //결재선
+				  this.getReportFileByReportNo(item);  // 파일
+				 
+				
+			  }, // reportListClick
+			  
+			  getReportFileByReportNo : function(item) {
+                  var param = {
+                            svcId:"getReportFileByReportNo",
+                            strUrl:"/ex/expense/report/getReportFileByReportNo", 
+                            inDs :  "" ,  
+                            param : {REPORT_NO: item.REPORT_NO}, 
+                            pCall : this.tranCallBack, 
+                            pLoad : true  ,
+                            async : true,
+                        };
+                        //트랜젝션 실행
+                        ajaxReadJsonData(param);
+            }, // getReportFileByReportNo			  
+			  
+			  getApproveHist : function(item) {
+                  var param = {
+                            svcId:"getApproveHist",
+                            strUrl:"/ex/expense/approve/getApproveHist", 
+                            inDs :  "" ,  
+                            param : {REPORT_NO:item.REPORT_NO}, 
+                            pCall : this.getApproveHistCallback, 
+                            pLoad : true    ,
+                            async : true,
+                        };
+                        //트랜젝션 실행
+                        ajaxReadJsonData(param);
+            }, // getApproveHist	
+            getApproveHistCallback : function(svcId, data) { 
+            	
+            	//////////================================
+                this.approveHist = [];
+                this.approveHist = data["ds_master"]['data'];    
+                this.myApprovalItem = {};
+                var ref = this;
+                var curIdx = "";
+                // $options.filters.isNotEmpty(selectedReport.REPORT_NO) && !$options.filters.isNotEmpty(item.APPROVE_YN)  && item.APPROVE_ID == user_id && item.APPROVAL == '1' 
+                
+                // 결재라인 중에 나의 id와 일치하는 건
+                log('this.approveHist');
+                log(this.approveHist);
+                
+                var arr = this.approveHist.filter( function (item, index) {
+                	
+                	log(ref.selectedReport.REPORT_NO);
+                	log(item.APPROVE_YN);
+                	log(item.APPROVE_ID);
+                	log(item.APPROVAL);
+                     
+                	if (!(isEmpty(ref.selectedReport.REPORT_NO))  &&  (isEmpty(item.APPROVE_YN) || item.APPROVE_YN == '0') && item.APPROVE_ID == ref.user_id && item.APPROVAL == '1'){
+                		curIdx = index;
+                		return  true;
+                	}
+                } );
+                
+                this.myApprovalItem = arr[0]; 
+                log('this.myApprovalItem');
+                log(this.myApprovalItem);   
+                
+                
+                if (arr.length == 1 && curIdx < this.approveHist.length-1 && this.myApprovalItem.APPROVE_TP != "3"){
+                   this.myApprovalItem.NEXT_APPROVE_ID = this.approveHist[curIdx+1].APPROVE_ID;
+                   this.myApprovalItem.NEXT_EMAIL = this.approveHist[curIdx+1].EMAIL;
+                }
+                
+                
+                // 차수
+                this.approveHists = [];
+                var seq = '';
+                var ref = this;
+                this.approveHist.forEach( function(item) {
+                	
+			               	if (seq != item.APPROVE_STEP) {
+			               		seq = item.APPROVE_STEP;
+			               	    ref.approveHists.push({APPROVE_STEP: item.APPROVE_STEP , APPROVE_STEP_NM: item.APPROVE_STEP_NM  , APPROVE_LIST : []});
+			               	} // if
+			                ref.approveHists[ref.approveHists.length-1].APPROVE_LIST.push(item);
+	               	
+	                   })
+                
+            },
+			  getExpListByReportNo : function(item) {
+				  
+				    //===========================
+	            	// 컴포넌트 테스트
+	            	   this.$refs.expListComponent.setReportNo(item.REPORT_NO);
+	            	//============================
+	               
+	                     var param = {
+	                          svcId:"getExpListByReportNo",
+	                          strUrl:"/ex/expense/expensemst/getExpListByReportNo", 
+	                          inDs :  "" ,  
+	                          param : {REPORT_NO: item.REPORT_NO}, 
+	                          pCall : this.getExpListByReportNoCallback, 
+	                          pLoad : true  ,
+	                          async : true,
+	                      };
+	                      //트랜젝션 실행
+// 	                      ajaxReadJsonData(param);
+	                      var param = {
+	                              svcId:"getExpFileListByReportNo",
+	                              strUrl:"/ex/expense/expensemst/getExpFileListByReportNo", 
+	                              inDs :  "" ,  
+	                              param : {REPORT_NO: item.REPORT_NO}, 
+	                              pCall : this.getExpFileListByReportNoCallback, 
+	                              pLoad : true ,      
+	                              async : true,
+	                          };
+	                          //트랜젝션 실행
+// 	                      ajaxReadJsonData(param);         
+			  }, // getExpListByReportNo
+			  
+			  getExpListByReportNoCallback : function(svcId, data) {
+			  
+                  this.expenseList = [];
+                  this.expenseList = data["ds_master"]['data'];
+                  this.reportMngList = [];
+                  this.reportMngList = data["ds_mng"]['data'];
+                  
+//                   this.expListCard = this.expenseList.filter( function (item) {return item.SOURCE_TP == '1'  });
+                  this.expListCard = this.expenseList.filter( function (item) { item.FILE_LISTS = JSON.parse( item.FILE_LIST );    return item.SOURCE_TP == '1'  });
+                  
+                  
+                  this.expListTravel = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '3'  });
+                  this.expListGas = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '4'  });
+                  this.expListToll = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '6'  });
+                  this.expListReceipt = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '2'  });
+                  this.expListEtax = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == 'A'  });
+                  this.expListPtax = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == 'B'  });
+                  this.expListEtc = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP != '1' 
+                	                                                         &&  item.SOURCE_TP != '2'
+                	                                                         &&  item.SOURCE_TP != '3'
+                	                                                         &&  item.SOURCE_TP != '4'
+           	                                                        	     &&  item.SOURCE_TP != '6'
+           	                                                        		 &&  item.SOURCE_TP != 'A'
+           	                                                        		 &&  item.SOURCE_TP != 'B'           	                                                        		
+                  });
+                  
+//                   관리항목 값 조회
+                  if (this.reportMngList.length > 0){
+                      var ref = this;
+                      
+                    this.$nextTick( function () {
+                  	  ref.reportMngList.forEach(item => {  
+                          if (item.INPUT_FORMAT_CD == '01') { 
+                              ref.$refs['popupreportmng'+item.MNG_CD][0].setData(item.MNGVAL_CD, item.MNGVAL_NM);
+                          }else if (item.INPUT_FORMAT_CD == '05' || item.INPUT_FORMAT_CD == '02' ){ // date , number
+                         	 ref.$refs['popupreportmng'+item.MNG_CD][0].setData(item.MNGVAL_NM);
+                          }else{
+                              $('#'+ref.pgmid+'popupreportmng'+item.MNG_CD).val(item.MNGVAL_NM); 
+                          }
+                       });
+                    
+                    })  // nextTick
+                    
+     
+                    
+               } // if
+                  
+                  
+			  },
+			  getExpAllList : function() {
+				  //getExpAllList
+	              var param = {
+                          svcId:"getExpAllList",
+                          strUrl:"/ex/expense/expensemst/getExpAllList", 
+                          inDs :  "" ,  
+                          param : {REPORT_NO: this.selectedReport.REPORT_NO}, 
+                          pCall : this.tranCallBack, 
+                          pLoad : true ,
+                          async : true,
+                      };
+                      //트랜젝션 실행
+                      ajaxReadJsonData(param);
+			  },
+			  
+			  reportExpCheckboxChange : function(item,e){
+	                  var param = {
+	                          svcId:"setReportExp",
+	                          strUrl:"/ex/expense/expensemst/setReportExp", 
+	                          inDs :  "" ,  
+	                          param : {REPORT_NO:this.selectedReport.REPORT_NO, EXPENSE_NO:item.EXPENSE_NO ,CHECKED:e.target.checked}, 
+	                          pCall : this.tranCallBack, 
+	                          pLoad : true  ,
+	                          async : true,
+	                          
+	                      };
+	                      //트랜젝션 실행
+	                      ajaxReadJsonData(param);
+	                  
+			  },//reportExpCheckboxChange
+			  
+			  changeIsMyCheckbox : function() {
+				  
+				  this.isMy = !(this.isMy);
+				  $('#'+this.pgmid+'myReport').prop('checked', this.isMy )
+				  this.searchButtonOnClick();
+				  
+			  },
+			  rejectExpenseItem : function(item) { // 비용1건 반려
+				  log("비용반려");
+			      log(item);
+			      this.expenseItem = item;
+			    //  customPrompt(type, title, callbackFunction, val){
+			    	customPrompt('','반려사유를 입력하세요.',this.rejectExpenseItemCallback,'', item);
+			  },
+			  rejectExpenseItemCallback : function(msg, item) { // 비용1건 반려
+				  log("비용반려");
+			      log(msg);
+			      log(item);
+	                  var param = {
+	                          svcId:"rejectExpenseItem",
+	                          strUrl:"/ex/expense/approve/rejectExpenseItem", 
+	                          inDs :  "" ,  
+	                          param : {EXPENSE_NO:item.EXPENSE_NO, MSG : msg }, 
+	                          pCall : this.rejectExpenseItemCallbackCallback, 
+	                          pLoad : true          
+	                      };
+	                      //트랜젝션 실행
+	                  ajaxReadJsonData(param);
+			  },	
+			  rejectExpenseItemCallbackCallback : function(svcid, data) { // 비용1건 반려
+				  //log(data);
+				  //this.getExpListByReportNo({REPORT_NO : this.selectedReport.REPORT_NO});
+				   this.reportListClick(this.selectedReport, this.selectedIndex) ;
+				   
+				   // this.expenseItem
+				   this.selectedReport.CNT = this.selectedReport.CNT -1;
+				   this.selectedReport.PAY_SUM_AMT = this.selectedReport.PAY_SUM_AMT - this.expenseItem.PAY_AMT;
+				   
+			  },
+			  searchButtonOnClick : function(option) {
+			  
+				  $('#'+this.pgmid+'collapseFilter').collapse('hide');
+				  
+				  var o={};
+				  if (this.approveStatus != '7'){
+					  Object.assign(o, serializeObjectX($('#'+this.pgmid+'searchCond1')) ) 
+				  }
+				  
+				  o.APPROVE_STATUS  = this.approveStatus;
+				  
+				  Object.assign(o, serializeObjectX($('#'+this.pgmid+'searchCond')) ) // searchCond1는 일자임.
+                  var param = {
+                          svcId:"getApproveList",
+                          strUrl:"/ex/expense/approve/getApproveList", 
+                          inDs :  "" ,  
+                          param : o,
+                          pCall : this.searchButtonOnClickCallback, 
+                          pLoad : true  ,
+                          async : true,
+                      };
+                      ajaxReadJsonData(param);
+					  }, // end of searchButtonOnClick
+					  
+				searchButtonOnClickCallback	 : function(svcId, data, errCd, msgTp, msgCd, msgText) { //******************************  
+				
+              	  this.selectedIndex = undefined;
+            	  this.selectedReport = {};
+            	  this.approveHist = [];
+            	  this.expenseList = [];
+                  this.approveList = [];
+                  this.expFiles = [];
+                  this.myApprovalItem = {};
+                  this.approveList = data["ds_master"]['data'];
+                  this.closeModal(); // this.expListCard = []; 등 초기화
+                  
+                 var ref = this;
+      	         this.$nextTick(function () {
+ 	                if (ref.approveList.length > 0){
+ 	                	
+ 	                  	   ref.getApproveHist(ref.approveList[0], 0);
+ 	                	//===========================
+ 	                	// 컴포넌트 테스트
+ 	                	   ref.$refs.expListComponent.setReportNo(ref.approveList[0].REPORT_NO);
+ 	                	   ref.selectedIndex = 0;
+ 	                	  ref.selectedReport = ref.approveList[ref.selectedIndex];
+	                	   this.getExpListByReportNo(ref.selectedReport, ref.selectedIndex); 
+ 	                	   this.getApproveHist(ref.selectedReport, ref.selectedIndex); 
+ 	                	   this.getReportFileByReportNo(ref.selectedReport, ref.selectedIndex);
+ 	                	//============================
+ 	                }else{
+ 	                	
+ 	                	   ref.$refs.expListComponent.setReportNo('xxxxx');
+ 	                }
+             	 });   
+      	         
+      	         
+     	         this.$nextTick(function () {
+ 	                if (ref.reportList.length > 0){
+ 	                	ref.getApproveHist(ref.reportList[0], 0);
+ 	                	//===========================
+ 	                	// 컴포넌트 테스트
+ 	                	   ref.$refs.expListComponent.setReportNo(ref.reportList[0].REPORT_NO);
+ 	                	   ref.selectedIndex = 0;
+ 	                	   ref.selectedReport = ref.reportList[ref.selectedIndex];
+ 	                	   this.getExpListByReportNo(ref.selectedReport, ref.selectedIndex); 
+ 	                	   this.getApproveHist(ref.selectedReport, ref.selectedIndex); 
+ 	                	   this.getReportFileByReportNo(ref.selectedReport, ref.selectedIndex);
+ 	                	//============================
+ 	                }else{
+ 	                	
+ 	                	   ref.$refs.expListComponent.setReportNo('xxxxx');
+ 	                }
+             	 });                
+                  
+				},
+				tranCallBack : function(svcId, data, errCd, msgTp, msgCd, msgText) { //******************************
+					  if(svcId=="getApprovalReportList"){
+						  
+                      }else if(svcId =="getApproveList"){
+                          
+                      }else if(svcId =="getExpListByReportNo"){
+                    	  
+                    	  this.expenseList = [];
+                          this.expenseList = data["ds_master"]['data'];
+                          
+                      }else if(svcId =="getExpAllList"){
+                    	  this.myApprovalItem = {};
+                          this.expAllList = [];
+                          this.expAllList = data["ds_master"]['data'];    
+                      }else if(svcId =="procCancel"){
+                    	  saveGritter();
+                    	  this.searchButtonOnClick();
+                      }else if(svcId =="procApprove"){
+                          saveGritter();
+                          $('#'+this.pgmid + 'expDetailModal').modal('hide');
+                          this.searchButtonOnClick(); 
+//                           this.getApproveHist(this.selectedReport.REPORT_NO);
+                      }else if(svcId =="procReject"){
+                          saveGritter();
+                          $('#'+this.pgmid + 'expDetailModal').modal('hide');
+                          this.searchButtonOnClick();                          
+                      }else if(svcId =="getReportFileByReportNo"){ // 리포트에 첨부된 파일, 비용X
+							this.reportFiles = data["ds_master"]['data'];
+							
+					  } // end if
+					},	// tranCallBack
+					
+		  }, // end of methods
+		  computed: {
+			  
+			  getSelectedExpTotal : function(){
+				  var t = 0 ;
+				  this.expenseList.forEach(item => {  t = t + (item.EXPENSE_AMT+to_number(item.EXPENSE_VAT_AMT)+to_number(item.EXCLUDE_AMT))});
+				  return t;
+				  
+			  }, // getSelectedExpTotal
+	          getSelectedExpVatTotal : function(){
+                  var t = 0 ;
+                  
+                  this.expenseList.forEach(item => { t = t + to_number(item.EXPENSE_VAT_AMT );});
+                  return t;     
+	           }, // getSelectedExpVatTotal
+	           getSelectedExpCount : function(){ // 
+	                  var t = 0 ;
+	                  this.expenseList.forEach(item => {   t = t + 1});
+	                  return t;     
+	           }, // getSelectedExpVatTotal 
+		  }, // computed
+		  
+		  mounted: function() {
+			 var ref = this;
+             this.$nextTick(function () {
+            	 ref.user_id = '[[${session.g_userId}]]' ;
+            	 ref.searchButtonOnClick();
+                 handleSlimScroll();
+                 // 다른 화면에서 호출했을 때,
+                 if ('[[${param.subParam}]]' == "my") {
+                     $('#'+ref.pgmid+'myReport').prop('checked',true);
+                  }
+            	// this.searchButtonOnClick();
+//             	 $("#"+ref.pgmid+'barcode1').barcode("1234567890128", "ean13",{barWidth:2, barHeight:30});
+//             	 $("#"+ref.pgmid+'barcode2').barcode("1234567890128", "datamatrix",{showHRI:false,bgColor:"white"});
+            	 
+            	 
+            	 $('#'+ref.pgmid+'midbtn1').append($('#'+ref.pgmid + 'toolbtn'));
+            	 if (!isMobile())  $('#'+ref.pgmid+'midbtn1').append($('#'+ref.pgmid + 'searchCond'));
+            	 
+            	 
+            	 //ec_handleSlimScroll();
+            	// initMultiCards(this.pgmid);
+      			  window.addEventListener('[[${param.pgm_id}]]Click', function (e) { 
+    				  ref.searchButtonOnClick();
+    			  }, false);	
+			  });
+             
+//**********************************************************************************************			  
+             vueArr.push(this);
+            // initMultiCards(this.pgmid); // 카드를 사용할 때만 필요
+			},
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

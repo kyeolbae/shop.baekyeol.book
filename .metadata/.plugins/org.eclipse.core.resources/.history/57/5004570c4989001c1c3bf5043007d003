@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+</head>
+<body>
+ 
+	<div :class="{'d-flex': curItem.TYPE =='RECEIPT' }" class="d-none flex-column flex-md-row" th:fragment="html">
+
+		<!-- begin modal 이미지-->
+		<div class="col-12 col-md-6  p-0 d-flex flex-column" :id="pgmid+'bizcard-clon-receipt'" style="height:650px;">
+			<div class="receipt-box-modal d-flex flex-column" >
+			    <ec-img ref="receiptimg"  ocryn="true"  v-show="$options.filters.isNotEmpty(curItem.FILE_NO)  &&  curItem.TYPE =='RECEIPT' " 
+			         source="RE" @edited="receiptimgedited" @clickmainfile="receiptClickMainFile"
+			         autoprocess="false"  @multiupload="saveServer"   @autoupload="getImgFilesNo"  @clicktrash="deleteEcImg"
+			         addfile="true"> 
+			    </ec-img>
+			</div>
+		</div> 
+		<div class="col-12 col-md-6 d-flex flex-column p-25 border-left" :id="pgmid+'receiptmodalbody'" style="height:650px;">
+                           <popup-help visible="false" ref="receiptmodalhelp" th:helpkey="${param.pgm_id}+'receiptmodalbody'" th:pgmid=${param.pgm_id} th:subname="receiptmodalbody"  ></popup-help>
+			               <div class="text-nowrap  d-flex flex-column p-0  modal-header" :class="pgmid+'modal-header-receipt'" >
+	                          <div class="d-flex w-100 justify-content-between">
+	                                  <div class="d-flex">
+				                          <div  v-show="curItem.SOURCE_TP_NM!=undefined" class="f-title-plane d-flex align-items-center">{{curItem.SOURCE_TP_NM}}&nbsp <span v-show="curItem.INDEX!=undefined">상세</span>
+		                                      <a class="ml-2 btn" @click="$refs.receiptmodalhelp.clickOpenModal()"><i class="icon-question"></i></a>
+  	                                          <exp-log class="px-0" ref="expLogReceipt" th:pgmid=${param.pgm_id} subname="log" @clicklog="clickExpDetailLog('expLogReceipt')" ></exp-log>
+				                          </div>
+				                          
+			                          </div>
+			                          <a class="close h-100" aria-hidden="true" type="button" data-dismiss="modal"><i class="mi-close mi-3x"></i></a>
+	                          </div>
+	                          <div class="d-flex w-100 flex-wrap  justify-content-between mb-3">
+	                        
+			                        <div class="d-flex align-items-center flex-nowrap  f-s-12">
+			                            <a v-for="item in approveStatus" :class="[{'text-blue  font-weight-bold' : item.CODE == curItem.APPROVE_STATUS},
+			                                                                       ]"   
+			                                                                     class="breadcrumb-item">{{item.NAME}}</a>
+			                        </div>  
+			                        
+		                          <!-- 페이저 -->
+		                          <div  class="d-flex justify-content-end ">
+		                                  <div v-if="curItem.INDEX!=undefined" class="d-flex  m-0" >
+	                                            <div class="badge text-white bg-black-transparent-4 m-3 f-plane p-5"><span class="f-s-12">{{curItem.INDEX+1}}/{{receiptList.length}}</span></div>
+	                                            <a  class="btn btn-white btn-sm border-0" @click="previousItem"><i class="icon-arrow-left"></i></a>
+	                                            <a  class="btn btn-white btn-sm border-0 pr-1" @click="nextItem"><i class="icon-arrow-right"></i></a>
+		                                  </div>
+		                          </div>          
+	                          </div> 
+	                      </div>
+                      <!-- end of header  -->
+		        <hr>
+			<div class="h-100 overflow-y ec-scrollbar">
+				<div class="ec-grid-row">
+					<label class="col-3 ec-col-label-0 bg-white label-required" >비용 청구자</label>
+					<div class="col-9  ec-col-input border-0">
+						<popup-code class="w-100" ref="popupreceiptemp" :pgmid="pgmid" pgmnm="비용 청구자" subname="popupreceiptemp" name="EMP_NO_RECEIPT" searchname="비용 청구자" required="true" columnlayout="popupemp" tablename="EMP" @codechanged="empNoChange"></popup-code>
+					</div>
+				</div>
+				<div class="ec-grid-row">
+					<label class="col-3  ec-col-label-0 bg-white label-required">증빙일</label>
+					<div class="col-9  ec-col-input  border-0">
+						<date-new-component-v1 ref="RECEIPT_DT_RECEIPT" th:pgmid="${param.pgm_id}" subname="RECEIPT_DT_RECEIPT" required="true" readonly="readonly" @changedate="changeReceiptDate"></date-new-component-v1>
+					</div>
+				</div>
+
+				<div class="ec-grid-row">
+					<label class="col-3  ec-col-label-0 bg-white label-required">비용금액</label>
+					<div class="col-9  ec-col-input flex-column  border-0">
+						<div class="w-100 d-flex">
+							<dropdown-tablecommon ref="RECEIPT_CURRENCY" class="col-6 col-lg-4 p-0 flex-shrink-0" :pgmid="pgmid" dropdownlabel="" selectid="RECEIPT_CURRENCY" selectname="RECEIPT_CURRENCY" tableid="getCurrency" @dropdownchanged="curCdChange"></dropdown-tablecommon>
+							<inputnumber-component  class="ml-1" ref="CURRENCY_AMT" required="true"  @inputchange="curAmtChg" ></inputnumber-component>
+
+						</div>
+						<div :class="{'d-none': currencyCd == curItem.BASE_CURRENCY_CD }" class="w-100 text-right">
+							<div>
+								<span>환율일자:</span><strong><span>{{currencyDt | dateformat('card-week') }}</span></strong>
+							</div>
+							<div>
+								<span>1{{currencyCd}}=</span><span>{{currencyRate }}{{curItem.BASE_CURRENCY_CD}}</span>
+							</div>
+							<div>
+								<span></span><strong><h4 class="text-red">{{expenseAmt | numberformat('0,000')}}{{curItem.BASE_CURRENCY_CD}}</h4></strong>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="ec-grid-row">
+					<label class="col-3  ec-col-label-0 bg-white label-required">비용항목</label>
+					<div class="col-9  ec-col-input  border-0">
+						<popup-code class="w-100" ref="popupexpreceipt" :pgmid="pgmid" pgmnm="비용항목" subname="popupexpreceipt" name="EXPENSE_CD_RECEIPT" searchname="비용항목" required="true" columnlayout="popupexpcard" tablename="EXRECEIPT" @codechanged="receiptExpCdChange"></popup-code>
+					</div>
+				</div>
+
+				<span v-show="receiptbelongtype != '0'">
+					<div class="ec-grid-row">
+						<label class="col-3 ec-col-label-0 bg-white label-required">비용귀속</label>
+						<div class="col-9 flex-column ec-col-input border-0">
+
+							<div class="w-100  p-0 mb-1 d-flex">
+								<dropdown-syscommon ref="RECEIPT_CCENTER_TP" class="w-100 p-0 flex-shrink-0" :pgmid="pgmid" dropdownlabel="" selectid="RECEIPT_CCENTER_TP" selectname="RECEIPT_CCENTER_TP" clcd="EX_CCENTER_TP" @changed="ccenterTpChange"></dropdown-syscommon>
+							</div>
+							<div class="w-100   p-0 mb-1 d-flex">
+								<span class="w-100" v-show="receiptcosttype=='1'"><popup-code class="w-100" ref="popupcostcenterreceipt" :pgmid="pgmid" pgmnm="코스트센터" subname="popupcostcenter-receipt" name="CCTR_CD_RECEIPT" searchname="코스트센터" columnlayout="popupcostcenter" tablename="CCTR" @codechanged="costCenterCdChange"></popup-code></span> 
+								<span class="w-100" v-show="receiptcosttype=='2'"><popup-code class="w-100" ref="popupprojectreceipt" :pgmid="pgmid" pgmnm="프로젝트" subname="popupproject-receipt" name="PROJECT_RECEIPT" searchname="프로젝트" columnlayout="popupproj" tablename="PROJ" @codechanged="projectCdChange"></popup-code></span>
+							</div>
+						</div>
+					</div>
+				</span>
+
+				<div v-for="item in receiptMngList " class="ec-grid-row">
+					<label class="col-3  ec-col-label-0 bg-white" :class="{'label-required' : item.MUST_YN=='1' }">{{item.MNG_NM}}</label>
+					<div v-if="item.INPUT_FORMAT_CD !='01' &&  item.INPUT_FORMAT_CD !='05'  &&  item.INPUT_FORMAT_CD !='02'" class="col-9  ec-col-input  border-0">
+						<input type="text" :id="pgmid+'popupreceiptmng'+item.MNG_CD" :class="{required : item.MUST_YN=='1'}" class="form-control form-control-sm " />
+					</div>
+					<div v-if="item.INPUT_FORMAT_CD=='01'" class="col-9  ec-col-input  border-0">
+						<popup-code class="w-100" :url="item.URL" :ref="'popupreceiptmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD" :pgmnm="item.MNG_NM" subname="popupcostcenter-receipt" name="CCTR_CD_RECEIPT" :searchname="item.MNG_NM" :required="item.MUST_YN=='1' ?  'true' : '' " :columnlayout="item.COLUMN_LAYOUT" :tablename="item.TABLE_CD" :codecl="item.COMM_CL_CD"></popup-code>
+					</div>
+					<div v-if="item.INPUT_FORMAT_CD=='02'" class="col-9  ec-col-input  border-0">
+						<inputnumber-component :ref="'popupreceiptmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD" :pgmnm="item.MNG_NM" subname="popupcostcenter-receipt" :required="item.MUST_YN=='1' ?  'true' : '' "></inputnumber-component>
+					</div>
+					<div v-if="item.INPUT_FORMAT_CD=='05'" class="col-9  ec-col-input  border-0">
+						<date-new-component-v1 :ref="'popupreceiptmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD" :pgmnm="item.MNG_NM" subname="receipt-mng-date" :required="item.MUST_YN=='1' ?  'true' : '' " readonly="readonly"></date-new-component>
+					</div>
+				</div>
+				<div class="ec-grid-row">
+					<label class="col-3  ec-col-label-0 bg-white">적요</label>
+					<div class="col-9  ec-col-input  border-0">
+						<input type="text" name="RMK_RECEIPT" :id="pgmid+'RMK_RECEIPT'" class="form-control form-control-sm" />
+					</div>
+				</div>
+			</div>
+		
+		                    <div class="d-flex flex-row btn-row ec-btn-bottom-row">
+                                <a v-if="curItem.PRIVATE_YN !='1' && curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' && curItem.PRIVATE_YN !='1'"  class="btn ec-btn-bottom w-100  bg-light " @click="newCurItem">신규</a>
+                                <a v-if="curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' && curItem.PRIVATE_YN !='1'" class="btn ec-btn-bottom w-100  bg-grey-lighter" @click="deleteExpMst(curItem, curItem.INDEX)">삭제</a>
+                                <a v-if="curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' && curItem.PRIVATE_YN !='1'" class="btn  ec-btn-bottom w-100  btn-maintheme" @click="saveCurItem">저장</a>
+							</div>
+		</div>
+		<!-- end of popup 법인카드-->
+	</div>
+
+</body>
+</html>

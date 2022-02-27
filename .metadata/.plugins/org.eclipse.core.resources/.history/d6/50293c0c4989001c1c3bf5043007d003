@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+    
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+ 
+      var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************        
+          
+          data: {  pgmid : "[[${param.pgm_id}]]",
+                   columnlayout : [],
+                   gridView : '',
+                   newitem :{},
+          },//data
+          created () { //초기화================================================================
+				
+        	  
+        	  this.columnlayout =   
+                   [   
+                	   {dataField : "EMP_NM",   headerText : "담당자명 <span class='text-danger'>*</span>",  width: 120,editable : true, renderer : {type : "TemplateRenderer" }, pgmid: this.pgmid,  gridname : "emp" , labelFunction : auiPopupCode },	
+                	   {dataField : "MG_EMP_NO",   headerText : "담당자코드",  width: 120,editable : false,style : "bg-light", filter : { showIcon : true} },
+                	   {dataField : "DEPT_NM",   headerText : "부서명",  width: 150,editable : false,style : "bg-light", filter : { showIcon : true}},
+                   	   {dataField : "CCTR_NM",   headerText : "코스트센터명 <span class='text-danger'>*</span>",  width: 120,editable : true,renderer : {type : "TemplateRenderer" }, pgmid: this.pgmid,  gridname : "costcenter" , labelFunction : auiPopupCode },
+                   	   {dataField : "CCTR_CD",   headerText : "코스트센터코드",  width: 150,style : "bg-light", editable : false,filter : { showIcon : true}},
+                   	   {dataField : "REGR_ID",   headerText : "등록자", editable : false, style : "bg-light",width: 120, filter : { showIcon : true}},
+                   	   {dataField : "REGR_DH",   headerText : "등록일시",editable : false, width: 130,style : "bg-light", filter : { showIcon : true}},
+                   	   {dataField : "MOD_ID",   headerText : "변경자",editable : false, width: 130,style : "bg-light", filter : { showIcon : true}},
+                   	   {dataField : "MOD_DH",   headerText : "변경일시",editable : false, width: 130,style : "bg-light", filter : { showIcon : true}},
+
+
+      	   
+                	   
+                
+                ] ;//columnlayout
+                  
+          }, // created       
+          methods : {  // ======================================================================================
+              
+        	  searchButtonOnClick : function() {
+        		  var o ={}
+        			o.MG_EMP_NO = $('#'+this.pgmid + 'SEARCH_EMPcodeId').val();
+        		  var j ={}
+      			j.CCTR_CD = $('#'+this.pgmid + 'SEARCH_CCTRcodeId').val();
+      		  
+        		  
+                            var param = {
+                                svcId:"searchCardMngr",
+                                strUrl:"/ec/ex/config/cardmngr/searchCardMngr",   //전송 url    
+                                inDs :  "" ,  
+                                param : Object.assign(serializeObjectX($('#[[${param.pgm_id}]]')),o,j), 
+                                pCall : this.searchButtonOnClickCallback, 
+                                pLoad : true          
+                            };
+                            //트랜젝션 실행
+                            ajaxReadJsonData(param);
+                            log(param);
+                      }, // end of searchButtonOnClick
+              
+              
+                 searchButtonOnClickCallback : function(svcId, data) { //******************************
+                this.$refs.gridmaster.setGridData(data["ds_master"]['data']);
+                  },// end of searchButtonOnClickCallback
+                  
+                  
+                  saveButtonOnClick : function() {
+                      // 그리드 필수항목 체크
+                       if (auiValidateGridData(this.gridView, ["EMP_NM","CCTR_NM"] ) == false){
+                            return;
+                       }
+                      
+                      // 변경된 데이터가 있는지 없는지 체크
+                      var    ds_master = getCRUDdata(this.gridView);
+                      if (ds_master['data'].length == 0 ) {
+                          customAlert('','','변경된 데이터가 없습니다.');
+                          return;
+                      }
+                      // Confirmation dialog, 시스템 설정에 따라 보이고 안보이고
+                      bootboxSaveConfirm(this);             
+        			},  //saveButtonOnClick
+        
+				        saveButtonOnClickCallback(){
+				          
+				             saveColumnLayout(this.gridView);
+				          
+				          // 저장할 데이터 만들기
+				          var    ds_master = {};
+				          ds_master['ds_master'] = getCRUDdata(this.gridView);
+				          
+				          
+				          var param = {
+				              svcId:"saveCardMngr", 
+				              strUrl: "/ec/ex/config/cardmngr/saveCardMngr",   //전송 url 
+				              inDs : {
+				                  ds_master:ds_master
+				              },
+				              param : ds_master,        // 전송할 파라미터
+				              pCall : this.saveButtonOnClickCallbackBack, 
+				              pLoad : true          // 로딩이미지 노출 여부  
+				          };
+				
+				          //트랜젝션 실행
+				          ajaxReadJsonData(param); 
+				      }, //   saveButtonOnClickCallback         
+				        
+				      
+				      saveButtonOnClickCallbackBack: function(svcId, data) {
+				      	this.searchButtonOnClick(); // 재조회  
+				          saveGritter();
+				      },   
+                  
+                  
+                  
+                  
+                  
+                  
+                    
+          }, // end of methods
+
+          mounted: function() {
+        	  var ref = this;
+	             
+	             this.$nextTick(function () {
+	            	 ref.gridView = ref.$refs.gridmaster.myGridID;
+	            	// pk컬럼(신규는 가능, update불가)
+//                    auiSetAddedRowEnabledCell(ref.gridView,['EMP_NM','CCTR_NM']);
+	            	 
+	             })
+             
+//**********************************************************************************************              
+             vueArr.push(this);
+            },
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

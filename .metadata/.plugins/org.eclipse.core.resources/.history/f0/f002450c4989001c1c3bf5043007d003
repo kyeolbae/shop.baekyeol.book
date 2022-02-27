@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper namespace="com.ec.eframework.mapper.ex.sap.common.SapServiceMapper">
+
+<!-- Sap전표조회(임시) -->
+    
+     <select id="getSapSlip" resultType="HashMap">
+  
+		 SELECT ERP_COMPANY_CODE, ERP_SLIP_YYYY,ERP_SLIP_NO,A1,A2,A3,A4,A5,A6,A7,A8 
+		 FROM   EXPENSE_RFC_SLIP             
+			WHERE ERP_COMPANY_CODE = #{ERP_COMPANY_CODE}
+			AND ERP_SLIP_YYYY = #{ERP_SLIP_YYYY}
+			AND ERP_SLIP_NO = #{ERP_SLIP_NO};
+
+     </select>
+ 
+     <select id="getSapSlipDetail" resultType="HashMap">
+    
+				SELECT ERP_COMPANY_CODE, ERP_SLIP_YYYY,ERP_SLIP_NO,ERP_ITEM_NO,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B11,B12,B13				
+				FROM EXPENSE_RFC_SLIPITEM
+				WHERE ERP_COMPANY_CODE = #{ERP_COMPANY_CODE}
+				and ERP_SLIP_YYYY = #{ERP_SLIP_YYYY}
+				and ERP_SLIP_NO = #{ERP_SLIP_NO}
+                
+    </select>
+    
+    <select id="SapPoUrl" resultType="String">
+		SELECT
+		IFNULL(MAX(URL_VALUE),'')AS URL_VALUE 
+		FROM SAP_URL
+		WHERE URL_KEY = #{URL_KEY}
+		AND COMPANY_CODE = #{g_comCd};
+	</select>
+
+	<select id="getSapPoConfig" resultType="String">
+		SELECT 
+		<if test="CONFIG_KEY == 'SAP_PO_PW'">
+			IFNULL(FC_DEC(CONFIG_VALUE, #{AES_DECRYPT}), '') AS CONFIG_VALUE
+		</if>
+		<if test="CONFIG_KEY != 'SAP_PO_PW'">
+			IFNULL(CONFIG_VALUE,'') AS CONFIG_VALUE
+		</if>
+		FROM SAP_CONFIG 
+		WHERE CONFIG_KEY = #{CONFIG_KEY} AND COMPANY_CODE = #{g_comCd};
+	</select>
+	
+	<select id="SapSendCnt" resultType="int">
+		SELECT
+		IFNULL(CONFIG_VALUE, 0)AS SEND_CNT 
+		FROM SAP_CONFIG
+		WHERE CONFIG_KEY = 'SEND_CNT'
+		AND COMPANY_CODE = #{g_comCd};
+	</select>
+
+</mapper>

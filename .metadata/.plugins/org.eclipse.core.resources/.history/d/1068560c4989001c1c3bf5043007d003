@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<!--     <meta charset="utf-8" /> -->
+</head>
+  <body>
+   <div  :class="{'d-flex': curItem.TYPE =='GAS' }" class="d-none flex-column flex-md-row" th:fragment="html">
+   
+   
+       <!-- begin modal 법인카드-->
+                         <div class="col-12 col-md-6  p-0 flex-column d-flex justify-content-center bg-light border-right" :id="pgmid+'bizcard-clon-gas'">
+                           <div v-show="distanceCalcType == '1' " :class="{'d-flex' : distanceCalcType == '1'  }"  class = " align-items-center border  h-100  justify-content-center " >
+                                  <h1> 직접입력    </h1>                  
+                           </div>
+                           <div v-show="distanceCalcType == '2' "  class = "tmap">
+                                <!-- 지도 -->
+                                 <div id="map_wrap" class="map_wrap">
+                                    <div v-show="!($options.filters.isNotEmpty(curItem.FILE_NO))" :id="pgmid+'map_div'"></div>
+                                    <img v-if="curItem.TYPE =='GAS'" v-show="$options.filters.isNotEmpty(curItem.FILE_NO)"  class="img-fluid receipt-img-box w-100 " :src="curItem.FILE_NO" >
+                                 </div>
+                            </div>
+                            <!-- 계기판  -->
+                            <div :class="{'d-flex' : distanceCalcType == '3' }" v-show="distanceCalcType == '3'" class="flex-column h-100 odometer">
+               			        <ec-img ref="odoimg" v-show="$options.filters.isNotEmpty(curItem.FILE_NO)  &&  curItem.TYPE =='GAS' " 
+							       source="GS" @edited="receiptimgedited" @clickmainfile="receiptClickMainFile"
+							       autoprocess="false" @successupload="saveServer" > 
+							    </ec-img>                 
+                             </div>
+                             
+                            <!-- GPS  -->
+                            <div  v-show="curItem.TYPE =='GAS' && distanceCalcType == '4' && curItem.FILE_NO !='' "  class="mobile-gps">
+<!--                                  <div class=""> -->
+<!-- 	                                 <div class="btn border rounded-0 p-5">출발</div><span class="ml-3">{{curItem.START_ADDR}}</span> -->
+<!-- 	                             </div>   -->
+<!-- 	                             <div class=""> -->
+<!-- 	                                 <div class="btn border rounded-0 p-5">도착</div><span class="ml-3">{{curItem.END_ADDR}}</span> -->
+<!-- 	                              </div>      -->
+                                 <img class="img-fluid receipt-img-box w-100 "  :src="curItem.TYPE =='GAS' && distanceCalcType == '4' ? curItem.FILE_NO : '' " >
+                             </div>                               
+                         </div>
+                         
+                         <div class="col-12 col-md-6 d-flex flex-column p-25" :id="pgmid+'gasmodalbody'" style="height:650px;">
+			               
+			               <div class="text-nowrap modal-header d-flex flex-column p-0">
+	                          <div class="d-flex w-100 justify-content-between">
+	                                  <div class="d-flex">
+				                          <div  v-show="curItem.SOURCE_TP_NM!=undefined" class="f-title-plane d-flex align-items-center">{{curItem.SOURCE_TP_NM}}&nbsp <span v-show="curItem.INDEX!=undefined">상세</span>
+		                                      <popup-help th:helpkey="${param.pgm_id}+'gasmodalbody'" th:pgmid=${param.pgm_id} th:subname="gasmodalbody"  ></popup-help>
+		                                      <exp-log class="px-0" ref="expLogGas" th:pgmid=${param.pgm_id} subname="log" @clicklog="clickExpDetailLog('expLogGas')" ></exp-log>
+				                          </div>
+			                          </div>
+			                          <a class="close h-100" aria-hidden="true" type="button" data-dismiss="modal"><i class="mi-close mi-3x"></i></a>
+	                          </div>
+	                          <div class="d-flex w-100 flex-wrap  justify-content-between mb-3">
+	                        
+			                        <div class="d-flex align-items-center flex-nowrap  f-s-12">
+			                            <a v-for="item in approveStatus" :class="[{'text-blue  font-weight-bold' : item.CODE == curItem.APPROVE_STATUS},
+			                                                                       ]"   
+			                                                                     class="breadcrumb-item">{{item.NAME}}</a>
+			                        </div>  
+			                        
+		                          <!-- 페이저 -->
+		                          <div  class="d-flex justify-content-end ">
+		                                  <div v-if="curItem.INDEX!=undefined" class="d-flex  m-0" >
+	                                            <div class="badge text-white bg-black-transparent-4 m-3 f-plane p-5"><span class="f-s-12">{{curItem.INDEX+1}}/{{receiptList.length}}</span></div>
+	                                            <a  class="btn btn-white btn-sm border-0" @click="previousItem"><i class="icon-arrow-left"></i></a>
+	                                            <a  class="btn btn-white btn-sm border-0 pr-1" @click="nextItem"><i class="icon-arrow-right"></i></a>
+		                                  </div>
+		                          </div>          
+	                          </div> 
+	                      </div>
+                      <!-- end of header  -->
+		        <hr>                      
+                         
+                         
+                            <div class="h-100 overflow-y ec-scrollbar" >
+                                            <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white label-required">비용 청구자</label>
+                                                <div class="col-9  ec-col-input border-0">
+                                                    <popup-code class="w-100" ref="popupgasemp" :pgmid="pgmid"  pgmnm="비용 청구자" subname="popupgasemp"   name="EMP_NO_GAS" searchname="비용 청구자"  columnlayout="popupemp"   tablename="EMP" @codechanged="empNoChange" required="true"></popup-code>
+                                                </div>
+                                           </div>    
+                                            <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white label-required">증빙일</label>
+                                                <div class="col-9  ec-col-input border-0">
+                                                    <date-new-component-v1 ref="RECEIPT_DT_GAS"  th:pgmid="${param.pgm_id}" subname="RECEIPT_DT_GAS"   required="true" ></date-new-component>
+                                                    
+                                                </div>
+                                           </div>
+                                             <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white label-required">거리계산 방식</label>
+                                                <div class="col-9  ec-col-input border-0">
+                                                   <radio-syscommon ref="EX_DISTANCE_CALC_TP" th:pgmid=${param.pgm_id}    selectid="EX_DISTANCE_CALC_TP" selectname="DISTANCE_TP" clcd="EX_DISTANCE_CALC_TP" @changed="changedDistanceTp"> </radio-syscommon> 
+                                                </div>
+                                           </div>
+                                           <div v-show="distanceCalcType=='2'" class="">
+			                                <div class="ec-grid-row">
+			                                     <label class="col-3  ec-col-label-0 bg-white label-required">출발지</label>
+			                                     <div class="col-9 ec-col-input border-0">
+			                                         <input type="text" name="StartAddr" :id="pgmid+'StartAddr'" :value="curItem.START_ADDR " v-on:keyup.enter="setStartLoc"  class="form-control form-control-sm" /> 
+			                                         <button type="button" class="btn btn-sm btn-white rounded-0 border-dark text-nowrap mr-1 px-1 "    @click="setStartLoc"><i class="icon-magnifier"></i></button>  
+			                                         <a class="  btn btn-sm btn-white rounded-0 text-nowrap"   @click="">경유지 +</a> 
+			                                     </div>
+			                                     
+			                                </div> 
+			                                <div class="ec-grid-row">
+			                                     <label class="col-3  ec-col-label-0 bg-white label-required">도착지</label>
+			                                     <div class="col-9 ec-col-input border-0">
+			                                         <input type="text" name="EndAddr" :id="pgmid+'EndAddr'" :value="curItem.END_ADDR " v-on:keyup.enter="setEndLoc"  class="form-control form-control-sm" /> 
+			                                         <button type="button" class="btn btn-sm btn-white rounded-0 border-dark  text-nowrap mr-1 px-1 "   @click="setEndLoc"><i class="icon-magnifier"></i></button>
+			                                         <a  class="bg-submaintheme btn btn-sm btn-white rounded-0 text-nowrap"   @click="searchPath">길찾기 ></i></a> 
+			                                     </div>
+			                                </div>   
+                                           </div>
+				                            <div  v-show="distanceCalcType == '4' && curItem.FILE_NO !='' "  class="">
+				                                 <div class="ec-grid-row">
+				                                     <label class="col-3  ec-col-label-0 bg-white label-required">출발지</label>
+				<!-- 	                                 <div class="btn border rounded-0 p-5">출발</div><span class="ml-3">{{curItem.START_ADDR}}</span> -->
+				                                     <div class="col-9  ec-col-input border-0">
+				                                        <input type="text" :value="curItem.START_ADDR"  class="form-control form-control-sm" readonly /> 
+				                                     </div> 
+					                             </div>  
+					                             <div class="ec-grid-row">
+					                                 <label class="col-3  ec-col-label-0 bg-white label-required">도착지</label>
+				<!-- 	                                 <div class="btn border rounded-0 p-5">도착</div><span class="ml-3">{{curItem.END_ADDR}}</span> -->
+				                                     <div class="col-9  ec-col-input border-0">
+				                                        <input type="text" :value="curItem.END_ADDR"  class="form-control form-control-sm" readonly /> 
+				                                     </div> 	                                 
+					                              </div>     
+				                             </div>                                            
+                                             <div v-show="distanceCalcType=='3'" class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white label-required">출발/도착(km)</label>
+                                                <div class="col-9  ec-col-input border-0">
+                                                    <input type="text" name="ODOMETER_START" :id="pgmid+'ODOMETER_START'" class="form-control form-control-sm"  :value="curItem.ODOMETER_START  | numberformat('0,000')"  @keyup="odoChange" @change="odoChange"  />~
+                                                    <input type="text" name="ODOMETER_END" :id="pgmid+'ODOMETER_END'" class="form-control form-control-sm"  :value="curItem.ODOMETER_END  | numberformat('0,000')" @keyup="odoChange" @change="odoChange"  />
+                                                </div>
+                                           </div>  
+                                             <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white label-required">거리(km)</label>
+                                                <div class="col-9  ec-col-input border-0">
+                                                    <input type="text" name="DISTANCE" :id="pgmid+'DISTANCE'" class="form-control form-control-sm text-right required"  :value="curItem.DISTANCE  | numberformat('0,000')"   @keyup="changeGasRate" />
+                                                </div>
+                                           </div>    
+                                             <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white label-required">적용율</label>
+                                                <div class="col-9  ec-col-input border-0">
+                                                    <dropdown-tablecommon class="w-100" ref="getGasRate"  th:pgmid=${param.pgm_id}  all="NO" selectid="getGasRate" selectname="GASRATE" tableid="getGasRate" @dropdownchanged="changeGasRate" ></dropdown-tablecommon>
+                                                </div>
+                                           </div>    
+
+
+                                            <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white label-required">비용금액</label>
+                                                <div class="col-9  ec-col-input border-0">
+<!--                                                      <input type="text" name="EXPENSE_AMT_GAS" :id="pgmid+'EXPENSE_AMT_GAS'" class="form-control form-control-sm text-right required"  :value="curItem.EXPENSE_AMT | numberformat('0,000')"  disabled  /> -->
+                                                     <input type="text" name="EXPENSE_AMT_GAS" :id="pgmid+'EXPENSE_AMT_GAS'" class="form-control form-control-sm text-right required"    disabled  />
+                                                </div>
+                                           </div> 
+
+                                            <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white label-required">비용항목</label>
+                                                <div class="col-9  ec-col-input border-0">
+                                                    <popup-code class="w-100" ref="popupexpgas" :pgmid="pgmid"  pgmnm="비용항목" subname="popupexpgas"  name="EXPENSE_CD_GAS"   searchname="비용항목"  columnlayout="popupexpcard"   tablename="EXGAS"  @codechanged="expCdChange" required="true"  ></popup-code>
+                                                </div>
+                                           </div> 
+
+
+                                           <span v-show="receiptbelongtype != '0'">
+                                              <div   class="ec-grid-row">
+                                                 <label class="col-3  ec-col-label-0 bg-white label-required">비용귀속</label>                                                
+                                                <div class="col-9 flex-column  ec-col-input border-0">
+                                                
+                                                  <div class="w-100   p-0 mb-1 d-flex">
+                                                             <dropdown-syscommon  ref="GAS_CCENTER_TP" class="w-100 p-0 flex-shrink-0"  :pgmid="pgmid"  
+                                                                     dropdownlabel=""  selectid="GAS_CCENTER_TP" selectname="GAS_CCENTER_TP" 
+                                                                     clcd="EX_CCENTER_TP"   @changed="ccenterTpChange"></dropdown-tablecommon>
+                                                 </div>
+                                                 <div class="w-100   p-0 mb-1 d-flex">  
+                                                  <span v-show="receiptcosttype=='1'" class="w-100" ><popup-code class="w-100" ref="popupcostcentergas" :pgmid="pgmid"  pgmnm="코스트센터" subname="popupcostcenter-gas"   name="CCTR_CD_GAS" searchname="코스트센터"   columnlayout="popupcostcenter"   tablename="CCTR" @codechanged="costCenterCdChange"  ></popup-code></span>
+                                                  <span v-show="receiptcosttype=='2'" class="w-100" ><popup-code class="w-100" ref="popupprojectgas" :pgmid="pgmid"  pgmnm="프로젝트" subname="popupproject-gas"   name="PROJECT_GAS" searchname="프로젝트"  columnlayout="popupproj"   tablename="PROJ" @codechanged="projectCdChange" ></popup-code></span>
+                                                 </div>
+                                                </div>
+                                           </div> 
+                                           </span>
+
+
+                                            <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white">적요</label>
+                                                <div class="col-9  ec-col-input border-0">
+                                                    <input type="text" name="RMK_GAS" :id="pgmid+'RMK_GAS'" :value="curItem.RMK"  class="form-control form-control-sm " /> 
+                                                </div>
+                                           </div> 
+                                           <div class="ec-grid-row d-none">
+                                             <input type="text" name="StartLon" :id="pgmid+'START_LONG'" class="form-control "  :value="curItem.START_LONG " />
+                                             <input type="text" name="StartLat" :id="pgmid+'START_LAT'" class="form-control "  :value="curItem.START_LAT " />
+                                             <input type="text" name="StartAddr" :id="pgmid+'START_ADDR'" class="form-control "  :value="curItem.START_ADDR "   />
+                                             <input type="text" name="StartDh" :id="pgmid+'START_DH'" class="form-control "  :value="curItem.START_DH "   />
+                                             <input type="text" name="EndLon" :id="pgmid+'END_LONG'" class="form-control "  :value="curItem.END_LONG "  />
+                                             <input type="text" name="EndLat" :id="pgmid+'END_LAT'" class="form-control "  :value="curItem.END_LAT "  />
+                                             <input type="text" name="EndAddr" :id="pgmid+'END_ADDR'" class="form-control "  :value="curItem.END_ADDR " />
+                                             <input type="text" name="EndDh" :id="pgmid+'END_DH'" class="form-control "  :value="curItem.END_DH " />
+										  </div>
+                                    </div>
+				                    <div class="d-flex flex-row btn-row ec-btn-bottom-row">
+		                                <a v-if="curItem.PRIVATE_YN !='1' && curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' && curItem.PRIVATE_YN !='1'"  class="btn ec-btn-bottom w-100  bg-light " @click="newCurItem">신규</a>
+		                                <a v-if="curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' && curItem.PRIVATE_YN !='1'" class="btn ec-btn-bottom w-100  bg-grey-lighter" @click="deleteExpMst(curItem, curItem.INDEX)">삭제</a>
+		                                <a v-if="curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' && curItem.PRIVATE_YN !='1'" class="btn  ec-btn-bottom w-100  btn-maintheme" @click="saveCurItem">저장</a>
+									</div>             
+                                    
+                            </div>
+          <!-- end of popup 법인카드-->    
+   </div> 
+   
+  </body>
+</html>

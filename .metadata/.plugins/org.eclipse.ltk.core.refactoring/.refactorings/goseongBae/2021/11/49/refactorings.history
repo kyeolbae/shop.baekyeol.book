@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Copy element &apos;&apos; to &apos;org.opentutorials.javatutorials.method.Helloworld.numbering()&apos;&#x0D;&#x0A;- Original project: &apos;goseongBae&apos;&#x0D;&#x0A;- Destination element: &apos;org.opentutorials.javatutorials.method.Helloworld.numbering()&apos;&#x0D;&#x0A;- Original element: &apos;org.opentutorials.javatutorials.method.Helloworld.numbering()&apos;" description="Copy method" destination="/src&lt;org.opentutorials.javatutorials.method{Helloworld.java[Helloworld~numbering" element1="/src&lt;org.opentutorials.javatutorials.method{Helloworld.java[Helloworld~numbering" flags="589830" id="org.eclipse.jdt.ui.copy" members="1" policy="org.eclipse.jdt.ui.copyMembers" stamp="1638176238365" version="1.0"/>
+</session>

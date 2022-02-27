@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper
+	namespace="com.ec.eframework.mapper.ex.approve.CommonApproveServiceMapper">
+	
+	
+	<update id="updateReportDetail" >
+    <!-- 프로젝트 -->
+    <if test='TABLE_NAME == "BDGT" '><include refid="updateReportDetailBdgt"></include></if>
+    <!-- 코스트센터 -->
+    <if test='TABLE_NAME == "EXPS" '><include refid="updateReportDetailExps"></include></if>
+    <!-- 전표 acct -->
+    
+    
+    
+  </update>
+  
+  <sql id="updateReportDetailBdgt">
+                     
+ 
+  </sql>
+  <sql id="updateReportDetailExps">
+                     
+         UPDATE EXPENSE_MST 
+         set REPORT_NO = #{REPORT_NO},
+             POSTING_DT = RECEIPT_DT,
+             MOD_DH = #{MOD_DH}
+         where EXPENSE_NO = #{EXPENSE_NO};
+ 
+  </sql>
+    
+</mapper>

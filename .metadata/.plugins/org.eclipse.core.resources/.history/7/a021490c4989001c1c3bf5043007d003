@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id}, report_tp=${param.report_tp} , reqty=${param.reqty})}">
+<head>
+  <meta charset="utf-8" />
+</head>
+
+<body>
+  <section layout:fragment="content">
+
+   <form class="d-flex  flex-column h-100" th:id=${param.pgm_id}  >
+   
+   				<div class="ec-grid-box-search ">
+                     <div class="ec-grid-lastrow">
+                     		<label class="col-lg-1  col-md-2 ec-col-label-first-search justify-content-md-end">회계단위</label>
+                            <div class="col-lg-3 col-md-3 ec-col-input">
+		                          <popup-code ref="PopUpSlipBa" :pgmid="pgmid"  pgmnm="회계단위" subname="GSBER"  name="GSBER" searchname="회계단위"  columnlayout="popupslipba"   tablename="SLIPBA"  required="true"   >
+                            </div>
+                            <label class="col-lg-1 col-md-2 ec-col-label-first-search justify-content-md-end">사원번호</label>
+                            <div class="col-lg-3 col-md-3 ec-col-input">
+ 								  <popup-code ref="popupemp" :pgmid="pgmid"  pgmnm="EMP" subname="popupemp"   name="popupemp" searchname="EMP"  columnlayout="popupemp"   tablename="EMP" ></popup-code>
+                            </div>
+                            <label class="col-lg-1 col-md-2 ec-col-label-first-search justify-content-md-end">코스트센터</label>
+                            <div class="col-lg-3 col-md-3 ec-col-input">
+ 								  <popup-code ref="popupcctr" :pgmid="pgmid"  pgmnm="CCTR" subname="popupcctr"   name="popupcctr" searchname="CCTR"  columnlayout="popupcctr"   tablename="CCTR" ></popup-code>
+                            </div>
+                     </div>
+                     <div class="ec-grid-lastrow">
+                      		<label class="col-lg-1 col-md-2 ec-col-label-first-search justify-content-md-end">계정</label>
+                            <div class="col-lg-3 col-md-3 ec-col-input">
+ 								  <popup-code ref="popupacct" :pgmid="pgmid"  pgmnm="ACCT" subname="popupacct"   name="popupacct" searchname="ACCT"  columnlayout="popupacct"   tablename="ACCT" ></popup-code>
+                            </div>
+                           	<label class="col-lg-1  col-md-2 ec-col-label-first-search justify-content-md-end">예산부서</label>
+                            <div class="col-lg-3 col-md-3 ec-col-input">
+ 								  <popup-code ref="popupbiz" :pgmid="pgmid"  pgmnm="BIZ" subname="popupabiz"   name="popupabiz" searchname="BIZ"  columnlayout="popupbiz"   tablename="BIZ" ></popup-code>
+                           </div>
+                           <label class="col-lg-1  col-md-2 ec-col-label-first-search justify-content-md-end">전표유형</label>
+                            <div class="col-lg-3 col-md-3 ec-col-input">
+ 								  <popup-code ref="popupsliptp" :pgmid="pgmid"  pgmnm="SLIPTP" subname="popupsliptp"   name="popupsliptp" searchname="SLIPTP"  columnlayout="popupsliptp"   tablename="SLIPTP" ></popup-code>
+                           </div>
+                     </div>
+                     <div class="ec-grid-lastrow">
+	                       <label class="col-lg-1  col-md-2 ec-col-label-first-search justify-content-md-end"style="border-bottom:none">전기일</label>
+                           <div class="col-lg-3 col-md-10 ec-col-input"style="border-bottom:none">
+                                  <daterange-new-component th:pgmid="${param.pgm_id}" subname1="SEARCH_FR_DT" subname2="SEARCH_TO_DT"  required="true"  initval1="firstday" initval2="lastday"></daterange-new-component>
+                           </div>
+                           <label class="col-lg-1  col-md-2 ec-col-label-first-search justify-content-md-end" style="border-bottom:none">증빙일</span></label>
+                           <div class="col-lg-4 col-md-10 ec-col-input" style="border-bottom:none">
+                                  <daterange-new-component th:pgmid="${param.pgm_id}" subname1="SEARCH_FR_DT1" subname2="SEARCH_TO_DT2"  required="true"  initval1="firstday" initval2="lastday"></daterange-new-component>
+                           </div>
+                     </div> 
+                     <div class="ec-grid-lastrow border-top"> 
+                  		<label class="col-lg-1  col-md-2 ec-col-label-first-search justify-content-md-end">적요</label>
+                  		<div class="col-lg-3 col-md-4 col-6 justify-content-center ec-col-input">
+                  			<input type="text"  class=" form-control w-100" placeholder="적요헤더"/>
+                 		</div>
+                 		<label class="col-lg-1  col-md-2 ec-col-label-first-search justify-content-md-end">결재상태</label>
+                 		<div class="ec-col-input border-0">
+                   			<radio-syscommon url="/common/syscommon/selectToCommonDropBox" ref="EX_SAP_APPRV_STS" th:pgmid=${param.pgm_id}    selectid="EX_SAP_APPRV_STS" selectname="APPRV_TP" clcd="EX_SAP_APPRV_STS" @changed="changedApprvTp" @complete="completeDistnsCalType"> </radio-syscommon>
+                    	</div>
+                     </div>
+                </div>
+                           <!-- 에이유아이 그리드가 이곳에 생성됩니다. -->
+                <div class="flex-shrink-1 flex-grow-1 h-100">
+                    <grid-r1 ref="gridmaster" :columnlayout="columnlayout" :pgmid="pgmid" subname="gridmaster" buttons=""></grid-r1>  
+                </div> 
+                    
+   </form>
+           
+	  	<!-- ================== BEGIN THIS PAGE JS ================== -->
+ 	<div th:insert="contents/ex/sap/slipapprv-js :: js"></div>  
+   </section>
+
+</body>
+</html>

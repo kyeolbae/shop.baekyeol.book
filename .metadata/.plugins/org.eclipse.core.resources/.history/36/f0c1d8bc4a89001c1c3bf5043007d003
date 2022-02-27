@@ -1,0 +1,38 @@
+# application.yml application.property 보다 먼저 실행됨. 34.80.117.164 35.229.221.36 //  uri: http://host.docker.internal:8888
+---
+spring:
+  profiles: prod, prodaws
+  application:
+     name: configfile-ezacc
+  cloud:
+    config:
+     uri: http://config-service:8888
+     label: main
+---    
+spring:
+  profiles: dev, devmart, devkornes
+  application:
+     name: configfile-ezacc
+  cloud:
+    config:
+     uri: http://localhost:8888
+     label: main
+---    
+spring:
+  profiles: drod
+  application:
+     name: configfile-ezacc
+  cloud:
+    config:
+     uri: http://localhost:8888
+     label: main
+
+---    
+spring:
+  profiles: prodxxxx
+  application:
+     name: configfile-ezacc
+  cloud:
+    config:
+     uri: http://host.docker.internal:8888
+     label: main

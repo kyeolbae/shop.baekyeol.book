@@ -1,0 +1,14 @@
+package org.opentutorials.javatutorials.method;
+
+public class Car {
+	String company = "현대자동차";
+	String model = "그랜져"
+			+ ""
+	
+	
+	public static void main(String[] args) {
+		
+
+	}
+
+}

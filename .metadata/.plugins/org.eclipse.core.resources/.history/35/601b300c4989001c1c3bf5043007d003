@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="utf-8" />
+</head>
+<body>
+   
+<script th:fragment="js">
+
+
+Vue.component('report-bgt-head-emart', { // ==================================================================
+	data: function () {
+		return {
+		id : objId(),
+		Report : [],
+        reportNo : '',
+        reportTp : '',
+        reportTitle : '',
+        reportRmk : '',
+        paySumAmt : '',
+        
+		refHeader : objId(),
+		refMng: objId(),
+		refFile: objId(),
+		}
+		}, props: {pgmid : String ,subname:String, ismobile : String },
+		template:
+		'<div class="h-100">\
+		                 <report-header-comp  :ref="refHeader" v-show="true"  ></report-header-comp> \
+		                 <report-mng-comp :ref="refMng" v-show="true"  >   </report-mng-comp> \
+		                 <div class="w-100 text-right f-maintheme f-subtitle">{{getSumAmt | numberformat("0,000") }}원</div> \
+	                     <div class="d-flex flex-wrap bg-light border-1">\
+	                     		<div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0 "> \
+		                            <div class="col-1 py-2 px-0 text-center ">순번</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">반영월</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">코스트센터</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">예산부서</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">계정</div>\
+		                        </div> \
+		                        <div class="col-12 col-xl-6 p-0 d-flex"> \
+		                            <div class="col-3 py-2 px-0 text-center border-xl-left">예산과목</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">신청금액</div>\
+		                            <div class="col-6 py-2 px-0 text-center border-left">적요</div>\
+		                        </div> \
+	                      </div>\
+	                      <div class="d-flex flex-wrap border-bottom-1 border-left-1 border-right-1" v-for="(item,index) in Report" >\
+	                      	    <div class="col-12 col-xl-6 p-0 d-flex border-bottom border-xl-bottom-0"   >\
+		                            <div class="col-1 py-2 px-0 text-center">{{item.ID}}</div>\
+		                            <div class="col-2 py-2 px-0 text-center border-left">{{item.BDGT_YM}}</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">{{item.CCTR_NM}}</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">{{item.BDGT_DEPT_NM}}</div>\
+		                            <div class="col-3 py-2 px-0 text-center border-left">{{item.ACC_NM}}</div>\
+		                       </div> \
+		                       <div class="col-12 col-xl-6 p-0 d-flex"> \
+			                            <div class="col-3 py-2 px-0 text-center border-xl-left">{{item.BDGT_ACC_NM}}</div>\
+			                            <div class="col-3 py-2 px-0 text-center border-left">{{item.BDGT_AMT}}</div>\
+			                            <div class="col-6 py-2 px-0 text-center border-left">{{item.RMK}}</div>\
+	                           </div> \
+	                      </div>\
+	               <report-file-comp :ref="refFile" v-show="true"  >   </report-file-comp> \
+	    </div>',
+		created () {
+			
+		},
+        computed: {
+            getSumAmt : function(){
+                var t = 0 ;
+                this.Report.forEach(item => {  t = t + item.BDGT_AMT });
+                return t;
+            }, // getSelectedExpTotal	
+        },
+		methods : { 
+			// 필수함수
+			   initData : function() {  // 필수함수
+				   this.$refs[this.refHeader].initData();
+				   this.$refs[this.refMng].initData();
+			   },
+			   setObj : function( o ) { // 필수함수
+				
+			   },   
+			   sendObj: function( o ) {  // 필수함수
+				   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+					return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+					    , ds_report : this.$refs[this.refHeader].getObj() 
+					, ds_files : this.reportFiles
+					}, this.$refs[this.refMng].getObj()   );
+				   },
+			   setReportTp : function( reporttp ) { // 필수함수
+				   this.$refs[this.refMng].searchMng(reporttp);
+			   },	
+			// 필수함수 end
+			
+			search : function(reportNo) {// 필수함수
+				 var param = {
+	                 svcId:"searchr",
+	                 strUrl:"/ex/bgt/req/searchBgt",   //전송 url    
+	                 param : {REPORT_NO : reportNo},
+	                 pCall : this.searchCallback, 
+	                 pLoad : true   ,
+	             };
+	             //트랜젝션 실행
+	             ajaxReadJsonData(param);
+	             console.log(param)
+	       }, // end of searchButtonOnClick
+	       searchCallback : function(svc, data) {
+	    	   console.log(data.ds_detail.data)
+	    	   this.Report = data.ds_detail.data
+	    	   console.log(this.Report.item)
+	       },
+			
+		},//method 
+		
+		mounted: function() { 
+	        var ref = this;
+	        this.search();
+	        this.$nextTick(function () {
+	        	
+	               });   
+		},
+}); // report-bgt-head-emart
+
+
+</script>
+   
+</body>
+</html>
+
+

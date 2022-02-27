@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper
+	namespace="com.ec.eframework.mapper.ex.bgt.ListServiceMapper">
+	
+	
+	   <select id="searchList" resultType="HashMap">
+		 <![CDATA[
+		SELECT
+			ROW_NUMBER() OVER() AS ID,
+			max(A.REPORT_TP) REPORT_TP,
+			max(ert.REPORT_TP_NM) REPORT_TP_NM, 
+			A.REPORT_NO,
+			max(A.REPORT_TITLE) as REPORT_TITLE,
+			max(B.REGR_NM) as REGR_NM,
+			max(B.REGR_DEPT_CD) as REGR_DEPT_CD,
+			max(B.REF_YM) as REF_YM,
+			sum(B.BDGT_AMT) as BDGT_AMT, 
+			max(A.APPROVE_STATUS) as APPROVE_STATUS,
+			max(A.SUBMIT_DH) as SUBMIT_DH,
+			max(A.APPROVE_DH) as APPROVE_DH,
+			max(A.TXT_REF1) as TXT_REF1,
+			max(A.TXT_REF2) as TXT_REF2
+		FROM bdgt_mst B
+		join EXPENSE_REPORT A
+			on A.REPORT_NO = B.REPORT_NO
+			and A.COMPANY_CODE = B.COMPANY_CODE
+		left outer join admin_dept C 
+			on C.COMPANY_CODE = B.COMPANY_CODE
+			and C.DEPT_CD = B.REGR_DEPT_CD
+		left outer join expense_report_type ert
+			on A.COMPANY_CODE = ert.COMPANY_CODE
+			and A.REPORT_TP = ert.REPORT_TP
+		WHERE B.COMPANY_CODE = #{g_comCd}
+			AND B.REF_YM BETWEEN REPLACE_DATE(#{REF_YM_FR},'') AND REPLACE_DATE(#{REF_YM_TO},'')
+			and B.REGR_DEPT_CD = #{g_deptCd}
+			and B.BDGT_AMT >= 0 
+			group by B.REPORT_NO
+			order by B.REPORT_NO DESC
+		;
+        ]]>
+       </select>
+       
+	   
+
+  
+    
+</mapper>

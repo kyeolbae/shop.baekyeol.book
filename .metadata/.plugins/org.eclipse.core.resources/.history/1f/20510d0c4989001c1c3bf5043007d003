@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+ 
+      var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************        
+          
+          data: {  pgmid : "[[${param.pgm_id}]]",
+                   columnlayout : [],
+                   gridView : {},
+          },//data
+          created () { //초기화================================================================
+                this.columnlayout =   
+                   [   
+                	   {dataField : "EMP_NO",  headerText : "사번",   width: 100 , style : "aui_col_center"},
+                       {dataField : "EMP_NM",  headerText : "사원명", width: 100, style : "aui_col_center"}, 
+                       {dataField : "ERP_CCTR_CD",  headerText : "코스트센터코드", width: 120,  style : "aui_col_center"}, 
+                       {dataField : "CCTR_NM", headerText : "코스트센터명",  width : 120,  style : "aui_col_center"},
+                       {dataField : "EXPENSE_NM",  headerText : "비용항목", width: 120, style : "aui_col_center"},
+                       {dataField : "POSTING_DT", headerText : "전기일",  width : 120, style : "aui_col_center", dataType : "date", formatString : "yyyy-mm-dd"},
+                       {dataField : "ERP_SLIP_NO",  headerText : "전표번호", width: 120,  style : "aui_col_center"}, 
+                       {dataField : "TAX_CD",  headerText : "세금코드", width: 120,  style : "aui_col_center"},
+                       {dataField : "RECEIPT_DT",  headerText : "사용일", width: 120,  style : "aui_col_center", dataType : "date", formatString : "yyyy-mm-dd"},
+                       {dataField : "RECEIPT_TS",  headerText : "사용시간", width: 130,  style : "aui_col_center"},
+                       {dataField : "CANCEL_YN",  headerText : "취소구분", width: 80,  style : "aui_col_center"},
+                       {dataField : "CURRENCY_CD",  headerText : "화폐", width: 80, style : "aui_col_center"},
+                       {dataField : "SUPPLY_AMT",  headerText : "공급가액", width: 100,  formatString : "#,###", dataType : "numeric" ,  style : "aui_col_right"},
+                       {dataField : "VAT_AMT",  headerText : "부가세", width: 100,  formatString : "#,###", dataType : "numeric" ,  style : "aui_col_right"},
+                       {dataField : "ETC_AMT",  headerText : "봉사료", width: 120,  formatString : "#,###", dataType : "numeric" ,  style : "aui_col_right"},
+                       {dataField : "TOT_AMT",  headerText : "총지급액", width: 100,  formatString : "#,###", dataType : "numeric" ,  style : "aui_col_right"},
+                       {dataField : "TAX_TP",  headerText : "과세구분", width: 80, style : "aui_col_center"},
+                       {dataField : "BIZ_NO",  headerText : "사업자번호", width: 120,  style : "aui_col_center"},
+                       {dataField : "BIZ_NM",  headerText : "상호", width: 150,  style : "aui_col_center"},
+                       {dataField : "BIZ_TYPE",  headerText : "업태", width: 120,  style : "aui_col_center"},
+                       {dataField : "BIZ_CATEGORY_CD",  headerText : "업종코드", width: 80,  style : "aui_col_center"},
+                       {dataField : "BIZ_CATEGORY",  headerText : "업종", width: 150,  style : "aui_col_center"},
+                       {dataField : "BIZ_ADDR",  headerText : "주소", width: 200,  style : "aui_col_center"},
+                       {dataField : "CARD_CD",  headerText : "카드번호 내부Key", width: 120,  style : "aui_col_center"},
+                       {dataField : "CARD_NO",  headerText : "카드번호", width: 130,  style : "aui_col_center"},
+                       {dataField : "CARD_BILL_NO",  headerText : "승인번호", width: 120,  style : "aui_col_center"},
+                       {dataField : "OVERSEAS_YN",  headerText : "해외사용", width: 80,  style : "aui_col_center"},
+                       {dataField : "OVERSEAS_CUR_CD",  headerText : "해외화폐코드", width: 80,  style : "aui_col_center"},
+                       {dataField : "OVERSEAS_AMT",  headerText : "외화금액", width: 100,  formatString : "#,###", dataType : "numeric" ,  style : "aui_col_right"},
+                       {dataField : "OVERSEAS_CUR_RATE",  headerText : "환율", width: 100,  formatString : "#,###", dataType : "numeric" ,  style : "aui_col_right"},
+                       {dataField : "OVERSEAS_DH",  headerText : "해외사용일시", width: 120,  style : "aui_col_center", dataType : "date", formatString : "yyyy-mm-dd HH:MM:ss"},
+                       {dataField : "USE_YN",  headerText : "사용여부", width: 80,  style : "aui_col_center"},
+                       {dataField : "EXPENSE_NO",  headerText : "비용처리Key", width: 120,  style : "aui_col_center"},
+                       {dataField : "PRIVATE_YN",  headerText : "사적사용", width: 80,  style : "aui_col_center"},
+                       {dataField : "PRIVATE_RMK",  headerText : "사적사용내역", width: 120,  style : "aui_col_center"},
+                       {dataField : "EVID_NO",  headerText : "증빙문서번호", width: 150,  style : "aui_col_center"},
+                       
+                       
+                ] ;//columnlayout
+                  
+          }, // created       
+          methods : {  // ======================================================================================
+              searchButtonOnClick : function() {
+              
+                            var param = {
+                                svcId:"search",
+                                strUrl:"/ec/ex/ledger/deptreceipt/search",   //전송 url    
+                                inDs :  "" ,  
+                                param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+                                pCall : this.tranCallBack, 
+                                pLoad : true          
+                            };
+                            //트랜젝션 실행
+                            ajaxReadJsonData(param);
+                      }, // end of searchButtonOnClick
+              
+                      
+                tranCallBack : function(svcId, data, errCd, msgTp, msgCd, msgText) { //******************************
+                      if (svcId=="search"){
+                          this.$refs.griddeptreceipt.setGridData(data["ds_master"]['data']);
+                      } // end if
+                    },  // tranCallBack
+                    
+          }, // end of methods
+
+          mounted: function() {
+             var ref = this;
+             this.$nextTick(function () {
+                   ref.gridView = ref.$refs.griddeptreceipt.myGridID;
+                   // pk컬럼(신규는 가능, update불가)
+                  // auiSetAddedRowEnabledCell(ref.gridView,['MNG_CD']);
+              });
+             
+//**********************************************************************************************              
+             vueArr.push(this);
+            },
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

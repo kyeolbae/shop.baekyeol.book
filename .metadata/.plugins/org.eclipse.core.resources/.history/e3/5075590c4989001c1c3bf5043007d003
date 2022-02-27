@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id}, subparam=${param.subParam})}">
+<head>
+  <meta charset="utf-8" />
+  <script>
+		$(function(){ 
+		  //initMultiCards();
+		});
+  </script>
+<!--   임시 , 각메뉴에 필요한 js include  필수항목 체크-->
+      
+</head>
+
+<body>
+  <section layout:fragment="content">
+   
+    <form class="d-flex   h-100"  th:id=${param.pgm_id} >
+                    <drop-file-modal  ref="dropfile" :pgmid="pgmid" subname="fileupload" pgmnm="파일 업로드"  url="ec/fi/slip/slipmst/savefiles"></drop-file-modal>   
+                    <div class="d-flex flex-column h-100" :id="pgmid+'left'">       
+                                       
+                                       <div class="ec-grid-box-search ">
+                                            <div class="ec-grid-row">
+                                                <label class="col-lg-1 col-md-2 ec-col-label-first justify-content-md-end">작성자</label>
+                                                <div class="col-lg-2 col-md-4 ec-col-input">
+                                                    <input type="text" name="USER_NM" th:id="${param.pgm_id}+'USER_NM'" class="form-control form-control-sm ec-max-width-100" th:value="${session.g_userNm}" disabled="disabled" /> 
+                                                    <input type="hidden" name="__rowStatus"  th:id="${param.pgm_id}+'__rowStatus'"  class="form-control form-control-sm"  disabled="disabled" /> 
+                                                </div>
+                                                <label class="col-lg-1 col-md-2 ec-col-label justify-content-md-end"><span class="text-danger">*</span>전기일</label>
+                                                <div class="col-lg-2 col-md-4 ec-col-input">
+                                                    <date-new-component-v1 ref="postingdate" th:pgmid="${param.pgm_id}" subname="POSTING_DT"  required="true"  initval="today"></date-new-component>
+                                                </div>
+                                                <label class="col-lg-1 col-md-2 ec-col-label justify-content-md-end">전표번호</label>
+                                                <div class="col-lg-5 col-md-10 ec-col-input">
+                                                    <input type="text" class="form-control form-control-sm ec-max-width-100" th:id="${param.pgm_id}+'SLIP_NO'"  name="SLIP_NO"  disabled="disabled" />
+                                                </div>
+                                            </div>
+                                            <div class="ec-grid-row">
+                                                <label class="col-lg-1 col-md-2 ec-col-label-first justify-content-md-end">전표유형</label>
+                                                <div class="col-lg-2 col-md-4 ec-col-input">
+<!--                                                <dropdown-syscommon class="w-100" th:pgmid=${param.pgm_id} selectid="SLIP_TP" selectname="SLIP_TP" clcd="SLIP_CL"></dropdown-syscommon>  -->
+                                                    <dropdown-common th:pgmid=${param.pgm_id}  selectid="SLIP_TP" selectname="SLIP_TP" clcd="SLIP_CL" ></dropdown-common>
+                                                </div>
+                                                <label class="col-lg-1 col-md-2 ec-col-label justify-content-md-end"><span class="text-danger">*</span>적요</label>
+                                                <div class="col-lg-5 col-md-4 ec-col-input">
+                                                    <input type="text" name="SLIP_RMK" th:id="${param.pgm_id}+'SLIP_RMK'"  
+                                                             data-parsley-trigger="keyup" data-parsley-maxlength="100"  data-parsley-required="true"
+                                                             class="form-control form-control-sm" /> 
+                                                </div>
+                                                <div class="col-lg-3 col-md-12 ec-col-input justify-content-center">
+                                                        <div class="checkbox checkbox-css custom-control custom-checkbox d-flex align-items-center justify-content-center">
+                                                          <input type="checkbox" class=""   th:id="${param.pgm_id}+'POSTING_YN'" name="POSTING_YN" >
+                                                          <label class="custom-control-label" th:for="${param.pgm_id}+'POSTING_YN'"><h4 class="m-0">기표</h4></label>
+                                                          <popup-help  th:helpkey="${param.pgm_id}+'기표'" th:pgmid=${param.pgm_id} th:subname="기표"  ></popup-help>
+                                                       </div>
+                                                </div>      
+                                            </div>
+                                            <div class="ec-grid-lastrow">
+                                                <label class="col-lg-1  col-md-2 ec-col-label-first justify-content-md-end">증빙일</label>
+                                                <div class="col-lg-2 col-md-4 ec-col-input">
+                                                    <date-new-component-v1  ref="eviddate"  th:pgmid="${param.pgm_id}" subname="RECEIPT_DT"  ></date-new-component>
+                                                </div>
+                                                <label class="col-lg-1 col-md-2 ec-col-label justify-content-md-end">증빙유형</label>
+                                                <div class="col-lg-2 col-md-4 ec-col-input">
+                                                    <dropdown-syscommon class="w-100" th:pgmid=${param.pgm_id} all="YES" selectid="EVID_CD" selectname="EVID_CD" clcd="EVID_CD"></dropdown-syscommon>
+                                                </div>
+                                                <label class="col-lg-1 col-md-2 ec-col-label justify-content-md-end">전자증빙</label>
+                                                <div class="col-lg-2 col-md-4 ec-col-input">
+                                                    <input type="text" name="EVID_NO"  th:id="${param.pgm_id}+'EVID_NO'"   class="form-control form-control-sm" 
+                                                       data-parsley-trigger="keyup" data-parsley-maxlength="100" /> 
+                                                </div>
+                                                <label class="col-lg-1  col-md-2 ec-col-label justify-content-md-end">변경일</label>
+                                                <div class="col-lg-2 col-md-4 ec-col-input">
+                                                    <input type="text" name="REGR_DH" th:id="${param.pgm_id}+'REGR_DH'"  class="form-control form-control-sm" disabled="disabled" /> 
+                                                </div>      
+                                            </div>
+                                        </div>                              
+                                        <!-- end ec-grid-box  -->
+                    
+                    
+                    <!-- 전표행 그리드 -->
+                    <div class="flex-shrink-1 flex-grow-1 h-100">
+                        <grid-crud  ref="gridslipitem" :columnlayout="columnlayout" :footerlayout="footerLayout" :pgmid="pgmid" subname="gridslipitem" autoincrementcolname="SLIPITEM_NO" tooltip="true"  :newitem="newgriditemslipitem" buttons="cd" @deletegridrow="deleteGridRow" ></grid-crud> 
+                    </div>
+                    <!-- 계정과목 팝업                     -->
+                    <popup-gridcode ref="codepopupacc" :pgmid="pgmid"  pgmnm="계정과목" subname="codepopupacc"  name="ACC_CD" searchname="계정과목명/코드"  columnlayout="popupacct"  @selectcode="selectAccCode"  tablename="ACCT"  :parentgrid="gridslipitem"></popup-gridcode>
+					<!-- 관리항목 팝업(동적)                     -->
+					<popup-gridcode v-for="item in codemngs" :key="item.MNG_CD" :ref="item.COLUMN_LAYOUT + item.MNG_CD"  
+					                :pgmid="pgmid"  :pgmnm="item.MNG_NM" :subname="item.COLUMN_LAYOUT" @selectcode="selectMngCode"  name="ACC_CD" :searchname="item.MNG_NM" 
+					                :columnlayout="item.COLUMN_LAYOUT"  :tablename="item.TABLE_CD"  :parentgrid="gridslipitemmng"  :codecl="item.COMM_CL_CD" ></popup-gridcode>
+
+                     <!-- 전표행 입력 모달                    -->
+                    <div class="modal" data-backdrop="false" :id="pgmid+'modal_form_slipitem'"   >
+                                <div class="modal-dialog modal-lg modal-dialog-centered ui-draggable" >
+                                    <div class="modal-content modal-content d-flex flex-column " style="height:600px">
+                                        <div class="modal-header ec-modal-header ui-draggable-handle">
+                                            <h4 class="modal-title">관리항목 등록</h4>
+                                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true" @click="clearGridOfModal();"><i class="icon-cross2"></i></button>
+                                        </div>
+                                        <div class="modal-body  d-flex flex-column h-100  ">
+					                           <div class="ec-grid-box-search ">
+						                           <div class="ec-grid-lastrow">
+						                               <label class="col-lg-3  col-md-2 ec-col-label-first-search justify-content-md-end">계정과목명/코드/행번</label>
+						                               <div class="col-lg-6 col-md-10 ec-col-input">
+				                                            <input type="text" name="ACC_NM" id="ACC_NM" class="form-control form-control-sm "  disabled="disabled" /> 
+				                                            <input type="text" name="ACC_CD" id="ACC_CD" class="form-control form-control-sm " disabled="disabled"/> 
+                                                            <input type="hidden" name="DRCR" id="DRCR" class="form-control form-control-sm " disabled="disabled"/> 
+                                                            <input type="text" name="SLIPITEM_NO" id="SLIPITEM_NO" class="form-control form-control-sm " disabled="disabled" placeholder="전표행번"/> 
+						                               </div>
+						                               <div class="col-lg-3 col-md-10 ec-col-input btn-group">
+								                             <button type="button" class="btn btn-sm btn-white" @click="refreshAccMngList();">새로고침</button> 
+		                                                     <button type="button" class="btn btn-sm btn-white" data-dismiss="modal" @click="saveAccMngList();">저장&닫기</button>
+						                               </div>
+						                           </div>
+					                           </div>                                      
+                                              
+                                              
+                                            <!-- grid -->
+                                                  <p/>
+                                                 <div class="flex-shrink-1 flex-grow-1 h-100 "  >
+                                                    <grid-crud ref="gridslipitemmng" :columnlayout="columnlayoutslipitemmng" :pgmid="pgmid" subname="gridslipitemmng"  :newitem="newgriditemslipitemmng"  buttons=""></grid-crud> 
+                                                 </div>
+                                        </div>
+                                     <!--end of modal body -->
+                                    </div>
+                                </div>
+                    </div>  
+                    </div>
+                    
+                    <div class="d-flex h-100  " :id="pgmid+'right'">
+                        <ec-img class="border w-100" ref="slipimg"  source="ET" > </ec-img>
+                    </div>                  
+                    <!-- 전표행 입력 모달  end -->
+<!-- 전표번호 조회 모달 -->
+ 
+   </form>
+
+           
+	  	<!-- ================== BEGIN THIS PAGE JS ================== -->
+ 	<div th:insert="contents/fi/slip/slipmst-js :: js"></div>  
+   </section>
+
+</body>
+</html>

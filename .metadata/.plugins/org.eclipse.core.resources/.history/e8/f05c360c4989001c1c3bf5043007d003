@@ -1,0 +1,114 @@
+<!-- 
+	-- 프로그램명 : 예산관리 / 결재상태 전송 [관리자용]
+	-- 날짜 : 2021.10.19 by hshwang
+	-- 수정 : 
+-->
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+<meta charset="utf-8" />
+<!-- VAN법인카드 -->
+</head>
+<body>
+
+	<section layout:fragment="content">
+
+		<form style="overflow: auto" class="d-flex  flex-column h-100 align-items-center" th:id=${param.pgm_id}>
+			<div class="ec-grid-box-search w-100">
+			
+				<div class="ec-grid-row" :id="pgmid+'REQ'">
+					<label class="col-lg-3 col-12 ec-col-label-first-search justify-content-center">추가예산(상신)</label>
+					<div class="col-lg-2 col-0 ec-col-input"></div>
+					<div class="col-lg-2 col-md-4 col-6 justify-content-center ec-col-input">
+						<input type="text" name="REQ_RPT_NO" :id="pgmid+'REQ_RPT_NO'" class="col form-control w-100 required" placeholder="Report No" />
+					</div>
+					<div class="col-lg-2 col-md-4 col-6 justify-content-center ec-col-input">
+						<input type="text" name="REQ_STAT" :id="pgmid+'REQ_STAT'" class="col form-control w-100" placeholder="결재상태"/>
+					</div>
+					<div class="col-lg-1 col-md-4 col-6 justify-content-center ec-col-input">
+						<input type="text" name="REQ_TEST" :id="pgmid+'REQ_TEST'" class="col form-control w-100" placeholder="테스트"/>
+					</div>
+					<div class="col-lg-2 col-md-4 col-12 justify-content-center ec-col-input">
+						<a type="button" v-on:click="bdtToSapOnclick('REQ')" class="btn btn-default btn-block">SAP 전송</a>
+					</div>
+				</div>
+				
+				<div class="ec-grid-row" :id="pgmid+'TRS'">
+					<label class="col-lg-3 col-12 ec-col-label-first-search justify-content-center">예산전용(상신)</label>
+					<div class="col-lg-2 col-0 ec-col-input"></div>
+					<div class="col-lg-2 col-md-4 col-6 justify-content-center ec-col-input">
+						<input type="text" name="TRS_RPT_NO" :id="pgmid+'TRS_RPT_NO'" class="col form-control w-100 required" placeholder="Report No" />
+					</div>
+					<div class="col-lg-2 col-md-4 col-6 justify-content-center ec-col-input">
+						<input type="text" name="TRS_STAT" :id="pgmid+'TRS_STAT'" class="col form-control w-100" placeholder="결재상태" />
+					</div>
+					<div class="col-lg-1 col-md-4 col-6 justify-content-center ec-col-input">
+						<input type="text" name="TRS_TEST" :id="pgmid+'TRS_TEST'" class="col form-control w-100" placeholder="테스트"/>
+					</div>
+					<div class="col-lg-2 col-md-4 col-12 justify-content-center ec-col-input">
+						<a type="button" v-on:click="bdtToSapOnclick('TRS')" class="btn btn-default btn-block">SAP 전송</a>
+					</div>
+				</div>
+				
+				<div class="ec-grid-row" :id="pgmid+'FWD'">
+					<label class="col-lg-3 col-12 ec-col-label-first-search justify-content-center">예산이월(상신)</label>
+					<div class="col-lg-2 col-0 ec-col-input"></div>
+					<div class="col-lg-2 col-md-4 col-6 justify-content-center ec-col-input">
+						<input type="text" name="FWD_RPT_NO" :id="pgmid+'FWD_RPT_NO'" class="col form-control w-100 required" placeholder="Report No" />
+					</div>
+					<div class="col-lg-2 col-md-4 col-6 justify-content-center ec-col-input">
+						<input type="text" name="FWD_STAT" :id="pgmid+'FWD_STAT'" class="col form-control w-100" placeholder="결재상태" />
+					</div>
+					<div class="col-lg-1 col-md-4 col-6 justify-content-center ec-col-input">
+						<input type="text" name="FWD_TEST" :id="pgmid+'FWD_TEST'" class="col form-control w-100" placeholder="테스트"/>
+					</div>
+					<div class="col-lg-2 col-md-4 col-12 justify-content-center ec-col-input">
+						<a type="button" v-on:click="bdtToSapOnclick('FWD')" class="btn btn-default btn-block">SAP 전송</a>
+					</div>
+				</div>
+				
+				<div class="ec-grid-row" :id="pgmid+'APR'">
+					<label class="col-lg-3 col-12 ec-col-label-first-search justify-content-center">예산 결재상태<br>(상신/결재/반려/회수)</label>
+					<div class="col-lg-2 col-0 ec-col-input"></div>
+					<div class="col-lg-2 col-md-4 col-6 justify-content-center ec-col-input">
+						<input type="text" name="APPRV_RPT_NO" :id="pgmid+'APPRV_RPT_NO'" class="col form-control w-100 required" placeholder="Report No" />
+					</div>
+					<div class="col-lg-2 col-md-4 col-6 justify-content-center ec-col-input">
+						<input type="text" name="APPRV_STAT" :id="pgmid+'APPRV_STAT'" class="col form-control w-100" placeholder="결재상태" />
+					</div>
+					<div class="col-lg-1 col-md-4 col-6 justify-content-center ec-col-input">
+						<input type="text" name="APPRV_TEST" :id="pgmid+'APPRV_TEST'" class="col form-control w-100" placeholder="테스트"/>
+					</div>
+					<div class="col-lg-2 col-md-4 col-12 justify-content-center ec-col-input">
+						<a type="button" v-on:click="bdtToSapOnclick('APR')" class="btn btn-default btn-block">SAP 전송</a>
+					</div>
+				</div>
+				
+				<div class="ec-grid-row" :id="pgmid+'CHIT'">
+					<label class="col-lg-3 col-12 ec-col-label-first-search justify-content-center">전표 결재상태<br>(상신/결재/반려/회수)</label>
+					<div class="col-lg-2 col-md-4 col-6 justify-content-center ec-col-input">
+						<input type="text" name="CHIT_NO" :id="pgmid+'CHIT_NO'" class="col form-control w-100 required" placeholder="Report No" />
+					</div>
+					<div class="col-lg-2 col-md-4 col-6 justify-content-center ec-col-input">
+						<input type="text" name="CHIT_STAT" :id="pgmid+'CHIT_STAT'" class="col form-control w-100" placeholder="결재상태" />
+					</div>
+					<div class="col-lg-2 col-md-4 col-6 justify-content-center ec-col-input">
+						<input type="text" name="ZZAPPRV_DATE" :id="pgmid+'ZZAPPRV_DATE'" class="col form-control w-100" placeholder="결재일" />
+					</div>
+					<div class="col-lg-1 col-md-4 col-6 justify-content-center ec-col-input">
+						<input type="text" name="ZZAPPRV_TIME" :id="pgmid+'ZZAPPRV_TIME'" class="col form-control w-100" placeholder="결재시간" />
+					</div>					
+					<div class="col-lg-2 col-md-4 col-12 justify-content-center ec-col-input">
+						<a type="button" v-on:click="bdtToSapOnclick('CHIT')" class="btn btn-default btn-block">SAP 전송</a>
+					</div>
+				</div>
+				
+										
+			</div>
+		</form>
+		<!-- ================== BEGIN THIS PAGE JS ================== -->
+		<div th:insert="contents/ex/bgt/bgt-stat-js :: js"></div>
+	</section>
+
+</body>
+</html>

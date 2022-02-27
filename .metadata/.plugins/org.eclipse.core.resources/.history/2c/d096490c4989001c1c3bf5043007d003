@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+  <meta charset="utf-8" />
+</head>
+
+<body>
+  <section layout:fragment="content">
+
+   <form class="d-flex  flex-column h-100" th:id=${param.pgm_id}  >
+   
+                <ex-read-report-v1 :pgmid = "pgmid" ref="report" ></ex-read-report-v1>
+   				<div class="ec-grid-box-search ">
+                           <div class="ec-grid-lastrow">
+                               <label class="col-lg-1  col-md-2 ec-col-label-first-search justify-content-md-end">년월<span class="text-danger">*</span></label>
+                               <div class="col-lg-4 col-md-10 ec-col-input">
+                                   <daterange-m-component-v1 format="YYYY-MM" th:pgmid="${param.pgm_id}" subname1="REF_YM_FR" subname2="REF_YM_TO"  required="true"  initval1="firstday" initval2="lastday"></daterange-m-component-v1>
+                           	   </div>
+                               <label class="col-lg-1  col-md-2 ec-col-label-first-search justify-content-md-end">신청부서</label>
+                               <div class="col-lg-2 col-sm-4 ec-col-input" style=" border:none">
+                                    <input type="text" th:value="${session.g_deptNm}"  class="col form-control form-control-sm " readonly/> 
+                               </div>
+                               <div class="col-lg-2 col-sm-4 ec-col-input" style=" border:none">
+                                    <input type="text" th:value="${session.g_deptCd}"  class="col form-control form-control-sm " readonly/>
+                               </div>                           
+                           </div>
+                </div>
+                           <!-- 에이유아이 그리드가 이곳에 생성됩니다. -->
+                    <div class="flex-shrink-1 flex-grow-1 h-100">
+                        <grid-r1 ref="gridmaster" :columnlayout="columnlayout" :pgmid="pgmid" subname="gridmaster" buttons="">
+<!--                                <a class="btn" @click="clickReport"> -->
+<!--                                   리포트 상세보기 -->
+<!--                                </a> -->
+                        </grid-r1>
+                        
+                    </div>
+   </form>
+           
+	  	<!-- ================== BEGIN THIS PAGE JS ================== -->
+ 	<div th:insert="contents/ex/bgt/bgt-list-js :: js"></div>  
+   </section>
+
+</body>
+</html>

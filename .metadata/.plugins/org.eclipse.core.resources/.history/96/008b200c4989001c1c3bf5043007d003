@@ -1,0 +1,28 @@
+
+package com.ec.eframework.mapper.ex.common;
+
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.ec.eframework.config.db.FirstMapper;
+import com.ec.eframework.mapper.basic.GridServiceMapper;
+
+@FirstMapper
+public interface ExCommonSelectServiceMapper extends GridServiceMapper  {
+	
+	//보고서 유형
+	List<HashMap<String , String >> getExReportTp(Map map); // 
+	
+	//마감 유형
+	List<HashMap<String , String >> getExClosingTp(Map map); // 
+	//팝업 추천
+	List<HashMap<String , String >> getExPopupRec(Map map); // 
+	//팝업 최근
+	List<HashMap<String , String >> getExRecentItemsByBizNo(Map map); // 
+	
+	//파일리스트
+	List<HashMap<String , String >> getImgList(Map map); // 
+	
+}

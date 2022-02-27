@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+    
+      var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************        
+          
+          data: {  pgmid : "[[${param.pgm_id}]]",
+                   columnlayout : [],
+                   gridView : {},
+          },//data
+          created () { //초기화================================================================
+                //그리드 초기화
+//                initGridDropDownBox("board_tp","/common/syscommon/selectSystemCommonCode", auiDropDownCallBack,{ COMM_CL_CD:"BOARD_TYPE" });
+                this.columnlayout =   
+                   [   
+                       
+                	   {dataField : "BOARD_TITLE",   headerText : "제목",editable : false,  style : "aui_col_left", width: 800},	
+                   	   {dataField : "FILE_YN",   headerText : "첨부", editable : false, width: 50, renderer : {type : "TemplateRenderer"},labelFunction : this.icon },
+                   	   {dataField : "POPUP_YN",   headerText : "HOME", editable : false, width: 50,renderer : { type : "CheckBoxEditRenderer",unCheckValue : "0", checkValue : "1" ,  checkableFunction : function(){return false;} ,  disabledFunction : function(){return true;} }},
+                   	   {dataField : "REGR_DH",   headerText : "등록일시",  width: 150,editable : false},
+                   	   {dataField : "REGR_NM",   headerText : "등록자", editable : false, width: 120},
+                   	   ] ;//columnlayout
+                  
+          }, // created       
+          methods : {  // ======================================================================================
+        	  icon : function (rowIndex, columnIndex, value, headerText, item) {
+        		  var template =''
+        			  if(value == '1') {
+        			  template ='<a class = "  fas fa-xl fa-paperclip d-block"></a>'
+        			  }
+        			return template;
+        	  },
+        	  
+              searchButtonOnClick : function() {
+              
+                            var param = {
+                                svcId:"search",
+                                strUrl:"/ec/ex/config/board/searchBoardList",   //전송 url    
+                                inDs :  "" ,  
+                                param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+                                pCall : this.tranCallBack, 
+                                pLoad : true          
+                            };
+                            
+                            //트랜젝션 실행
+                            ajaxReadJsonData(param);
+                      }, // end of searchButtonOnClick
+              
+              
+                tranCallBack : function(svcId, data, errCd, msgTp, msgCd, msgText) { //******************************
+                      this.$refs.gridmaster.setGridData(data["ds_master"]['data']);
+                      
+                 },  // tranCallBack
+                    
+          }, // end of methods
+
+          mounted: function() {
+         	 
+             var ref = this;
+             this.$nextTick(function () {
+                   ref.gridView = ref.$refs.gridmaster.myGridID;
+                  
+                   
+          
+                   
+                   
+                   AUIGrid.bind(ref.gridView, "cellDoubleClick", async function(event) {
+                	   console.log("cellDoubleClick")
+                	   
+                	   
+                	   await goMenu('','','EXP_BOARD_REG','3303','',event.item.BOARD_SEQ);
+                       gotoBoardEvent.BOARD_SEQ = event.item.BOARD_SEQ;
+                       window.dispatchEvent(gotoBoardEvent);
+                       
+                       
+                       //    gotoBoardEvent
+                   });
+                   
+                   
+                   
+                   
+                   
+                   
+                   
+                   
+              });
+             
+//**********************************************************************************************              
+             vueArr.push(this);
+            },
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

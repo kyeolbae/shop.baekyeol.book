@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper
+	namespace="com.ec.eframework.mapper.ex.config.BoardServiceMapper">
+	
+	<resultMap id="helptexttype" type="HashMap">
+        <result property="HELP_TEXT" column="HELP_TEXT" jdbcType="CLOB" javaType="java.lang.String" />
+    </resultMap>
+	
+
+	<!-- DataHub Token 등록 -->
+	<insert id="saveBoard">
+	
+        <selectKey  resultType="long" keyProperty="BOARD_SEQ" order="BEFORE">
+             SELECT NEXTVAL(BOARD_SEQ);
+        </selectKey>	
+	
+	
+		INSERT INTO ADMIN_BOARD
+		(
+		BOARD_SEQ,
+		COMPANY_CODE,
+		SYSTEM_CODE,
+		BOARD_TP,
+		BOARD_TITLE,
+		BOARD_CONTENTS,
+		POPUP_YN,
+		USE_YN,
+		REGR_DH,
+		MOD_DH,
+		DEL_DH,
+		REGR_ID,
+        MOD_ID,
+        DEL_ID
+		) VALUES (
+		
+		#{BOARD_SEQ},
+		#{g_comCd},
+		#{g_systemCl},
+		#{BOARD_TP},
+		#{BOARD_TITLE},
+		#{BOARD_CONTENTS},
+		#{POPUP_YN}, 
+		'1',
+		REGR_DH(),
+		null,
+		null,
+		#{g_userId},
+		null,
+		null
+		) 
+		;
+	
+		
+		<if test = 'FILE_LIST != null and FILE_LIST != "" and FILE_LIST.size > 0' >
+		
+		          INSERT INTO admin_board_file(BOARD_NO,FILE_NO,COMPANY_CODE,USE_YN,REGR_DH,MOD_DH,DEL_DH,REGR_ID)
+		                  VALUES 
+		                  <foreach collection="FILE_LIST" item="item" separator=" , " >
+		                      (#{BOARD_SEQ} , #{item.fileNo}, #{g_comCd}, '1', REGR_DH() ,#{MOD_DH},#{DEL_DH},#{g_userId})
+		                  </foreach> 
+		                  ; 
+		</if>
+		
+		
+	</insert>
+	
+	<update id="updateBoard">
+        UPDATE ADMIN_BOARD         
+        SET
+         BOARD_TP= #{BOARD_TP},
+         BOARD_TITLE= #{BOARD_TITLE},
+         BOARD_CONTENTS= #{BOARD_CONTENTS},
+         POPUP_YN= #{POPUP_YN},
+         MOD_DH= REGR_DH(),
+         MOD_ID= #{g_userId}
+        where  BOARD_SEQ = #{BOARD_SEQ};
+     
+		<if test = 'FILE_LIST != null and FILE_LIST != "" and FILE_LIST.size > 0' >
+		
+		          INSERT INTO admin_board_file(BOARD_NO,FILE_NO,COMPANY_CODE,USE_YN,REGR_DH,MOD_DH,DEL_DH,REGR_ID)
+		                  VALUES 
+		                  <foreach collection="FILE_LIST" item="item" separator=" , " >
+		                      (#{BOARD_SEQ} , #{item.fileNo}, #{g_comCd}, '1', REGR_DH() ,#{MOD_DH},#{DEL_DH},#{g_userId})
+		                  </foreach> 
+		                  ; 
+		</if>
+     
+     
+     
+     </update>
+    
+	<delete id="deleteAdminBoard">
+        DELETE  
+        FROM ADMIN_BOARD 
+        where BOARD_SEQ = #{BOARD_SEQ}
+    </delete>
+	
+	
+	 <select id="search" resultType="HashMap">
+		SELECT
+    	A.BOARD_SEQ,
+    	A.BOARD_TP,
+    	A.BOARD_TITLE,
+    	A.BOARD_CONTENTS,
+    	A.POPUP_YN,
+    	A.REGR_DH,
+    	A.MOD_DH,
+    	A.REGR_ID,
+    	B.USER_NM AS REGR_NM,
+    	A.MOD_ID,
+    	B.USER_NM AS MOD_NM
+		FROM ADMIN_BOARD A left outer join  ADMIN_USER B
+		on A.REGR_ID = B.USER_ID 
+		WHERE A.BOARD_SEQ= #{BOARD_SEQ}
+		AND A.COMPANY_CODE = #{g_comCd}
+		AND A.USE_YN = '1'
+	</select> 
+	
+	 <select id="searchfile" resultType="HashMap">
+		SELECT
+    	Q.BOARD_NO,
+    	Q.FILE_NO,
+    	Q.COMPANY_CODE,
+    	Q.USE_YN,
+    	Q.REGR_DH,
+    	Q.MOD_DH,
+    	Q.DEL_DH,
+    	Q.REGR_ID,
+    	W.ORG_FILE_NAME
+		FROM admin_board_file Q , admin_file W
+		WHERE Q.COMPANY_CODE = #{g_comCd}
+		and Q.BOARD_NO = #{BOARD_SEQ}
+		AND Q.FILE_NO = W.FILE_NO
+		AND Q.USE_YN = '1';
+	</select> 
+	<select id="searchBoardList" resultType="HashMap">
+		SELECT ROW_NUMBER() OVER() AS ID,
+		A.COMPANY_CODE,
+    	A.BOARD_SEQ,
+    	A.BOARD_TP,
+    	A.BOARD_TITLE,
+    	A.BOARD_CONTENTS,
+    	A.POPUP_YN,
+    	DATE_FORMAT(A.REGR_DH, '%Y-%m-%d %T') REGR_DH,
+    	A.MOD_DH,
+    	A.REGR_ID,
+    	B.USER_NM AS REGR_NM,
+    	A.MOD_ID,
+    	B.USER_NM AS MOD_NM,
+    	A.USE_YN,
+    	sum(C.USE_YN)>0 as FILE_YN
+		FROM ADMIN_BOARD A  
+		left outer join  ADMIN_USER B
+		on A.REGR_ID = B.USER_ID 
+		left outer join  ADMIN_BOARD_FILE C 
+		on A.BOARD_SEQ = C.BOARD_NO
+		WHERE A.COMPANY_CODE= #{g_comCd}
+		AND A.USE_YN = '1'
+		<if test='REGR_DH_FR !=null and REGR_DH_FR !="" and REGR_DH_TO !=null and REGR_DH_TO !=""'>
+			AND A.REGR_DH BETWEEN REPLACE_DATE(#{REGR_DH_FR},'') AND CONCAT(  REPLACE_DATE(#{REGR_DH_TO},'')   ,'999999')
+		</if>		
+		 <if test='BOARD_TP !=null and BOARD_TP !=""'>
+		   AND  A.BOARD_TP = #{BOARD_TP}
+		 </if>
+		 <if test='CHECKED_ONLY == "true"'>
+		 	AND A.POPUP_YN = '1'
+		 </if>
+		 group by A.BOARD_SEQ 
+		ORDER BY REGR_DH DESC
+		<if test='LIMIT !=null and LIMIT !=""'>
+		 Limit ${LIMIT};
+		</if>
+	</select>
+	
+	<update id="updateBoardfileYn">
+	 	UPDATE ADMIN_BOARD_FILE 
+	 	/* com.ec.eframework.mapper.ex.config.BoardServiceMapper.updateBoardfileYn 2021.10.18 by hshwang */
+		 	SET USE_YN = '0' 
+		 	,DEL_DH = REGR_DH()
+	 	WHERE BOARD_NO = #{BOARD_SEQ} 
+	 	AND COMPANY_CODE = #{g_comCd}
+	 	AND FILE_NO = #{FILE_NO}
+	 	AND REGR_ID = #{g_userId};
+	</update>
+	
+	<update id="updateBoardYn">
+		UPDATE ADMIN_BOARD 
+		/* com.ec.eframework.mapper.ex.config.BoardServiceMapper.updateBoardYn 2021.10.18 by hshwang */
+			SET USE_YN = '0'
+			,DEL_DH = REGR_DH()
+			,DEL_ID = #{g_userId}
+		WHERE BOARD_SEQ = #{BOARD_SEQ} 
+	 	AND COMPANY_CODE = #{g_comCd}
+	 	AND REGR_ID = #{g_userId};
+	 	
+	 	UPDATE ADMIN_BOARD_FILE
+	 	/* com.ec.eframework.mapper.ex.config.BoardServiceMapper.updateBoardYn 2021.10.18 by hshwang */
+		 	SET USE_YN = '0' 
+		 	,DEL_DH = REGR_DH()
+	 	WHERE BOARD_NO = #{BOARD_SEQ} 
+	 	AND COMPANY_CODE = #{g_comCd}
+	 	AND REGR_ID = #{g_userId}; 
+	 	
+	 	<if test = 'FILE_LIST != null and FILE_LIST != "" and FILE_LIST.size > 0' >
+             <foreach collection="FILE_LIST" item="item" separator="  " >
+					UPDATE ADMIN_FILE SET USE_YN = '0', DEL_DH = REGR_DH(), DEL_ID = #{g_userId}
+					/* com.ec.eframework.mapper.ex.config.BoardServiceMapper.updateBoardYn 2021.10.18 by hshwang */
+		            WHERE FILE_NO = #{item.FILE_NO}
+		            AND COMPANY_CODE = #{g_comCd};
+             </foreach>  
+		</if>
+		
+	</update>
+	
+	<select id="searchUserBoardList" resultType="HashMap">
+	SELECT ID
+		/* com.ec.eframework.mapper.ex.config.BoardServiceMapper.searchUserBoardList 2021.11.30 by kbae */
+		,BOARD_SEQ,
+    	BOARD_TITLE,
+    	BOARD_CONTENTS,
+    	POPUP_YN,
+    	DATE_FORMAT(REGR_DH, '%Y-%m-%d') REGR_DH,
+    	REGR_ID,
+    	REGR_NM,
+    	MOD_ID,
+    	MOD_NM,
+    	USE_YN,
+    	FILE_YN
+		FROM (select 
+				ROW_NUMBER() OVER(PARTITION BY POPUP_YN DESC ORDER BY REGR_DH) AS ID,
+				A.COMPANY_CODE,
+		    	A.BOARD_SEQ,
+		    	A.BOARD_TP,
+		    	A.BOARD_TITLE,
+		    	A.BOARD_CONTENTS,
+<!-- 		    	SUBSTRING(A.DISPLAY_FR_DH,1,8) AS DISPLAY_FR_DH, -->
+<!-- 		        CONCAT(SUBSTRING(A.DISPLAY_FR_DH,9,2), '시') AS DISPLAY_FR_HH, -->
+<!-- 		        SUBSTRING(A.DISPLAY_TO_DH,1,8) AS DISPLAY_TO_DH, -->
+<!-- 		        CONCAT(SUBSTRING(A.DISPLAY_TO_DH,9,2), '시') AS DISPLAY_TO_HH, -->
+		    	A.POPUP_YN,
+		    	DATE_FORMAT(A.REGR_DH, '%Y-%m-%d %T') REGR_DH,
+		    	A.MOD_DH,
+		    	A.REGR_ID,
+		    	B.USER_NM AS REGR_NM,
+		    	A.MOD_ID,
+		    	B.USER_NM AS MOD_NM,
+		    	C.USE_YN,
+		    	(count(C.FILE_NO) > 0) as FILE_YN
+			 from 
+				ADMIN_BOARD A  
+				left outer join  ADMIN_USER B 
+				on A.REGR_ID = B.USER_ID 
+				left outer join  ADMIN_BOARD_FILE C 
+				on A.BOARD_SEQ = C.BOARD_NO
+			WHERE A.COMPANY_CODE= #{g_comCd}
+			AND A.USE_YN = '1'		
+			AND  A.BOARD_TP = #{BOARD_TP}
+		<if test='searchKeyword !=null and searchKeyword !=""'>
+		  	AND ${searchType} LIKE CONCAT('%', #{searchKeyword}, '%')
+		</if>
+			GROUP BY BOARD_SEQ
+		<if test='searchLimit != null'>
+	 		LIMIT ${searchStartId}, ${searchLimit}
+	 	</if>
+	 	) t
+		ORDER BY POPUP_YN DESC, ID DESC	
+		<if test='pageLimit !=null and pageLimit !=""'>
+		Limit ${startId}, ${pageLimit};
+		</if>
+		
+	</select>
+	
+	<select id="getPageCount" resultType="HashMap">
+		
+		SELECT count(*) as TOT_CNT 
+		/* com.ec.eframework.mapper.ex.config.BoardServiceMapper.getPageCount 2021.11.30 by kbae */
+			FROM 
+			(
+			select A.BOARD_SEQ
+			from
+				ADMIN_BOARD A
+				left outer join ADMIN_USER B 
+				on A.REGR_ID = B.USER_ID 
+				WHERE COMPANY_CODE= #{g_comCd}
+				AND A.USE_YN = '1'
+				AND A.BOARD_TP = 'NOTICE'
+				<if test='searchKeyword !=null and searchKeyword !=""'>
+			    	AND ${searchType} LIKE CONCAT('%', #{searchKeyword}, '%')
+			 	</if> 
+			 	<if test='searchLimit !=null'>
+			 		LIMIT ${searchStartId}, ${searchLimit}
+			 	</if>
+		 	) t
+			
+			
+	</select>
+	
+	
+</mapper>

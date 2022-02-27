@@ -1,0 +1,158 @@
+<!-- 
+	-- 프로그램명 : 비용관리 / 전자세금계산서
+	-- 날짜 : 2021.08.10 by hshwang
+	-- 수정 : 
+-->
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+<meta charset="utf-8" />
+</head>
+
+<body>
+  <section layout:fragment="content">
+
+	        <form class="d-md-flex h-100 w-100 overflow-y ec-scrollbar" th:id=${param.pgm_id}>
+	              <div id="leftPanel" style="min-width: 450px;">
+		              <div id="div_top" class="ec-grid-box-search" style="height: 220px; min-height: 150px">
+		           		  <div class="ec-grid-row">
+		                      <label class="col-md-2 ec-col-label-search justify-content-md-end">분개유형</label>
+		                      <div class="col-md-10 ec-col-input">
+		                          <popup-code class="w-100" ref="popupjournaltype" :pgmid="pgmid"  pgmnm="분개유형" subname="popupjournaltype"   name="JOURNAL_TYPE" searchname="분개유형"  columnlayout="popupjournaltype"   tablename="TAX" @codechanged="journalTypeChange" required="true"></popup-code>
+		                      </div>
+		                  </div>
+		                  <div class="ec-grid-row h-75 w-100">
+		                        <grid-crud ref="gridmaster" gridcaption="" :columnlayout="columnlayout" :pgmid="pgmid" subname="gridmaster"  :newitem="newgriditem" buttons=""></grid-crud> 
+		                  </div>
+		              </div>
+		              
+		              <!-- 가로 resize bar -->
+								
+							<div id ="div_horizontal" class="note-statusbar">
+								<div class="note-resizebar">
+									<div class="note-icon-bar"></div>
+									<div class="note-icon-bar"></div>
+									<div class="note-icon-bar"></div>
+								</div>
+							</div>
+							
+					<div id="div_bottom">
+					    <div class=" f-subtitle mt-2 d-md-flex">
+					    	<div class="col-12 col-md-5 col-lg-4 d-flex align-items-center">
+								<i class="fa fa-circle text-maintheme f-s-8 mr-2"></i>[자동분개내역]
+					    	</div>
+					    	<div class="d-none d-lg-block col-lg-2">
+					    	</div>
+					    	<div class="col-12 col-md-7 col-lg-6 d-md-flex justify-content-end">
+					    		<div class="col-12 col-md-8 d-flex">
+									<div class="col-5 col-md-5 ec-col-input">
+				                         <input type="text" name="ACCNT_YEAR" id="${param.pgm_id}+'ACCNT_YEAR'" class="form-control form-control-sm" placeholder="회계년도" disabled/>
+				                     </div>
+									<div class="col-7 col-md-7 ec-col-input">
+				                         <input type="text" name="DOC_NO" id="${param.pgm_id}+'DOC_NO'" class="form-control form-control-sm" placeholder="전표번호" disabled/>
+				                     </div>
+					    		</div>
+								<div class="col-12 col-md-4 ec-col-input">
+										<a type="button" v-on:click="createStatement" class="btn btn-default btn-block">전표생성</a>
+								</div>
+					    	</div>
+						</div>       
+			              <div class="ec-grid-box-search ">
+			                  <div class="ec-grid-row">
+			                      <label class="col-md-2 ec-col-label-search justify-content-md-end">전기일/증빙일</label>
+			                      <div class="col-md-5 ec-col-input">
+			                          <input type="text" name="REC_DATE" id="${param.pgm_id}+'REC_DATE'" class="form-control form-control-sm" disabled/>
+			                      </div> 
+			                      <div class="col-md-5 ec-col-input">
+			                          <input type="text" name="DOC_DATE" id="${param.pgm_id}+'DOC_DATE'" class="form-control form-control-sm" disabled/>
+			                      </div>        
+			                  </div>
+			                  
+			                  <div class="ec-grid-row">
+			                      <label class="col-md-2 ec-col-label-search justify-content-md-end">AP계정</label>
+			                      <div class="col-md-5 ec-col-input">
+			                          <input type="text" name="AP_NAME" id="${param.pgm_id}+'AP_NAME'" class="form-control form-control-sm" disabled/>
+			                      </div> 
+			                      <div class="col-md-5 ec-col-input">
+			                          <input type="text" name="AP_CODE" id="${param.pgm_id}+'AP_CODE'" class="form-control form-control-sm" disabled/>
+			                      </div>        
+			                  </div>
+			                  
+			                  <div class="ec-grid-row">
+			                      <label class="col-md-2 ec-col-label-search justify-content-md-end">거래처코드</label>
+			                      <div class="col-md-4 ec-col-input">
+			                          <input type="text" name="BIZ_NO" id="${param.pgm_id}+'BIZ_NO'" class="form-control form-control-sm" disabled/>
+			                      </div>   
+			                      <div class="col-md-4 ec-col-input">
+			                          <popup-code class="w-100" ref="popupbiznm" :pgmid="pgmid"  pgmnm="거래처명" subname="popupbiznm"   name="BIZ_NO" searchname="거래처명"  columnlayout="popupbiznm"   tablename="BIZ" @codechanged="" required="true"></popup-code>
+			                      </div>
+			                      <div class="col-md-2 ec-col-input">
+										<a type="button" v-on:click="registerAccounts" class="btn btn-default btn-block">거래처 등록</a>
+								</div>    
+			                  </div>
+			                  
+			                  <div class="ec-grid-row">
+			                      <label class="col-md-2 ec-col-label-search justify-content-md-end">지급방법</label>
+			                      <div class="col-md-3 ec-col-input">
+			                          <popup-code class="w-100" ref="popuppaymethod" :pgmid="pgmid"  pgmnm="지급방법" subname="popuppaymethod"   name="PAY_METHOD" searchname="지급방법"  columnlayout="popuppaymethod"   tablename="PAYDESC" @codechanged="" required="true"></popup-code>
+			                      </div>
+			                      <div class="col-md-3 ec-col-input">
+			                          <popup-code class="w-100" ref="popuppaycon" :pgmid="pgmid"  pgmnm="지급조건" subname="popuppaycon"   name="PAY_CONDITION" searchname="지급조건"  columnlayout="popuppaycon"   tablename="" @codechanged="" required="true"></popup-code>
+			                      </div>
+			                      <div class="col-md-2 ec-col-input">
+			                          <popup-code class="w-100" ref="popuppayaccnt" :pgmid="pgmid"  pgmnm="지급계좌" subname="popuppayaccnt"   name="PAY_ACCOUNT" searchname="지급계좌"  columnlayout="popuppayaccnt"   tablename="" @codechanged="" required="true"></popup-code>
+			                      </div>  
+								  <div class="col-md-2  ec-col-input">
+			                          <input type="text" name="PAY_DATE" id="${param.pgm_id}+'PAY_DATE'" class="form-control form-control-sm" placeholder="지급예정일"/>
+			                      </div>      
+			                  </div>
+			                  
+			                  <div class="ec-grid-row">
+			                      <label class="col-md-2 ec-col-label-search justify-content-md-end">세금정보</label>
+			                      <div class="col-md-3 ec-col-input">
+			                          <input type="text" name="SUPPLY_VALUE" id="${param.pgm_id}+'SUPPLY_VALUE'" class="form-control form-control-sm" disabled/>
+			                      </div> 
+			                      <div class="col-md-3 ec-col-input">
+			                          <input type="text" name="VAT" id="${param.pgm_id}+'VAT'" class="form-control form-control-sm" disabled/>
+			                      </div>    
+			                      <div class="col-md-4 ec-col-input">
+			                          <popup-code class="w-100" ref="popuptaxcd" :pgmid="pgmid"  pgmnm="세금코드" subname="popuptaxcd"   name="TAC_CODE" searchname="세금코드"  columnlayout="popuptaxcd"   tablename="TAX" @codechanged="" required="true"></popup-code>
+			                      </div>    
+			                  </div>
+								
+			                  <div class="ec-grid-row w-100" style="height: 100px">
+			                      <grid-r1 ref="griddetail" gridcaption="" :columnlayout="columnlayout1" :pgmid="pgmid" subname="griddetail"  :gridprop="gridProps" ></grid-r1>
+			                  </div>  
+			              </div>
+		              </div>
+	              </div>
+	              
+	          		<!-- 세로 resize bar -->
+	              <div id ="div_vertical" class="d-none d-md-block ml-1" style="background-color: rgba(0, 0, 0, 0.02);">
+		              <div class="h-100 d-flex align-items-center" style="cursor:col-resize; padding: 0 2px; border-left: 1px solid #ddd;">
+							<div style="height: 1.25rem; width: 0px; margin-right: 2px; border-right: 1px solid #ddd;"></div>
+							<div style="height: 1.25rem; width: 0px; margin-right: 2px; border-right: 1px solid #ddd;"></div>
+							<div style="height: 1.25rem; width: 0px; margin-right: 2px; border-right: 1px solid #ddd;"></div>
+						</div>
+	              </div>
+	              
+	              <div id="rightPanel" style="width: 500px; min-width: 150px">
+	              	<div class="col-12 p-0 d-flex flex-column w-100" :id="pgmid+'bizcard-clon-receipt'">
+						<div class="receipt-box-modal d-flex flex-column justify-content-center" >
+						    <ec-img ref="receiptimg"  ocryn="true"  v-show="$options.filters.isNotEmpty(curItem.FILE_NO)  &&  curItem.TYPE =='RECEIPT' " 
+						         source="RE" @edited="receiptimgedited" @clickmainfile="receiptClickMainFile"
+						         autoprocess="false"  @multiupload="saveServer"   @autoupload="getImgFilesNo"  @clicktrash="deleteEcImg"> 
+						    </ec-img>
+						</div>
+					</div>
+	              </div>
+			</form>
+		    
+	  	<!-- ================== BEGIN THIS PAGE JS ================== -->
+ 	<div th:replace="contents/ex/sap/tax/sapptax-js :: js"></div>
+ 	
+   </section>
+
+</body>
+</html>

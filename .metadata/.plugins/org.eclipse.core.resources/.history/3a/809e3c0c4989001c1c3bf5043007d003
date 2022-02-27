@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+  <meta charset="utf-8" />
+</head>
+
+<body>
+  <section layout:fragment="content">
+
+  <form class="d-flex  flex-column h-100" th:id=${param.pgm_id}>
+   
+      
+                   <div class="ec-grid-box-search mt-2">
+                           <div class="ec-grid-lastrow">
+                               <label class="col-lg-2  col-md-2 ec-col-label-first-search justify-content-md-end">SOURCE TYPE</label>
+                               <div class="col-lg-2 col-md-10 ec-col-input">
+                                   <dropdown-syscommon th:pgmid=${param.pgm_id}   all="NO" selectid="EX_SOURCE_TP" selectname="SOURCE_TP" clcd="EX_SOURCE_TP"  clcd1="EX_TAX_SOURCE_TP"></dropdown-syscommon> 
+                               </div>
+                           </div> <!-- ec-grid-lastrow -->
+                   </div>   
+                    
+	                    <!-- 에이유아이 그리드가 이곳에 생성됩니다. -->
+	                    <div class="d-flex mb-1" :id="pgmid+'firstgrid'">
+	                        <grid-crud   ref="gridexpsource" gridcaption="소스타입별 계정항목" :columnlayout="columnlayoutexpsource" :pgmid="pgmid" subname="gridexpsource"  buttons="qs"    @searchgridrow="searchExpenseSource()" @savegridrow="saveExpenseSource()"></grid-crud> 
+	                    </div>
+	                    <!-- 에이유아이 그리드가 이곳에 생성됩니다. -->
+	                    <div class="d-flex" :id="pgmid+'secondgrid'">
+	                        <grid-crud  ref="gridexpmng" gridcaption="계정항목 관리항목" :columnlayout="columnlayoutexpmng" :pgmid="pgmid" subname="gridexpmng" buttons="qs"    @searchgridrow="searchExpenseMng()" @savegridrow="saveExpenseMng()" ></grid-crud> 
+	                    </div>
+                    </div>
+   </form>
+           
+	  	<!-- ================== BEGIN THIS PAGE JS ================== -->
+ 	<div th:insert="contents/ex/config/expmngconfig-js :: js"></div>  
+   </section>
+
+</body>
+</html>

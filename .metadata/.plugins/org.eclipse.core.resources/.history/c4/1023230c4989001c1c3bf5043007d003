@@ -1,0 +1,82 @@
+package com.ec.eframework.mapper.ex.expense;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+//@Component
+import org.apache.ibatis.annotations.Mapper;
+
+import com.ec.eframework.config.db.FirstMapper;
+import com.ec.eframework.mapper.basic.GridServiceMapper;
+@FirstMapper
+public interface ExpenseMstServiceMapper extends GridServiceMapper  {
+	//공통 삭제
+	int deleteExpenseItem(Map<String, Object> map);
+	// Card
+	int insertExpenseItemCard(Map<String, Object> map);
+	int updateExpenseItemCard(Map<String, Object> map);
+	
+	// Etax
+	int insertExpenseItemEtax(Map<String, Object> map);
+	int updateExpenseItemEtax(Map<String, Object> map);
+	
+	// Ptax
+	int insertExpenseItemPtax(Map<String, Object> map);
+	int updateExpenseItemPtax(Map<String, Object> map);
+	// Etc
+	int insertExpenseItemEtc(Map<String, Object> map);
+	int updateExpenseItemEtc(Map<String, Object> map);	
+	// 영수증(스캔)
+	int insertExpenseItemReceipt(Map<String, Object> map);
+	int updateExpenseItemReceipt(Map<String, Object> map);
+	// Toll
+	int insertExpenseItemToll(Map<String, Object> map);
+	int updateExpenseItemToll(Map<String, Object> map);	
+	// 가지급금
+	int insertExpenseItemPrepay(Map<String, Object> map);
+	int updateExpenseItemPrepay(Map<String, Object> map);
+	// 선급금
+	int insertExpenseItemPrepaid(Map<String, Object> map);
+	int updateExpenseItemPrepaid(Map<String, Object> map);
+	// GAS
+	int insertExpenseItemGas(Map<String, Object> map);
+	int updateExpenseItemGas(Map<String, Object> map);
+	// TRAVLE
+	int expenseItemTravelNextVal();
+	int insertExpenseItemTravel(Map<String, Object> map);
+	int updateExpenseItemTravel(Map<String, Object> map);	
+	
+	int updateExpenseReport(Object object);
+	int updateExpenseReportCheck(Object object);
+	
+	
+	int savePrivateUse(Map<String, Object> map);
+	int saveCardSharedEmp(Map<String, Object> map);
+	
+	List<HashMap<String , String >> getExpListByReportNo(Map map);
+	List<HashMap<String , String >> getExpAllList(Map map);
+	List<HashMap<String , String >> getMngList(Map map);
+	List<HashMap<String , String >> getExpMngList(Map map);
+	List<HashMap<String , String >> getExpMngLists(Map map); // 전체 리스트 조회
+	List<HashMap<String , String >> getTollList(Map map);
+	List<HashMap<String , String >> getGpsList(Map map);
+	List<HashMap<String , String >> getSplitedExpenseList(Map map);
+	List<HashMap<String , String >> getExpenseFilesByNo(Map map);
+	List<HashMap<String , String >> getExpenseFilesByNos(Map map);
+	
+	List<HashMap<String , String >> getFilesByGroupNo(Map map);
+	List<HashMap<String , String >> getOcrImgByEvidNo(Map map);
+	List<HashMap<String , String >> getExpFileListByReportNo(Map map);
+	List<HashMap<String , String >> getReportMng(Map map);
+	List<HashMap<String , String >> getReportConfig(Map map);
+	
+	
+	List<HashMap<String , String >> getReportMngListByReportNo(Map map);
+	//출장일 중복 확인
+	int getExpTravelDupPeriod(Map map);
+	
+	int provExpToReport(Map<String, Object> map);
+	int ceaseExpToReport(Map<String, Object> map);
+
+}

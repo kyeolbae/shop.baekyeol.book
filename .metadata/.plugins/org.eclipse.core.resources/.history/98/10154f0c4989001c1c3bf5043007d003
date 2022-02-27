@@ -1,0 +1,2528 @@
+<!-- 
+	-- 프로그램명 : 급여관리 / 급여 RC
+	-- 날짜 : 2021.06.28 by hshwang
+	-- 수정 : 
+-->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+	<meta charset="utf-8" />
+</head>
+  <body>
+   <div th:fragment="js">
+    <script type="text/javascript" >
+	  var [[${param.pgm_id}]] = new Vue({
+		  el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************		  
+	 	  
+		  data: {  pgmid : "[[${param.pgm_id}]]",
+			       columnlayout : [],
+			       gridProps : {editable : false}, 
+			       newgriditem : {} ,
+			       gridView : '',
+			       timerId : 0, //master-detail구조에서만 사용, 민감도
+			       masterBeforeRowIndex : 0, //master-detail구조에서만 사용
+			       masterBeforeColIndex : 0, //master-detail구조에서만 사용
+			       tempCurItem : {},
+			       curItem : {},
+			       fileList : [],
+			       
+			       T_HEADER : [] ,
+			       T_VAT : [],
+			       T_ITEM : [],
+			      
+			      reportJson : {
+			    	  "report": {
+			    		    "name": "reportRoot",
+			    		    "paperSize": "A4",
+			    		    "paperWidth": "210mm",
+			    		    "paperHeight": "297mm",
+			    		    "marginLeft": "12mm",
+			    		    "marginRight": "12mm",
+			    		    "marginTop": "12mm",
+			    		    "marginBottom": "12mm"
+			    		  },
+			    		  "page": {
+			    		    "name": "reportPage",
+			    		    "pageHeader": {
+			    		      "name": "pageHeader",
+			    		      "height": 0
+			    		    },
+			    		    "reportHeader": {
+			    		      "name": "reportHeader",
+			    		      "height": 0,
+			    		      "visible": false
+			    		    },
+			    		    "reportFooter": {
+			    		      "name": "reportFooter",
+			    		      "height": 0,
+			    		      "visible": false
+			    		    },
+			    		    "pageFooter": {
+			    		      "name": "pageFooter",
+			    		      "height": 24,
+			    		      "items": [
+			    		        {
+			    		          "type": "rbox",
+			    		          "name": "",
+			    		          "right": 0,
+			    		          "itemGap": 0,
+			    		          "items": [
+			    		            {
+			    		              "type": "text",
+			    		              "value": "${page}",
+			    		              "name": "",
+			    		              "text": "Text"
+			    		            },
+			    		            {
+			    		              "type": "text",
+			    		              "name": "",
+			    		              "text": "/",
+			    		              "styles": {
+			    		                "paddingLeft": "3px",
+			    		                "paddingRight": "3px",
+			    		                "__tag_": {}
+			    		              }
+			    		            },
+			    		            {
+			    		              "type": "text",
+			    		              "value": "${pages}",
+			    		              "name": "",
+			    		              "text": "Text"
+			    		            }
+			    		          ]
+			    		        }
+			    		      ]
+			    		    },
+			    		    "body": {
+			    		      "itemGap": 0,
+			    		      "items": [
+			    		        {
+			    		          "type": "rbox",
+			    		          "width": 699,
+			    		          "height": 157,
+			    		          "name": "",
+			    		          "itemGap": 0,
+			    		          "items": [
+			    		            {
+			    		              "type": "table",
+			    		              "width": "225px",
+			    		              "height": "130px",
+			    		              "name": "",
+			    		              "top": 0,
+			    		              "rowCount": 4,
+			    		              "minRowHeight": "24px",
+			    		              "cellStyles": {},
+			    		              "rows": [
+			    		                {
+			    		                  "height": "2mm"
+			    		                },
+			    		                {
+			    		                  "height": "3px"
+			    		                },
+			    		                {
+			    		                  "height": "5px"
+			    		                },
+			    		                {
+			    		                  "height": "15mm"
+			    		                }
+			    		              ],
+			    		              "cells": [
+			    		                {
+			    		                  "r": 0,
+			    		                  "c": 0,
+			    		                  "styles": {
+			    		                    "backgroundColor": "#f1b902ad"
+			    		                  }
+			    		                },
+			    		                {
+			    		                  "r": 0,
+			    		                  "c": 1,
+			    		                  "styles": {
+			    		                    "backgroundColor": "#f1b902ad"
+			    		                  }
+			    		                },
+			    		                {
+			    		                  "r": 0,
+			    		                  "c": 2,
+			    		                  "styles": {
+			    		                    "backgroundColor": "#f1b902ad"
+			    		                  }
+			    		                }
+			    		              ],
+			    		              "colCount": 3,
+			    		              "columns": [
+			    		                {
+			    		                  "width": "75px"
+			    		                },
+			    		                {
+			    		                  "width": "75px"
+			    		                },
+			    		                {
+			    		                  "width": "75px"
+			    		                }
+			    		              ]
+			    		            }
+			    		          ]
+			    		        },
+			    		        {
+			    		          "type": "simpleband",
+			    		          "data": "T_HEADER",
+			    		          "width": "100%",
+			    		          "height": "80%",
+			    		          "name": "",
+			    		          "detail": {
+			    		            "type": "detail",
+			    		            "width": "100%",
+			    		            "height": 487,
+			    		            "name": "",
+			    		            "items": [
+			    		              {
+			    		                "type": "simpleband",
+			    		                "name": "T_VAT",
+			    		                "data": "T_VAT",
+			    		                "width": "100%",
+			    		                "masterFields": "BELNR",
+			    		                "keyFields": "BELNR",
+			    		                "detail": {
+			    		                  "type": "detail",
+			    		                  "width": "100%",
+			    		                  "name": "",
+			    		                  "visible": false
+			    		                },
+			    		                "groups": [],
+			    		                "header": {
+			    		                  "type": "stack",
+			    		                  "width": "100%",
+			    		                  "height": 31,
+			    		                  "name": null,
+			    		                  "items": [
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "left": 0,
+			    		                      "bottom": 0,
+			    		                      "text": "[부가세 정보]",
+			    		                      "styles": {
+			    		                        "fontWeight": "bold",
+			    		                        "__tag_": {}
+			    		                      }
+			    		                    }
+			    		                  ]
+			    		                },
+			    		                "footer": {
+			    		                  "type": "stack",
+			    		                  "width": "100%",
+			    		                  "height": 32,
+			    		                  "name": null
+			    		                },
+			    		                "dataRow": {
+			    		                  "type": "stack",
+			    		                  "data": "T_VAT",
+			    		                  "width": "100%",
+			    		                  "name": null,
+			    		                  "items": [
+			    		                    {
+			    		                      "type": "table",
+			    		                      "width": "100%",
+			    		                      "name": "",
+			    		                      "rowCount": 3,
+			    		                      "minRowHeight": "24px",
+			    		                      "cellStyles": {},
+			    		                      "rows": [
+			    		                        {},
+			    		                        {},
+			    		                        {}
+			    		                      ],
+			    		                      "cells": [
+			    		                        {
+			    		                          "r": 0,
+			    		                          "c": 0,
+			    		                          "styles": {
+			    		                            "backgroundColor": "#00000030"
+			    		                          }
+			    		                        },
+			    		                        {
+			    		                          "r": 0,
+			    		                          "c": 3,
+			    		                          "colspan": 2
+			    		                        },
+			    		                        {
+			    		                          "r": 0,
+			    		                          "c": 5,
+			    		                          "styles": {
+			    		                            "backgroundColor": "#00000030"
+			    		                          }
+			    		                        },
+			    		                        {
+			    		                          "r": 0,
+			    		                          "c": 6,
+			    		                          "colspan": 2
+			    		                        },
+			    		                        {
+			    		                          "r": 1,
+			    		                          "c": 0,
+			    		                          "styles": {
+			    		                            "backgroundColor": "#00000030"
+			    		                          }
+			    		                        },
+			    		                        {
+			    		                          "r": 1,
+			    		                          "c": 3,
+			    		                          "colspan": 2
+			    		                        },
+			    		                        {
+			    		                          "r": 1,
+			    		                          "c": 5,
+			    		                          "styles": {
+			    		                            "backgroundColor": "#00000030"
+			    		                          }
+			    		                        },
+			    		                        {
+			    		                          "r": 2,
+			    		                          "c": 0,
+			    		                          "styles": {
+			    		                            "backgroundColor": "#00000030"
+			    		                          }
+			    		                        },
+			    		                        {
+			    		                          "r": 2,
+			    		                          "c": 1,
+			    		                          "colspan": 2,
+			    		                          "styles": {
+			    		                            "cellAlign": "right"
+			    		                          }
+			    		                        },
+			    		                        {
+			    		                          "r": 2,
+			    		                          "c": 3,
+			    		                          "styles": {
+			    		                            "backgroundColor": "#00000030"
+			    		                          }
+			    		                        },
+			    		                        {
+			    		                          "r": 2,
+			    		                          "c": 4,
+			    		                          "styles": {
+			    		                            "cellAlign": "right"
+			    		                          }
+			    		                        },
+			    		                        {
+			    		                          "r": 2,
+			    		                          "c": 5,
+			    		                          "styles": {
+			    		                            "backgroundColor": "#00000030"
+			    		                          }
+			    		                        },
+			    		                        {
+			    		                          "r": 2,
+			    		                          "c": 6,
+			    		                          "colspan": 2,
+			    		                          "styles": {
+			    		                            "cellAlign": "right"
+			    		                          }
+			    		                        }
+			    		                      ],
+			    		                      "colCount": 8,
+			    		                      "columns": [
+			    		                        {
+			    		                          "width": "17.7%"
+			    		                        },
+			    		                        {
+			    		                          "width": "22.5%"
+			    		                        },
+			    		                        {
+			    		                          "width": "14.4%"
+			    		                        },
+			    		                        {
+			    		                          "width": "16%"
+			    		                        },
+			    		                        {
+			    		                          "width": "29.4%"
+			    		                        },
+			    		                        {
+			    		                          "width": "25.9%"
+			    		                        },
+			    		                        {
+			    		                          "width": "12%"
+			    		                        },
+			    		                        {
+			    		                          "width": "53%"
+			    		                        }
+			    		                      ],
+			    		                      "items": [
+			    		                        {
+			    		                          "type": "text",
+			    		                          "name": "",
+			    		                          "col": 0,
+			    		                          "row": 0,
+			    		                          "text": "공급자"
+			    		                        },
+			    		                        {
+			    		                          "type": "text",
+			    		                          "name": "",
+			    		                          "col": 0,
+			    		                          "row": 1,
+			    		                          "text": "공급받는자"
+			    		                        },
+			    		                        {
+			    		                          "type": "text",
+			    		                          "name": "",
+			    		                          "col": 0,
+			    		                          "row": 2,
+			    		                          "text": "공급가액"
+			    		                        },
+			    		                        {
+			    		                          "type": "text",
+			    		                          "value": "BIZNO_SUPPLIER",
+			    		                          "name": "",
+			    		                          "col": 1,
+			    		                          "row": 0,
+			    		                          "textFormat": "###-##-#####",
+			    		                          "text": "Text"
+			    		                        },
+			    		                        {
+			    		                          "type": "text",
+			    		                          "value": "BIZNO_BUYER",
+			    		                          "name": "",
+			    		                          "col": 1,
+			    		                          "row": 1,
+			    		                          "textFormat": "###-##-#####",
+			    		                          "text": "Text"
+			    		                        },
+			    		                        {
+			    		                          "type": "text",
+			    		                          "value": "AMT_BASE",
+			    		                          "name": "",
+			    		                          "col": 1,
+			    		                          "row": 2,
+			    		                          "text": "Text"
+			    		                        },
+			    		                        {
+			    		                          "type": "text",
+			    		                          "value": "SUB_BIZNO_SUPPLIER",
+			    		                          "name": "",
+			    		                          "col": 2,
+			    		                          "row": 0,
+			    		                          "text": "Text"
+			    		                        },
+			    		                        {
+			    		                          "type": "text",
+			    		                          "value": "SUB_BIZNO_BUYER",
+			    		                          "name": "",
+			    		                          "col": 2,
+			    		                          "row": 1,
+			    		                          "text": "Text"
+			    		                        },
+			    		                        {
+			    		                          "type": "text",
+			    		                          "value": "NAME_SUPPLIER",
+			    		                          "name": "",
+			    		                          "col": 3,
+			    		                          "row": 0,
+			    		                          "text": "Text"
+			    		                        },
+			    		                        {
+			    		                          "type": "text",
+			    		                          "value": "NAME_BUYER",
+			    		                          "name": "",
+			    		                          "col": 3,
+			    		                          "row": 1,
+			    		                          "text": "Text"
+			    		                        },
+			    		                        {
+			    		                          "type": "text",
+			    		                          "name": "",
+			    		                          "col": 3,
+			    		                          "row": 2,
+			    		                          "text": "세액"
+			    		                        },
+			    		                        {
+			    		                          "type": "text",
+			    		                          "value": "AMT_VAT",
+			    		                          "name": "",
+			    		                          "col": 4,
+			    		                          "row": 2,
+			    		                          "text": "Text"
+			    		                        },
+			    		                        {
+			    		                          "type": "text",
+			    		                          "name": "",
+			    		                          "col": 5,
+			    		                          "row": 0,
+			    		                          "text": "세금계산서번호"
+			    		                        },
+			    		                        {
+			    		                          "type": "text",
+			    		                          "name": "",
+			    		                          "col": 5,
+			    		                          "row": 1,
+			    		                          "text": "세금코드"
+			    		                        },
+			    		                        {
+			    		                          "type": "text",
+			    		                          "name": "",
+			    		                          "col": 5,
+			    		                          "row": 2,
+			    		                          "text": "합계"
+			    		                        },
+			    		                        {
+			    		                          "type": "text",
+			    		                          "value": "ISSUE_ID",
+			    		                          "name": "",
+			    		                          "col": 6,
+			    		                          "row": 0,
+			    		                          "text": "Text"
+			    		                        },
+			    		                        {
+			    		                          "type": "text",
+			    		                          "value": "MWSKZ",
+			    		                          "height": 14,
+			    		                          "name": "",
+			    		                          "col": 6,
+			    		                          "row": 1,
+			    		                          "text": "Text"
+			    		                        },
+			    		                        {
+			    		                          "type": "text",
+			    		                          "value": "AMT_TOTAL",
+			    		                          "name": "",
+			    		                          "col": 6,
+			    		                          "row": 2,
+			    		                          "text": "Text"
+			    		                        },
+			    		                        {
+			    		                          "type": "text",
+			    		                          "value": "MWSKZ_NAME",
+			    		                          "name": "",
+			    		                          "col": 7,
+			    		                          "row": 1,
+			    		                          "text": "Text"
+			    		                        }
+			    		                      ]
+			    		                    }
+			    		                  ]
+			    		                },
+			    		                "styles": {
+			    		                  "fontFamily": "Arial",
+			    		                  "__tag_": {}
+			    		                }
+			    		              },
+			    		              {
+			    		                "type": "tableband",
+			    		                "name": "T_ITEM",
+			    		                "data": "T_ITEM",
+			    		                "width": "100%",
+			    		                "masterFields": "BELNR",
+			    		                "keyFields": "BELNR",
+			    		                "rowsPerPage": 11,
+			    		                "detail": {
+			    		                  "type": "detail",
+			    		                  "width": "100%",
+			    		                  "name": "",
+			    		                  "visible": false
+			    		                },
+			    		                "colCount": 9,
+			    		                "columns": [
+			    		                  {
+			    		                    "width": "8%"
+			    		                  },
+			    		                  {
+			    		                    "width": "16.8%"
+			    		                  },
+			    		                  {
+			    		                    "width": "21.6%"
+			    		                  },
+			    		                  {
+			    		                    "width": "23.2%"
+			    		                  },
+			    		                  {
+			    		                    "width": "16.8%"
+			    		                  },
+			    		                  {
+			    		                    "width": "21.3%"
+			    		                  },
+			    		                  {
+			    		                    "width": "21.6%"
+			    		                  },
+			    		                  {
+			    		                    "width": "18.7%"
+			    		                  },
+			    		                  {
+			    		                    "width": "20%"
+			    		                  }
+			    		                ],
+			    		                "header": {
+			    		                  "width": "100%",
+			    		                  "name": null,
+			    		                  "rowCount": 5,
+			    		                  "cellStyles": {},
+			    		                  "rows": [
+			    		                    {},
+			    		                    {},
+			    		                    {},
+			    		                    {},
+			    		                    {}
+			    		                  ],
+			    		                  "cells": [
+			    		                    {
+			    		                      "r": 0,
+			    		                      "c": 0,
+			    		                      "rowspan": 5,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 0,
+			    		                      "c": 1,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 0,
+			    		                      "c": 2,
+			    		                      "colspan": 2,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 0,
+			    		                      "c": 3,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 0,
+			    		                      "c": 4,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 0,
+			    		                      "c": 5,
+			    		                      "colspan": 2,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 0,
+			    		                      "c": 6,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 0,
+			    		                      "c": 7,
+			    		                      "rowspan": 2,
+			    		                      "colspan": 2,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 0,
+			    		                      "c": 8,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 1,
+			    		                      "c": 0,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 1,
+			    		                      "c": 1,
+			    		                      "colspan": 2,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 1,
+			    		                      "c": 2,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 1,
+			    		                      "c": 3,
+			    		                      "colspan": 2,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 1,
+			    		                      "c": 4,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 1,
+			    		                      "c": 5,
+			    		                      "colspan": 2,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 1,
+			    		                      "c": 6,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 1,
+			    		                      "c": 7,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 1,
+			    		                      "c": 8,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 2,
+			    		                      "c": 0,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 2,
+			    		                      "c": 1,
+			    		                      "colspan": 4,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 2,
+			    		                      "c": 2,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 2,
+			    		                      "c": 3,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 2,
+			    		                      "c": 4,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 2,
+			    		                      "c": 5,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 2,
+			    		                      "c": 6,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 2,
+			    		                      "c": 7,
+			    		                      "rowspan": 3,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 2,
+			    		                      "c": 8,
+			    		                      "rowspan": 3,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 3,
+			    		                      "c": 0,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 3,
+			    		                      "c": 1,
+			    		                      "colspan": 3,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 3,
+			    		                      "c": 2,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 3,
+			    		                      "c": 3,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 3,
+			    		                      "c": 4,
+			    		                      "colspan": 3,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 3,
+			    		                      "c": 5,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 3,
+			    		                      "c": 6,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 3,
+			    		                      "c": 7,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 3,
+			    		                      "c": 8,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 4,
+			    		                      "c": 0,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 4,
+			    		                      "c": 1,
+			    		                      "colspan": 3,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 4,
+			    		                      "c": 2,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 4,
+			    		                      "c": 3,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 4,
+			    		                      "c": 4,
+			    		                      "colspan": 3,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 4,
+			    		                      "c": 5,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 4,
+			    		                      "c": 6,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 4,
+			    		                      "c": 7,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    },
+			    		                    {
+			    		                      "r": 4,
+			    		                      "c": 8,
+			    		                      "styles": {
+			    		                        "backgroundColor": "#00000030"
+			    		                      }
+			    		                    }
+			    		                  ],
+			    		                  "items": [
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "col": 0,
+			    		                      "row": 0,
+			    		                      "text": "순번"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "col": 1,
+			    		                      "row": 0,
+			    		                      "text": "계정코드"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "col": 1,
+			    		                      "row": 1,
+			    		                      "text": "회계단위"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "col": 2,
+			    		                      "row": 0,
+			    		                      "text": "계정과목명"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "col": 3,
+			    		                      "row": 1,
+			    		                      "text": "코스트센터"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "col": 4,
+			    		                      "row": 0,
+			    		                      "text": "거래처/자산"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "col": 5,
+			    		                      "row": 1,
+			    		                      "text": "손익센터"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "col": 5,
+			    		                      "row": 0,
+			    		                      "text": "거래처/자산 명칭"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "col": 7,
+			    		                      "row": 0,
+			    		                      "text": "금액"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "col": 1,
+			    		                      "row": 2,
+			    		                      "text": "적요"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "col": 1,
+			    		                      "row": 3,
+			    		                      "text": "관리항목1"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "col": 1,
+			    		                      "row": 4,
+			    		                      "text": "관리항목2"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "col": 5,
+			    		                      "row": 2,
+			    		                      "text": "반제전표"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "col": 6,
+			    		                      "row": 2,
+			    		                      "text": "WBS"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "col": 4,
+			    		                      "row": 3,
+			    		                      "text": "관리항목3"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "col": 4,
+			    		                      "row": 4,
+			    		                      "text": "관리항목4"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "col": 7,
+			    		                      "row": 2,
+			    		                      "text": "차변금액"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "name": "",
+			    		                      "col": 8,
+			    		                      "row": 2,
+			    		                      "text": "대변금액"
+			    		                    }
+			    		                  ]
+			    		                },
+			    		                "footer": {
+			    		                  "width": "100%",
+			    		                  "name": null,
+			    		                  "visible": false,
+			    		                  "rowCount": 1,
+			    		                  "cellStyles": {},
+			    		                  "rows": [
+			    		                    {}
+			    		                  ],
+			    		                  "cells": []
+			    		                },
+			    		                "dataRow": {
+			    		                  "width": "100%",
+			    		                  "name": null,
+			    		                  "rowCount": 5,
+			    		                  "cellStyles": {},
+			    		                  "rows": [
+			    		                    {},
+			    		                    {},
+			    		                    {},
+			    		                    {},
+			    		                    {}
+			    		                  ],
+			    		                  "cells": [
+			    		                    {
+			    		                      "r": 0,
+			    		                      "c": 0,
+			    		                      "rowspan": 5
+			    		                    },
+			    		                    {
+			    		                      "r": 0,
+			    		                      "c": 2,
+			    		                      "colspan": 2
+			    		                    },
+			    		                    {
+			    		                      "r": 0,
+			    		                      "c": 5,
+			    		                      "colspan": 2
+			    		                    },
+			    		                    {
+			    		                      "r": 0,
+			    		                      "c": 7,
+			    		                      "rowspan": 5
+			    		                    },
+			    		                    {
+			    		                      "r": 0,
+			    		                      "c": 8,
+			    		                      "rowspan": 5
+			    		                    },
+			    		                    {
+			    		                      "r": 1,
+			    		                      "c": 3,
+			    		                      "colspan": 2
+			    		                    },
+			    		                    {
+			    		                      "r": 1,
+			    		                      "c": 5,
+			    		                      "colspan": 2
+			    		                    },
+			    		                    {
+			    		                      "r": 2,
+			    		                      "c": 1,
+			    		                      "colspan": 4
+			    		                    },
+			    		                    {
+			    		                      "r": 3,
+			    		                      "c": 2,
+			    		                      "colspan": 2
+			    		                    },
+			    		                    {
+			    		                      "r": 3,
+			    		                      "c": 5,
+			    		                      "colspan": 2
+			    		                    },
+			    		                    {
+			    		                      "r": 4,
+			    		                      "c": 2,
+			    		                      "colspan": 2
+			    		                    },
+			    		                    {
+			    		                      "r": 4,
+			    		                      "c": 5,
+			    		                      "colspan": 2
+			    		                    }
+			    		                  ],
+			    		                  "items": [
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "BUZEI",
+			    		                      "name": "",
+			    		                      "col": 0,
+			    		                      "row": 0,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "HKONT",
+			    		                      "name": "",
+			    		                      "col": 1,
+			    		                      "row": 0,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "TXT50",
+			    		                      "name": "",
+			    		                      "col": 2,
+			    		                      "row": 0,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "PARTNER",
+			    		                      "name": "",
+			    		                      "col": 4,
+			    		                      "row": 0,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "PARTNER_NAME",
+			    		                      "name": "",
+			    		                      "col": 5,
+			    		                      "row": 0,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "DMBTR_D",
+			    		                      "name": "",
+			    		                      "col": 7,
+			    		                      "row": 0,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "DMBTR_C",
+			    		                      "name": "",
+			    		                      "col": 8,
+			    		                      "row": 0,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "PRCTR_NAME",
+			    		                      "name": "",
+			    		                      "col": 5,
+			    		                      "row": 1,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "KOSTL_NAME",
+			    		                      "name": "",
+			    		                      "col": 3,
+			    		                      "row": 1,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "GSBER",
+			    		                      "name": "",
+			    		                      "col": 1,
+			    		                      "row": 1,
+			    		                      "numberFormat": "",
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "SGTXT",
+			    		                      "name": "",
+			    		                      "col": 1,
+			    		                      "row": 2,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "MG_NAME_3",
+			    		                      "name": "",
+			    		                      "col": 4,
+			    		                      "row": 3,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "MG_NAME_4",
+			    		                      "name": "",
+			    		                      "col": 4,
+			    		                      "row": 4,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "AUGBL",
+			    		                      "name": "",
+			    		                      "col": 5,
+			    		                      "row": 2,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "PROJK",
+			    		                      "name": "",
+			    		                      "col": 6,
+			    		                      "row": 2,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "MG_NAME_1",
+			    		                      "name": "",
+			    		                      "col": 1,
+			    		                      "row": 3,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "MG_NAME_2",
+			    		                      "name": "",
+			    		                      "col": 1,
+			    		                      "row": 4,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "MG_VALUE_1",
+			    		                      "name": "",
+			    		                      "col": 2,
+			    		                      "row": 3,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "MG_VALUE_2",
+			    		                      "name": "",
+			    		                      "col": 2,
+			    		                      "row": 4,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "MG_VALUE_3",
+			    		                      "name": "",
+			    		                      "col": 5,
+			    		                      "row": 3,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "MG_VALUE_4",
+			    		                      "name": "",
+			    		                      "col": 5,
+			    		                      "row": 4,
+			    		                      "text": "Text"
+			    		                    },
+			    		                    {
+			    		                      "type": "text",
+			    		                      "value": "GSBER_NAME",
+			    		                      "name": "",
+			    		                      "col": 2,
+			    		                      "row": 1,
+			    		                      "text": "Text"
+			    		                    }
+			    		                  ]
+			    		                },
+			    		                "styles": {
+			    		                  "fontFamily": "Arial",
+			    		                  "__tag_": {}
+			    		                }
+			    		              }
+			    		            ]
+			    		          },
+			    		          "groups": [],
+			    		          "header": {
+			    		            "type": "stack",
+			    		            "width": "100%",
+			    		            "height": 29,
+			    		            "name": null,
+			    		            "visible": false
+			    		          },
+			    		          "footer": {
+			    		            "type": "stack",
+			    		            "width": "100%",
+			    		            "height": 17,
+			    		            "name": null,
+			    		            "visible": false
+			    		          },
+			    		          "dataRow": {
+			    		            "type": "stack",
+			    		            "name": "T_HEADER",
+			    		            "data": "T_HEADER",
+			    		            "width": "100%",
+			    		            "height": 90,
+			    		            "styles": {
+			    		              "fontFamily": "Arial",
+			    		              "__tag_": {}
+			    		            },
+			    		            "items": [
+			    		              {
+			    		                "type": "text",
+			    		                "data": "T_HEADER",
+			    		                "value": "GSBER_NAME",
+			    		                "name": "",
+			    		                "left": 127,
+			    		                "top": 1,
+			    		                "text": "Text"
+			    		              },
+			    		              {
+			    		                "type": "text",
+			    		                "name": "",
+			    		                "left": 2,
+			    		                "top": 1,
+			    		                "text": "회계단위 : "
+			    		              },
+			    		              {
+			    		                "type": "text",
+			    		                "data": "T_HEADER",
+			    		                "value": "GSBER",
+			    		                "name": "",
+			    		                "left": 70,
+			    		                "top": 1,
+			    		                "text": "Text"
+			    		              },
+			    		              {
+			    		                "type": "text",
+			    		                "name": "",
+			    		                "left": 2,
+			    		                "top": 20,
+			    		                "text": "입력사원 : "
+			    		              },
+			    		              {
+			    		                "type": "text",
+			    		                "name": "",
+			    		                "left": 119,
+			    		                "top": 1,
+			    		                "text": "/"
+			    		              },
+			    		              {
+			    		                "type": "text",
+			    		                "data": "T_HEADER",
+			    		                "value": "PERNR",
+			    		                "name": "",
+			    		                "left": 72,
+			    		                "top": 20,
+			    		                "text": "Text"
+			    		              },
+			    		              {
+			    		                "type": "text",
+			    		                "name": "",
+			    		                "left": 111,
+			    		                "top": 20,
+			    		                "text": "/"
+			    		              },
+			    		              {
+			    		                "type": "text",
+			    		                "data": "T_HEADER",
+			    		                "value": "NAME",
+			    		                "width": 58,
+			    		                "name": "",
+			    		                "left": 122,
+			    		                "top": 20,
+			    		                "text": "Text"
+			    		              },
+			    		              {
+			    		                "type": "text",
+			    		                "name": "",
+			    		                "left": 184,
+			    		                "top": 20,
+			    		                "text": "/"
+			    		              },
+			    		              {
+			    		                "type": "text",
+			    		                "data": "T_HEADER",
+			    		                "value": "SDEPTNM",
+			    		                "name": "",
+			    		                "left": 196,
+			    		                "top": 20,
+			    		                "text": "Text"
+			    		              },
+			    		              {
+			    		                "type": "table",
+			    		                "width": "100%",
+			    		                "name": "",
+			    		                "bottom": 0,
+			    		                "rowCount": 2,
+			    		                "minRowHeight": "24px",
+			    		                "cellStyles": {},
+			    		                "rows": [
+			    		                  {},
+			    		                  {}
+			    		                ],
+			    		                "cells": [
+			    		                  {
+			    		                    "r": 0,
+			    		                    "c": 0,
+			    		                    "styles": {
+			    		                      "backgroundColor": "#00000030"
+			    		                    }
+			    		                  },
+			    		                  {
+			    		                    "r": 0,
+			    		                    "c": 2,
+			    		                    "styles": {
+			    		                      "backgroundColor": "#00000030"
+			    		                    }
+			    		                  },
+			    		                  {
+			    		                    "r": 0,
+			    		                    "c": 4,
+			    		                    "styles": {
+			    		                      "backgroundColor": "#00000030"
+			    		                    }
+			    		                  },
+			    		                  {
+			    		                    "r": 0,
+			    		                    "c": 6,
+			    		                    "styles": {
+			    		                      "backgroundColor": "#00000030"
+			    		                    }
+			    		                  },
+			    		                  {
+			    		                    "r": 0,
+			    		                    "c": 8,
+			    		                    "rowspan": 2,
+			    		                    "styles": {
+			    		                      "backgroundColor": "#00000030"
+			    		                    }
+			    		                  },
+			    		                  {
+			    		                    "r": 0,
+			    		                    "c": 9,
+			    		                    "rowspan": 2
+			    		                  },
+			    		                  {
+			    		                    "r": 1,
+			    		                    "c": 0,
+			    		                    "styles": {
+			    		                      "backgroundColor": "#00000030"
+			    		                    }
+			    		                  },
+			    		                  {
+			    		                    "r": 1,
+			    		                    "c": 2,
+			    		                    "colspan": 2
+			    		                  },
+			    		                  {
+			    		                    "r": 1,
+			    		                    "c": 4,
+			    		                    "styles": {
+			    		                      "backgroundColor": "#00000030"
+			    		                    }
+			    		                  },
+			    		                  {
+			    		                    "r": 1,
+			    		                    "c": 5,
+			    		                    "colspan": 3
+			    		                  }
+			    		                ],
+			    		                "colCount": 10,
+			    		                "columns": [
+			    		                  {
+			    		                    "width": "18.8%"
+			    		                  },
+			    		                  {
+			    		                    "width": "25.1%"
+			    		                  },
+			    		                  {
+			    		                    "width": "15.7%"
+			    		                  },
+			    		                  {
+			    		                    "width": "25.1%"
+			    		                  },
+			    		                  {
+			    		                    "width": "15.7%"
+			    		                  },
+			    		                  {
+			    		                    "width": "18.8%"
+			    		                  },
+			    		                  {
+			    		                    "width": "18.8%"
+			    		                  },
+			    		                  {
+			    		                    "width": "18.8%"
+			    		                  },
+			    		                  {
+			    		                    "width": "18.5%"
+			    		                  },
+			    		                  {
+			    		                    "width": "44.7%"
+			    		                  }
+			    		                ],
+			    		                "items": [
+			    		                  {
+			    		                    "type": "text",
+			    		                    "name": "",
+			    		                    "col": 0,
+			    		                    "row": 0,
+			    		                    "text": "전기일"
+			    		                  },
+			    		                  {
+			    		                    "type": "text",
+			    		                    "name": "",
+			    		                    "col": 0,
+			    		                    "row": 1,
+			    		                    "text": "전표유형"
+			    		                  },
+			    		                  {
+			    		                    "type": "text",
+			    		                    "data": "T_HEADER",
+			    		                    "value": "BUDAT",
+			    		                    "name": "",
+			    		                    "col": 1,
+			    		                    "row": 0,
+			    		                    "numberFormat": "",
+			    		                    "text": "Text"
+			    		                  },
+			    		                  {
+			    		                    "type": "text",
+			    		                    "data": "T_HEADER",
+			    		                    "value": "BLART",
+			    		                    "name": "",
+			    		                    "col": 1,
+			    		                    "row": 1,
+			    		                    "text": "Text"
+			    		                  },
+			    		                  {
+			    		                    "type": "text",
+			    		                    "name": "",
+			    		                    "col": 2,
+			    		                    "row": 0,
+			    		                    "text": "증빙일"
+			    		                  },
+			    		                  {
+			    		                    "type": "text",
+			    		                    "data": "T_HEADER",
+			    		                    "value": "BLDAT",
+			    		                    "name": "",
+			    		                    "col": 3,
+			    		                    "row": 0,
+			    		                    "numberFormat": "",
+			    		                    "text": "Text"
+			    		                  },
+			    		                  {
+			    		                    "type": "text",
+			    		                    "data": "T_HEADER",
+			    		                    "value": "BLART_NAME",
+			    		                    "name": "",
+			    		                    "col": 2,
+			    		                    "row": 1,
+			    		                    "text": "Text"
+			    		                  },
+			    		                  {
+			    		                    "type": "text",
+			    		                    "name": "",
+			    		                    "col": 4,
+			    		                    "row": 0,
+			    		                    "text": "통화키"
+			    		                  },
+			    		                  {
+			    		                    "type": "text",
+			    		                    "data": "T_HEADER",
+			    		                    "value": "WAERS",
+			    		                    "name": "",
+			    		                    "col": 5,
+			    		                    "row": 0,
+			    		                    "text": "Text"
+			    		                  },
+			    		                  {
+			    		                    "type": "text",
+			    		                    "name": "",
+			    		                    "col": 4,
+			    		                    "row": 1,
+			    		                    "text": "적요"
+			    		                  },
+			    		                  {
+			    		                    "type": "text",
+			    		                    "data": "T_HEADER",
+			    		                    "value": "BKTXT",
+			    		                    "name": "",
+			    		                    "col": 5,
+			    		                    "row": 1,
+			    		                    "text": "Text"
+			    		                  },
+			    		                  {
+			    		                    "type": "text",
+			    		                    "name": "",
+			    		                    "col": 6,
+			    		                    "row": 0,
+			    		                    "text": "환율"
+			    		                  },
+			    		                  {
+			    		                    "type": "text",
+			    		                    "data": "T_HEADER",
+			    		                    "value": "KURSF",
+			    		                    "name": "",
+			    		                    "col": 7,
+			    		                    "row": 0,
+			    		                    "text": "Text"
+			    		                  },
+			    		                  {
+			    		                    "type": "text",
+			    		                    "name": "",
+			    		                    "col": 8,
+			    		                    "row": 0,
+			    		                    "text": "전표번호"
+			    		                  },
+			    		                  {
+			    		                    "type": "text",
+			    		                    "data": "T_HEADER",
+			    		                    "value": "BELNR",
+			    		                    "name": "",
+			    		                    "col": 9,
+			    		                    "row": 0,
+			    		                    "numberFormat": "",
+			    		                    "dateFormat": "",
+			    		                    "text": ""
+			    		                  }
+			    		                ]
+			    		              }
+			    		            ]
+			    		          }
+			    		        }
+			    		      ]
+			    		    },
+			    		    "styles": {
+			    		      "fontSize": "10px",
+			    		      "__tag_": {}
+			    		    }
+			    		  },
+			    		  "assets": {
+			    		    "/": []
+			    		  },
+			    		  "data": {
+			    		    "T_HEADER": {
+			    		      "type": "band",
+			    		      "fields": [
+			    		        {
+			    		          "fieldName": "BUKRS",
+			    		          "dataType": "number",
+			    		          "sample": "1000",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "BELNR",
+			    		          "dataType": "number",
+			    		          "sample": "1000000173",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "GJAHR",
+			    		          "dataType": "number",
+			    		          "sample": "2021",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "GSBER",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "GSBER_NAME",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "PERNR",
+			    		          "dataType": "text",
+			    		          "sample": "FI01",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "NAME",
+			    		          "dataType": "text",
+			    		          "sample": "FI조시영",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "SDEPTNM",
+			    		          "dataType": "text",
+			    		          "sample": "차세대혁신담당재무(FI/CO)",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "BUDAT",
+			    		          "dataType": "datetime",
+			    		          "format": "",
+			    		          "sample": "20210628",
+			    		          "expression": "",
+			    		          "description": "",
+			    		          "dateReader": {
+			    		            "_format": "",
+			    		            "_type": 0,
+			    		            "_parser": {
+			    		              "_format": null,
+			    		              "_baseYear": 2000,
+			    		              "_patterns": [],
+			    		              "_amText": "AM",
+			    		              "_pmText": "PM"
+			    		            }
+			    		          }
+			    		        },
+			    		        {
+			    		          "fieldName": "BLDAT",
+			    		          "dataType": "datetime",
+			    		          "format": "",
+			    		          "sample": "20211003",
+			    		          "expression": "",
+			    		          "description": "",
+			    		          "dateReader": {
+			    		            "_format": "",
+			    		            "_type": 0,
+			    		            "_parser": {
+			    		              "_format": null,
+			    		              "_baseYear": 2000,
+			    		              "_patterns": [],
+			    		              "_amText": "AM",
+			    		              "_pmText": "PM"
+			    		            }
+			    		          }
+			    		        },
+			    		        {
+			    		          "fieldName": "WAERS",
+			    		          "dataType": "text",
+			    		          "sample": "KRW",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "KURSF",
+			    		          "dataType": "text",
+			    		          "sample": "0.00000 ",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "BLART",
+			    		          "dataType": "text",
+			    		          "sample": "A0",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "BLART_NAME",
+			    		          "dataType": "text",
+			    		          "sample": "일반전표",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "BKTXT",
+			    		          "dataType": "text",
+			    		          "sample": "BAPI테스트",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        }
+			    		      ]
+			    		    },
+			    		    "T_VAT": {
+			    		      "type": "band",
+			    		      "fields": [
+			    		        {
+			    		          "fieldName": "BUKRS",
+			    		          "dataType": "number",
+			    		          "sample": "1000",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "BELNR",
+			    		          "dataType": "number",
+			    		          "sample": "1000000173",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "GJAHR",
+			    		          "dataType": "number",
+			    		          "sample": "2021",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "BIZNO_SUPPLIER",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "SUB_BIZNO_SUPPLIER",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "NAME_SUPPLIER",
+			    		          "dataType": "text",
+			    		          "sample": "SSG마린시티점",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "BIZNO_BUYER",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "SUB_BIZNO_BUYER",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "NAME_BUYER",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "AMT_BASE",
+			    		          "dataType": "text",
+			    		          "sample": "40.00 ",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "AMT_VAT",
+			    		          "dataType": "text",
+			    		          "sample": "4.00 ",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "AMT_TOTAL",
+			    		          "dataType": "text",
+			    		          "sample": "44.00 ",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MWSKZ",
+			    		          "dataType": "text",
+			    		          "sample": "V1",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MWSKZ_NAME",
+			    		          "dataType": "text",
+			    		          "sample": "매입/10%/세금계산서/고정자산",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "ISSUE_ID",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        }
+			    		      ]
+			    		    },
+			    		    "T_ITEM": {
+			    		      "type": "band",
+			    		      "fields": [
+			    		        {
+			    		          "fieldName": "BUKRS",
+			    		          "dataType": "number",
+			    		          "sample": "1000",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "BELNR",
+			    		          "dataType": "number",
+			    		          "sample": "1000000173",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "GJAHR",
+			    		          "dataType": "number",
+			    		          "sample": "2021",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "BUZEI",
+			    		          "dataType": "text",
+			    		          "sample": "001",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "HKONT",
+			    		          "dataType": "text",
+			    		          "sample": "0021050505",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "TXT50",
+			    		          "dataType": "text",
+			    		          "sample": "미지급금_기타",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "PARTNER",
+			    		          "dataType": "text",
+			    		          "sample": "0000005103",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "PARTNER_NAME",
+			    		          "dataType": "text",
+			    		          "sample": "SSG마린시티점",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "ANLN1",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "ANLN1_NAME",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "GSBER",
+			    		          "dataType": "number",
+			    		          "sample": "1001",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "GSBER_NAME",
+			    		          "dataType": "text",
+			    		          "sample": "EM 창동점",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "KOSTL",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "KOSTL_NAME",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "PRCTR",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "PRCTR_NAME",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "SGTXT",
+			    		          "dataType": "text",
+			    		          "sample": "21년 9월분 전기료",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "AUGBL",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "AUGDT",
+			    		          "dataType": "text",
+			    		          "sample": "00000000",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "PROJK",
+			    		          "dataType": "text",
+			    		          "sample": "00000000",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "POSID",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "POST1",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "DMBTR_D",
+			    		          "dataType": "text",
+			    		          "sample": "0.00 ",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "DMBTR_C",
+			    		          "dataType": "text",
+			    		          "sample": "44.00 ",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "WRBTR_D",
+			    		          "dataType": "text",
+			    		          "sample": "0.00 ",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "WRBTR_C",
+			    		          "dataType": "text",
+			    		          "sample": "44.00 ",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_CODE_1",
+			    		          "dataType": "text",
+			    		          "sample": "000",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_NAME_1",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_VALUE_1",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_CODE_2",
+			    		          "dataType": "text",
+			    		          "sample": "000",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_NAME_2",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_VALUE_2",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_CODE_3",
+			    		          "dataType": "text",
+			    		          "sample": "000",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_NAME_3",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_VALUE_3",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_CODE_4",
+			    		          "dataType": "text",
+			    		          "sample": "000",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_NAME_4",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_VALUE_4",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_CODE_5",
+			    		          "dataType": "text",
+			    		          "sample": "000",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_NAME_5",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_VALUE_5",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_CODE_6",
+			    		          "dataType": "text",
+			    		          "sample": "000",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_NAME_6",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_VALUE_6",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_CODE_7",
+			    		          "dataType": "text",
+			    		          "sample": "000",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_NAME_7",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_VALUE_7",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_CODE_8",
+			    		          "dataType": "text",
+			    		          "sample": "000",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_NAME_8",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        },
+			    		        {
+			    		          "fieldName": "MG_VALUE_8",
+			    		          "dataType": "text",
+			    		          "sample": "",
+			    		          "description": "",
+			    		          "dateReader": null
+			    		        }
+			    		      ]
+			    		    }
+			    		  },
+			    		  "guid": "75675eb1-b3a0-4dc0-aee9-9914c70185b2"
+			    		}
+
+			   		
+		  },//data
+		  created () { //초기화================================================================
+			    //그리드 초기화
+		    
+		  }, // created		 
+		  methods : {  // ======================================================================================
+			//file reset
+				
+			searchButtonOnClick : function() {
+				  
+				  var param = {
+							svcId:"apisearch",
+							strUrl:"/ec/exp/sap/apislip/apisearch",	//전송 url 	
+							inDs :  "" ,  
+							param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+							pCall : this.searchButtonOnClickCallBack, 
+							pLoad : true          
+						};
+						//트랜젝션 실행
+						ajaxReadJsonData(param);
+			  	
+			  },
+			  
+			  searchButtonOnClickCallBack : function(s ,data) {
+				  
+				  if(data["ds_master"]['data'].RESULT == "ERROR"){
+            		  customAlert('','','조회할 수 없습니다.');
+            		  return null
+				  }
+				  
+				  this.T_HEADER = [];
+				  this.T_VAT = [];
+				  this.T_ITEM = [];
+				  
+				  this.T_HEADER = data["ds_master"]['data'].T_HEADER;
+				  this.T_VAT = data["ds_master"]['data'].T_VAT;
+				  var ref = this;
+				  data["ds_master"]['data'].T_ITEM.forEach(item => ref.T_ITEM.push(item));
+
+				  
+				  this.showRealReport();
+				  
+			  },  
+			  showRealReport : 
+				  function(){
+				  
+					  var iframe = document.getElementById(this.pgmid+'realreport');
+					       RealReport.openFrame(iframe, this.reportJson, ['T_HEADER', 'T_VAT', 'T_ITEM'], [this.T_HEADER, this.T_VAT, this.T_ITEM]
+			  )},
+				  
+// 			  printPopup :  
+// 				  function(){
+// 					  var container = document.getElementById('realreport');
+// 					  RealReport.print(container, this.reportJson, ['T_HEADER', 'T_VAT', 'T_ITEM'], [this.T_HEADER, this.T_VAT, this.T_ITEM]);
+// 			  },
+			
+			
+			  resetSlipFile : function() {
+                  $('#'+this.pgmid+'BoardFile').val('');
+              },	
+			  
+			
+              saveSlipFile : function() {
+            	ajaxUploadFile('#'+this.pgmid+'BoardFile', null ,this.saveSlipFileCallback); 
+              },
+			  
+              saveSlipFileCallback: function (svdid, data){
+            	  log(data)
+            	  var fileList = {FILE_LIST : data } ;
+            	  console.log(fileList)
+            	  this.fileList =data
+            	  var o = {}
+            	  o.GJAHR = $('#'+this.pgmid+'GJAHR').val();
+            	  o.BELNR = $('#'+this.pgmid+'BELNR').val();
+            	  var param = {
+			    			svcId :"savefile",
+			    			strUrl: "ec/ex/sap/slip/saveflie",
+			    			param : Object.assign(serializeObjectX($('#[[${param.pgm_id}]]')), fileList,o ) ,         // {  BOARD_TITLE : 'ㅌㅌㅌㅌㅌㅌ' , BOARD_TP : '01' ,   file_list : [{file_no : 'xcxfsdddfsfd'} , {} , {}   ]             }
+			    			pCall : this.saveSlipFileCallbackCallback, 
+		                    pLoad : true,
+			    	 };
+            	//트랜젝션 실행
+                  ajaxReadJsonData(param); 
+            	  
+              },
+              
+              saveSlipFileCallbackCallback: function(svdid, data){
+            	  saveGritter();
+            	  
+              },
+              
+              
+				deletefile : function(fileNo){
+					
+			    	  var param = {
+			    			  svcId : 'updateSlipYn',
+			    			  strUrl : "ec/ex/sap/slip/updateSlipYn",
+			    			  param : { fileNo : fileNo},
+			    			  pCall : this.deletefileCallBackCallBack,
+			    			  pLoad : true
+			    	  }
+			    	  
+			    	  
+			    	  bootboxDeleteConfirm(this.deletefileCallBack, param)
+//	 		    	  트랜젝션
+			      },
+		      
+			  deletefileCallBack : function (param) {
+		    	  
+				  ajaxReadJsonData(param); 
+				  console.log(param)
+		    //	  fileMoveToTrash(fileNo, this.deletefileCallBackCallBack);
+		      } ,
+		      
+              
+		      deletefileCallBackCallBack: function(svcId, data) {
+		    	  
+		    	  customAlert("","",data.SVC_MSG_TEXT);
+		      },
+			  // 이미지 첨부 
+			  // 이미지 편집 후 저장(기존 파일 제거 & replace)
+			  receiptimgedited: function (fileno) { 
+                  // reload 보류
+                  $('#'+this.pgmid+'expbox'+this.curItem.INDEX).find('img').attr('src', '/ec/common/syscommon/fileupload/downloadFile/' + fileno+'?objid='+objId());
+                  $('#'+this.pgmid+'expmobilebox'+this.curItem.INDEX).find('img').attr('src', '/ec/common/syscommon/fileupload/downloadFile/' + fileno+'?objid='+objId());
+        	  },
+        	  
+        	  receiptClickMainFile:  function (url, kind, name) {
+					this.tempCurItem.FILE_NO = url;
+					this.tempCurItem.FILE_KIND = kind;
+					this.tempCurItem.ORG_FILE_NAME = name;
+					
+			  },
+			  
+			  saveServer : function(response, urls){
+            	  
+                  // response가 있는 경우=======================================================
+                 if (!isEmpty(response)){	  
+	            		  this.curItem.FILE_NO = urls[0].FILE_NO;
+	            		  this.curItem.FILE_KIND = urls[0].FILE_KIND;                	  
+		            	  
+           		  if (this.curItem.TYPE == 'TOLL' && isEmpty(this.curItem.EXPENSE_NO) ){
+		                      // 이미지(파일) 배열
+		                      if (this.checkRequiredImg(urls) == false) {
+		                    	  return false;
+		                      }
+		            	  }else if (this.curItem.TYPE == 'RECEIPT' && isEmpty(this.curItem.EXPENSE_NO) ){
+		                      // 이미지(파일) 배열
+		                      if (this.checkRequiredImg(urls) == false) {
+		                    	  return false;
+		                      }
+		            	  }else if (this.curItem.TYPE == 'PREPAY' && isEmpty(this.curItem.EXPENSE_NO) ){
+		                      // 이미지(파일) 배열
+		                      if (this.checkRequiredImg(urls) == false) {
+		                    	  return false;
+		                      }         
+		            	  }else if (this.curItem.TYPE == 'GAS' && this.tempCurItem.DISTANCE_TP == '3' && isEmpty(this.curItem.EXPENSE_NO) ){
+		                      // 이미지(파일) 배열
+		                      if (this.checkRequiredImg(urls) == false) {
+		                    	  return false;
+		                      }                    
+		            	  }else if (this.curItem.TYPE == 'CARD' && isEmpty(this.curItem.EXPENSE_NO) ){
+		//             		  this.curItem.FILE_NO = response[0].fileNo;
+		                      // 이미지(파일) 배열
+		//                       this.tempCurItem.FILE_LIST = this.$refs.cardimg.getUrls(); // 파일저장 후
+		                      if (this.checkRequiredImg(urls) == false) {
+		                    	  return false;
+		                      }   
+		            	  }
+                 }else{
+               	//  ref.tempCurItem.FILE_LIST.push({ FILE_NO :  item.fileNo})
+               	//  this.$refs.cardimg.getUrls()
+//                	  if (this.curItem.TYPE == 'TOLL' && isEmpty(this.curItem.EXPENSE_NO) ){
+               		  
+//                	  }
+                 }
+                  // 
+                  
+                  if (this.curItem.TYPE == 'RECEIPT' ){
+               	   this.curItem.FILE_LIST = this.$refs.receiptimg.getUrls();
+               	   if  (this.curItem.FILE_LIST.length == 0) { 
+               		   	customAlert('','','증빙(이미지)을 업로드하세요.'); 
+               		   	return false;
+               	   }
+                  }else if (this.curItem.TYPE == 'CARD') {
+               	   this.curItem.FILE_LIST = this.$refs.cardimg.getUrls();
+                  }else if (this.curItem.TYPE == 'TOLL') {
+               	   this.curItem.FILE_LIST = this.$refs.tollimg.getUrls();
+                  }else if (this.curItem.TYPE == 'GAS') {
+               	   this.curItem.FILE_LIST = this.$refs.gasimg.getUrls();
+                  }else if (this.curItem.TYPE == 'PREPAY') {
+               	   this.curItem.FILE_LIST = this.$refs.prepayimg.getUrls();
+               	   if  (this.curItem.FILE_LIST.length == 0) { 
+              		   	customAlert('','','증빙(이미지)을 업로드하세요.'); 
+              		   	return false;
+              	   }                	   
+                  }
+                 log('this.curItem.FILE_LIST'); 
+                 log(this.curItem.FILE_LIST);
+                 
+                 var sObj =  {};
+                 Object.assign(sObj, this.curItem); 
+                 Object.assign(sObj, this.tempCurItem);
+                 Object.assign(sObj, this.tempCurItem.mngs);
+                
+                
+                 log("sObj");
+                 log(sObj);
+                var param = {
+                        svcId:"saveExpenseItem",
+                        strUrl:"/ex/expense/expensemst/saveExpenseItem", 
+                        inDs :  "" ,  
+                        param : sObj, 
+                        pCall : this.tranCallBack, 
+                        pLoad : true          
+                    };
+                    //트랜젝션 실행
+                   ajaxReadJsonData(param);  
+             },
+             
+             getImgFilesNo : function(response, urls ){
+                 log('getImgFilesNo');
+           	  log(response);
+                 log(urls);
+                 
+             },
+             
+             deleteEcImg:  function (me) {
+       		  
+       		  //  <a v-if="curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' && curItem.PRIVATE_YN !='1'" 
+                      if (this.curItem.APPROVE_STATUS == '2' ||this.curItem.APPROVE_STATUS == '4')	 {
+                   	      customAlert('','','진행중 또는 결재건은 삭제할 수 없습니다.');
+                      }else{
+                   	   me.deleteimg();
+//                    	  this.$refs.receiptimg.deleteimg();
+                      }
+       	  	},
+       	  	// 이미지 첨부 end	  
+					
+		  }, // end of methods
+
+		  mounted: function() {
+			 
+		       var ref = this;
+               this.$nextTick(function () {
+            	   
+            	   Split(['#'+ref.pgmid+'leftPanel', '#'+ref.pgmid+'rightPanel'],
+            			   { direction : 'horizontal',
+            		   		 minSize: 550,
+            		   		gutterSize: 12,
+            		   	    gutterAlign: 'end',
+			               });
+               
+			});
+//**********************************************************************************************			  
+             vueArr.push(this);
+		  }
+      }) // end of new Vue
+
+      </script>
+   </div> 
+   
+  </body>
+</html>

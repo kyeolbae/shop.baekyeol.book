@@ -1,0 +1,150 @@
+/* 
+	-- 프로그램명 : 프레임웍 / SAP CO 예산부서, 예산과목, WBS 검색 팝업
+	-- 날짜 : 2021.10.21 by hshwang
+	-- 수정 : 2021.10.25 by hshwang (세부코드 수정)
+	-- 수정 : 2021.11.04 by hshwang (return data 수정)
+*/
+
+package com.ec.eframework.ex.sap;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.configurationprocessor.json.JSONArray;
+import org.springframework.boot.configurationprocessor.json.JSONException;
+import org.springframework.boot.configurationprocessor.json.JSONObject;
+import org.springframework.stereotype.Service;
+
+import com.ec.eframework.ex.common.HttpSapConnectionService;
+import com.ec.eframework.lib.P;
+import com.ec.eframework.mapper.ex.sap.common.SapServiceMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+@Service
+public class ApiSlipService {
+	
+	@Autowired
+	private HttpSapConnectionService httpConnectionService;
+
+	@Autowired
+	private SapServiceMapper sapServiceMapper;
+	
+	private boolean CheckUrl(Map<String, Object> paramMap, String propKey ,Map<String, Object> result)  {
+//		P.ln("CheckUrl");
+		paramMap.put("URL_KEY", propKey);
+		String val =  sapServiceMapper.SapPoUrl(paramMap);
+		if (val.equals("")) {
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "URL 정보가 없습니다.");
+			P.ln("CheckUrl false");
+			return  false;	
+		}else {
+			paramMap.put("URL", val) ;
+		}
+		P.ln("CheckUrl true");
+		   return true;
+	}//	
+	private boolean Checkbukrs(Map<String, Object> paramMap, Map<String, Object> result)  {
+		P.ln("Check bukrs");
+		paramMap.put("CONFIG_KEY", "BUKRS");
+		String bukrs = sapServiceMapper.getSapPoConfig(paramMap);
+		if (bukrs == null || bukrs.equals("")) {
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "BURKS 정보가 없습니다.");
+			P.ln("Checkbukrs false");
+			return  false;	
+		}else {
+			paramMap.put("BUKRS", bukrs) ;
+		}
+		P.ln("Checkbukrs true");
+	      return true;
+	}//	
+	
+	// Config check
+	private boolean CheckConfigData(Map<String, Object> paramMap, Map<String, Object> result, String urlStr)  {
+		P.ln("CheckConfigData");
+		if (!(CheckUrl(paramMap,urlStr, result) && Checkbukrs(paramMap, result))) { 	//  API URL
+			P.ln("CheckConfigData return false");
+			return false;
+			}
+		P.ln("CheckConfigData return true");
+  	    return true;
+	}
+	
+	private JSONObject JSONObjectFactory(Map<String, Object> paramMap) throws JSONException  {
+		P.ln("JSONObjectFactory");
+		JSONObject json = new JSONObject();
+		json.put("BUKRS", paramMap.get("g_comCd").toString());		//회사코드
+		json.put("BELNR", paramMap.get("BELNR").toString());  		 //전표번호
+		json.put("GJAHR", paramMap.get("GJAHR").toString());		//회계연도
+		return json;
+	}
+	
+	// SAP 예실현황 조회
+		public Map<String, Object> getSapapi(Map<String, Object> paramMap) {
+			// 순서 중요		
+			Map<String, Object> result = new HashMap();
+			if (!(CheckConfigData(paramMap, result, "PO_SLIP_QRY"))) return result; 
+			
+			try {			
+				JSONObject json = new JSONObject();
+				json.put("REQUEST_FIDOC", JSONObjectFactory(paramMap));//Request
+				P.ln(json.toString());
+				JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, json, "TOSAP"); // API 호출
+				P.ln(jObject.toString());
+//					 response 
+				JSONObject sub_jObject = jObject.getJSONObject("ES_RESULT");
+				if(!sub_jObject.get("RETURN_CD").equals("E")) {
+					if(jObject.has("T_HEADER")) {
+						if(jObject.has("T_VAT")) {
+							result.put("T_VAT", httpConnectionService.getListMapFromJsonArray(jObject.getJSONArray("T_VAT")));
+						}else {
+							List<HashMap<String,String>> list = new ArrayList();
+							HashMap<String,String> map1 = new HashMap();
+							map1.put("BUKRS",paramMap.get("g_comCd").toString());
+							map1.put("BELNR","");
+							map1.put("GJAHR",paramMap.get("GJAHR").toString());
+							map1.put("BIZNO_SUPPLIER","");
+							map1.put("SUB_BIZNO_SUPPLIER","");
+							map1.put("NAME_SUPPLIER","");
+							map1.put("BIZNO_BUYER","");
+							map1.put("SUB_BIZNO_BUYER","");
+							map1.put("NAME_BUYER","");
+							map1.put("AMT_BASE","");
+							map1.put("AMT_VAT","");
+							map1.put("AMT_TOTAL","");
+							map1.put("MWSKZ","");
+							map1.put("MWSKZ_NAME","");
+							map1.put("ISSUE_ID","");
+							list.add(map1);
+							result.put("T_VAT", list);
+						}
+						result.put("T_HEADER", httpConnectionService.getListMapFromJsonArray(jObject.getJSONArray("T_HEADER")));
+						result.put("T_ITEM", httpConnectionService.getListMapFromJsonArray(jObject.getJSONArray("T_ITEM")));
+						result.put("RESULT" , "OK");
+						result.put("MSG" , sub_jObject.get("RETURN_MSG"));
+					}else {
+						result.put("RESULT" , "ERROR");
+						result.put("MSG" , sub_jObject.get("RETURN_MSG"));
+					}
+				} else {
+					result.put("RESULT" , "ERROR");
+					result.put("MSG" , sub_jObject.get("RETURN_MSG"));
+				}
+			} catch (JSONException | JsonProcessingException e) {
+				result.put("RESULT" , "ERROR");
+				result.put("MSG" , e.getMessage());
+				e.printStackTrace();
+			} catch (Exception e) {  
+				result.put("RESULT" , "ERROR");
+				result.put("MSG" , e.getMessage());
+				e.printStackTrace();
+			}
+			return result;
+		}
+	
+	
+}

@@ -1,0 +1,30 @@
+/* 
+	-- 프로그램명 : 예산관리 / 결재상태 전송 [관리자용]
+	-- 날짜 : 2021.10.19 by hshwang
+	-- 수정 : 
+*/
+
+package com.ec.eframework.mapper.ex.bgt;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.ec.eframework.config.db.FirstMapper;
+import com.ec.eframework.mapper.basic.GridServiceMapper;
+@FirstMapper
+public interface BgtToSapServiceMapper extends GridServiceMapper  {
+	
+	
+	HashMap<String, Object> getBdgtReqIsHeader(Map map);
+	
+	List<HashMap<String, Object>> getBdgtReqItDetail(Map map);
+	
+	HashMap<String , Object > getBdgtTrsIsHeader(Map map);
+	List<HashMap<String , Object >> getBdgtTrsItDetail(Map map);
+	HashMap<String , Object > getBdgtFwdIsHeader(Map map);
+	List<HashMap<String , Object >> getBdgtFwdItDetail(Map map);
+	HashMap<String , Object > getBdgtApprvIsHeader(Map map);
+	HashMap<String , Object > getBdgtChitIsHeader(Map map);
+	
+}

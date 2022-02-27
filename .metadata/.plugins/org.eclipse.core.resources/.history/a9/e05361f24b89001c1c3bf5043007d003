@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper namespace="com.ec.eframework.mapper.ex.expense.ExpImgServiceMapper">
+	    
+	<select id="getExpImgList" resultType="HashMap">
+				    
+      SELECT 
+		/* com.ec.eframework.mapper.ex.expense.ExpImgServiceMapper.getExpImgList 2021.09.08 by hshwang*/
+		ROW_NUMBER() OVER() AS ID,	   
+      		IF(A.SHARED_ID = #{g_userId}, 1, 0) as BE_SHARED_YN,
+		 	IFNULL(B.EXPENSE_NO,'') AS EXPENSE_NO, 
+		 	IFNULL(R.REPORT_NO,'') AS REPORT_NO, 
+		 	IFNULL(C.DATA_EXT_NO,'') AS DATA_EXT_NO ,
+		 	A.FILE_NO, 
+		 	GET_FILE_KIND(A.ORG_FILE_NAME) AS FILE_KIND , 
+		 	UPPER(SUBSTRING_INDEX(A.ORG_FILE_NAME , '.', -1))  AS FILE_TYPE , 
+		 	A.SOURCE,
+		 	A.ORG_FILE_NAME, 
+		 	A.GROUP_NO, 
+            round(A.FILE_SIZE/1024) as FILE_SIZE, 
+            A.OCR_YN, 
+            DATE_FORMAT(A.REGR_DH, '%Y-%m-%d %T')REGR_DH, 
+            IFNULL(A.FILE_OWNER_TP,'') as FILE_OWNER_TP, 
+            A.FILE_OWNER_YN, 
+            A.REGR_ID, 
+            X.USER_NM AS NAME ,
+			P.EXPENSE_NM,
+			EX_GET_APPROVE_STATUS_NM(TO_NUMBER(M.EXPENSE_NO),#{g_lang}) AS APPROVE_STATUS_NM,
+            IFNULL(A.SHARED_ID, '') as SHARED_ID,  
+            V.USER_NM AS SHARED_EMP_NAME, 
+            IFNULL(A.MOD_DH, '') as MOD_DH, 
+            IFNULL(M.MOD_DH, '') as EXPENSE_MOD_DH, 
+            DATE_FORMAT(A.DEL_DH, '%Y-%m-%d %T') as DEL_DH,
+            IFNULL(A.DEL_ID, '') as DEL_ID
+            FROM ADMIN_FILE A
+            LEFT OUTER JOIN EXPENSE_FILE B INNER JOIN EXPENSE_MST M LEFT OUTER JOIN EXPENSE_REPORT R
+	            ON M.REPORT_NO = R.REPORT_NO
+	            ON B.EXPENSE_NO = M.EXPENSE_NO
+	            ON A.FILE_NO = B.FILE_NO
+	            AND B.USE_YN = '1'
+	        LEFT OUTER JOIN OCR_RECEIPT C 
+	        	ON A.FILE_NO = C.FILE_NO 
+	        LEFT OUTER JOIN ADMIN_USER V
+				ON A.SHARED_ID = V.USER_ID 
+			LEFT OUTER JOIN ADMIN_USER X 
+				ON A.REGR_ID = X.USER_ID 
+			LEFT OUTER JOIN EXPENSE_CATEGORY P
+				ON  A.COMPANY_CODE = P.COMPANY_CODE
+				AND M.EXPENSE_CD = P.EXPENSE_CD
+            WHERE A.COMPANY_CODE = #{g_comCd}
+            	and A.USE_YN = #{USE_YN}
+                <if test = 'USE_YN == "1"'>
+				AND A.REGR_DH BETWEEN REPLACE_DATE(#{FR_DATE},'') AND CONCAT(  REPLACE_DATE(#{TO_DATE},'')   ,'999999')
+				</if>
+				<if test = 'USE_YN == "0"'>
+				AND A.DEL_DH BETWEEN REPLACE_DATE(#{FR_DATE},'') AND CONCAT(  REPLACE_DATE(#{TO_DATE},'')   ,'999999')
+				</if>
+				AND (A.REGR_ID = #{g_userId} or A.SHARED_ID = #{g_userId}  )
+				AND A.SOURCE != "07"  -- 일반파일(게시판 등)은 제외
+				and A.clear_file_yn = '0'
+				and A.FILE_OWNER_YN = '0'
+				AND GET_FILE_KIND(A.ORG_FILE_NAME) = 'IMG'
+<!-- 				and (A.FILE_OWNER_TP = 'EX' or  A.FILE_OWNER_TP = '' or A.FILE_OWNER_TP is null) -->
+				<if test = 'SEARCH_TYPE == "M"'>
+				and A.REGR_ID = #{g_userId} and (A.SHARED_ID is null or A.SHARED_ID = "") 
+				</if>
+				<if test = 'SEARCH_TYPE == "I"'>
+				and A.REGR_ID = #{g_userId}  and A.SHARED_ID != #{g_userId} and A.SHARED_ID is not null and A.SHARED_ID != ""
+				</if>
+				<if test = 'SEARCH_TYPE == "C"'>
+				and A.REGR_ID != #{g_userId} and A.SHARED_ID = #{g_userId}
+				</if>
+				order by A.REGR_DH desc, A.GROUP_NO desc
+    </select>
+
+	<select id="getExpImgOcrList" resultType="HashMap">
+    
+		SELECT DATA_EXT_NO,
+		/* com.ec.eframework.mapper.ex.expense.ExpImgServiceMapper.getExpImgOcrList */
+				FILE_NO,
+				COMPANY_CODE,
+				STORE_NAME,
+				STORE_SUBNAME,
+				STORE_BIZNUM,
+				STORE_ADDRESS,
+				STORE_TEL,
+				PAYMENT_DATE,
+				PAYMENT_TIME,
+				PAYMENT_COMPANY,
+				PAYMENT_CARD_NO,
+				PAYMENT_CONFIRM_NO,
+				TOTAL_PRICE,
+				OCR_YN,
+				OCR_CORRECT_YN,
+				CARD_MAPPING_YN,
+				CARD_MAP_KIND,
+				CARD_EVID_NO,
+				REGR_DH,
+				REGR_ID 
+		FROM OCR_RECEIPT
+		WHERE COMPANY_CODE = #{g_comCd}
+		AND FILE_NO = #{FILE_NO}
+		
+			    
+    </select>
+    
+	<select id="getExpImgOcrDetail" resultType="HashMap">
+    
+		SELECT 
+		/* com.ec.eframework.mapper.ex.expense.ExpImgServiceMapper.getExpImgOcrDetail */
+		ROW_NUMBER() OVER() AS ID,
+		RECEIPT_ITEM_NM, RECEIPT_ITEM_PRICE,RECEIPT_ITEM_CNT, RECEIPT_ITEM_UNIT, RECEIPT_ITEM_SEQ, RECEIPT_ITEM_CODE 
+		FROM OCR_RECEIPT_ITEM
+		WHERE DATA_EXT_NO = #{DATA_EXT_NO}
+			    
+    </select>
+    
+    <select id="getExpImgExpense" resultType="HashMap">
+		SELECT C.FILE_NO, B.EXPENSE_CD, B.EXPENSE_NM, A.EXCLUDE_AMT , A.RMK , A.RECEIPT_DT, A.REPORT_NO 
+		/* com.ec.eframework.mapper.ex.expense.ExpImgServiceMapper.getExpImgExpense 2021.08.19 by hshwang*/ 
+		FROM EXPENSE_MST A , EXPENSE_CATEGORY B, EXPENSE_FILE C
+		WHERE A.COMPANY_CODE = #{g_comCd}
+		AND A.COMPANY_CODE = B.COMPANY_CODE 
+		AND A.EXPENSE_NO = #{EXPENSE_NO}
+		AND A.EXPENSE_CD  = B.EXPENSE_CD 
+		AND A.EXPENSE_NO = C.EXPENSE_NO 
+		AND C.USE_YN = '1'
+		AND C.FILE_NO = #{FILE_NO}
+    </select>
+    
+    <select id="getExpImgReport" resultType="HashMap">
+		SELECT C.FILE_NO ,D.REPORT_TITLE , D.SUBMIT_DH, D.APPROVE_DH, D.APPROVE_STATUS, EX_GET_APPROVE_STATUS_NM(A.EXPENSE_NO,'KO')  
+		/* com.ec.eframework.mapper.ex.expense.ExpImgServiceMapper.getExpImgReport 2021.08.19 by hshwang*/
+		FROM EXPENSE_MST A ,  EXPENSE_FILE C, EXPENSE_REPORT D
+		WHERE A.EXPENSE_NO = #{EXPENSE_NO}
+		AND A.EXPENSE_NO = C.EXPENSE_NO 
+		AND A.REPORT_NO = D.REPORT_NO 
+		AND C.USE_YN = '1'
+		AND A.USE_YN  = '1'
+		AND D.USE_YN  = '1'
+		AND C.COMPANY_CODE  = #{g_comCd}
+		AND A.COMPANY_CODE  = C.COMPANY_CODE 
+		AND A.COMPANY_CODE  = D.COMPANY_CODE 
+		AND C.FILE_NO = #{FILE_NO}
+    </select>  
+    
+    <update id="restoreImg">
+    	UPDATE ADMIN_FILE
+    	/* com.ec.eframework.mapper.ex.expense.ExpImgServiceMapper.restoreImg 2021.08.18 by hshwang */
+    	SET USE_YN = '1', MOD_DH = REGR_DH(), DEL_ID = '', DEL_DH = ''
+		WHERE COMPANY_CODE = #{g_comCd} AND FILE_NO = #{FILE_NO};
+    </update>
+    
+    <update id="updateSharedEmp">
+    	UPDATE ADMIN_FILE
+    	/* com.ec.eframework.mapper.ex.expense.ExpImgServiceMapper.restoreImg 2021.08.18 by hshwang */
+    	SET SHARED_ID = #{SHARED_ID}, MOD_DH = REGR_DH()
+		WHERE COMPANY_CODE = #{g_comCd} AND FILE_NO = #{FILE_NO};
+    </update>
+
+</mapper>

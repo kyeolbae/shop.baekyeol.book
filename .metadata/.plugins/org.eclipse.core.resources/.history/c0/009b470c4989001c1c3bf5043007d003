@@ -1,0 +1,148 @@
+/* 
+	-- 프로그램명 : 프레임웍 / DATAHUB 관리
+	-- 날짜 : 2021.10.21 by hshwang
+	-- 수정 : 2021.11.04 by hshwang (return data 수정)
+	-- 수정 : 2021.12.06 by hshwang (SocketException - connection reset 에러 해결 SSLContext 추가)
+*/
+package com.ec.eframework.ex.common;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import org.apache.commons.codec.binary.Base64;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.configurationprocessor.json.JSONException;
+import org.springframework.boot.configurationprocessor.json.JSONObject;
+import org.springframework.stereotype.Service;
+
+import com.ec.eframework.common.HttpConnectionService;
+import com.ec.eframework.mapper.ex.sap.common.SapServiceMapper;
+
+@Service
+public class HttpSapConnectionService extends HttpConnectionService {
+	
+	@Value("${db_encrypt.key}")
+	private String aesKey ; 
+	@Autowired
+	private SapServiceMapper sapServiceMapper;
+	 
+	// 커넥션
+	private HttpURLConnection dataHubHttpURLConnectionFactory(Map<String, String> paramMap) throws IOException, KeyManagementException, NoSuchAlgorithmException {
+		final SSLContext sslContext = SSLContext.getInstance("TLS");
+		sslContext.init(null, new TrustManager[] { new X509TrustManager() {
+			@Override
+			public void checkClientTrusted(java.security.cert.X509Certificate[] arg0, String arg1) throws CertificateException {}
+			@Override
+			public void checkServerTrusted(java.security.cert.X509Certificate[] arg0, String arg1) throws CertificateException {}
+			@Override
+			public java.security.cert.X509Certificate[] getAcceptedIssuers() {return new java.security.cert.X509Certificate[0];}
+		}}, null);
+		
+		javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+		javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
+			public boolean verify(String hostname, SSLSession session) {
+				return true;
+			}
+		});
+		
+		URL postUrl = new URL(paramMap.get("URL").toString());
+		HttpURLConnection connection = (HttpURLConnection) postUrl.openConnection();
+		connection.setDoOutput(true); // xml내용을 전달하기 위해서 출력 스트림을 사용
+		connection.setInstanceFollowRedirects(false); // Redirect처리 하지 않음
+		connection.setRequestMethod("POST");
+	    connection.setRequestProperty("Authorization", "Token " + paramMap.get("TOKEN").toString());
+	    connection.setRequestProperty("Content-Type", "application/json;charset=UTF-8");
+  	    return connection;
+	}
+	
+	private HttpURLConnection SapHttpURLConnectionFactory(Map<String, String> paramMap) throws IOException {
+		
+		// ID / PW 를 Base64로 인코딩
+		List<HashMap<String, Object>> configs = new ArrayList<HashMap<String, Object>>();
+		paramMap.put("AES_DECRYPT", aesKey);
+		
+		String sapPoId ="", sapPoPw = "";
+		paramMap.put("CONFIG_KEY", "SAP_PO_ID");
+		sapPoId = sapServiceMapper.getSapPoConfig(paramMap);
+		paramMap.put("CONFIG_KEY", "SAP_PO_PW");
+		sapPoPw = sapServiceMapper.getSapPoConfig(paramMap);
+		
+		String auth = sapPoId+":"+sapPoPw; 	// 임시 - 추후 config 파일로 저장
+		byte[] authEncBytes = Base64.encodeBase64(auth.getBytes()); 
+		String authStringEnc = new String(authEncBytes); 
+		URL postUrl = new URL(paramMap.get("URL").toString());
+		HttpURLConnection connection = (HttpURLConnection) postUrl.openConnection();
+		connection.setDoOutput(true); // xml내용을 전달하기 위해서 출력 스트림을 사용
+		connection.setInstanceFollowRedirects(false); // Redirect처리 하지 않음
+		connection.setRequestMethod("POST");
+	    connection.setRequestProperty("Authorization","Basic "+authStringEnc);  //  Base64로 인코딩EHLS ID/PW
+	    connection.setRequestProperty("Content-Type", "application/json;charset=UTF-8");
+	    
+  	    return connection;
+	}
+		
+	
+	public JSONObject httpURLConnectionResult(Map paramMap, JSONObject json, String type) throws IOException, JSONException, KeyManagementException, NoSuchAlgorithmException {
+//		param.put("g_comCd", paramMap.get("g_comCd"));
+		JSONObject jObject = new JSONObject();
+		HttpURLConnection connection = null;
+		if(type == "DATAHUB") {
+			connection = dataHubHttpURLConnectionFactory(paramMap);
+		} else if (type == "TOSAP"){
+			connection = SapHttpURLConnectionFactory(paramMap);
+		}
+		
+//			HttpURLConnection connection = HttpURLConnectionFactory(param);		//HttpURLConnection - connection당 한번 호출 후 disconnect
+		OutputStream os = connection.getOutputStream();
+		os.write(json.toString().getBytes());
+		os.flush();
+		os.close();
+		
+		BufferedReader br = new BufferedReader(new InputStreamReader((connection.getInputStream()) ,"UTF-8"));
+		jObject = new JSONObject(br.readLine());
+		connection.disconnect();
+		return jObject;
+	}
+	
+
+	
+	// JsonObject -> Map
+//	@SuppressWarnings("unchecked")
+//	public Map<String, Object> getMapFromJsonObject(JSONObject jsonObj) throws JsonMappingException, JsonProcessingException {
+//		Map<String, Object> map = new ObjectMapper().readValue(jsonObj.toString(), Map.class);
+//		return map;
+//	}
+		
+	// JsonArray -> List<Map>
+//	public List<Map<String, Object>> getListMapFromJsonArray(JSONArray jsonArray) throws JsonMappingException, JsonProcessingException, JSONException {
+//		List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+//		if (jsonArray != null) {
+//			int jsonSize = jsonArray.length();
+//			for (int i = 0; i < jsonSize; i++) {
+//				Map<String, Object> map;
+//					map = getMapFromJsonObject((JSONObject) jsonArray.get(i));
+//				list.add(map);
+//			}
+//		}
+//		return list;
+//	}
+	
+}

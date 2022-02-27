@@ -1,0 +1,138 @@
+package com.ec.eframework.ex.report;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.ec.eframework.lib.JsonDataMap;
+import com.ec.eframework.lib.JsonResultMsgMap;
+import com.ec.eframework.lib.P;
+import com.ec.eframework.lib.MapSession;
+import com.ec.eframework.mapper.ex.expense.ReportServiceMapper;
+import com.ec.eframework.mapper.fi_closing.ClosingServiceMapper;
+
+@Controller
+@RequestMapping("/ex/expense/report")
+public class ReportController {
+
+	@RequestMapping(value = "/my_report")
+    public String my_report() {
+     return "contents/ex/report/my_report";
+    }
+	
+	@RequestMapping(value = "/m_my_report")
+    public String m_my_report() {
+     return "contents/ex/report/m_my_report";
+    }
+	
+	
+	@RequestMapping(value = "/reported")
+    public String reported() {
+     return "contents/ex/report/reported";
+    }
+	
+	@RequestMapping(value = "/m_reported")
+    public String m_reported() {
+     return "contents/ex/report/m_reported";
+    }
+	
+	@RequestMapping(value = "/rejected")
+    public String rejected() {
+     return "contents/ex/report/rejected";
+    }
+	@RequestMapping(value = "/m_rejected")
+    public String m_rejected() {
+     return "contents/ex/report/m_rejected";
+    }
+	@RequestMapping(value = "/m_approved")
+    public String m_approved() {
+     return "contents/ex/report/m_approved";
+    }
+	@RequestMapping(value = "/approved")
+    public String approved() {
+     return "contents/ex/report/approved";
+    }
+	
+	@RequestMapping(value = "/approval")
+    public String approval() {
+     return "contents/ex/report/approval";
+    }
+
+	@RequestMapping(value = "/m_approval")
+    public String m_approval() {
+     return "contents/ex/report/m_approval";
+    }
+	
+	@Autowired
+	private ReportServiceMapper reportServiceMapper;
+	
+//	@Transactional
+//	@ResponseBody
+//	@RequestMapping(value = "/saveReport", produces = MediaType.APPLICATION_JSON_VALUE)
+//	public Map<String, Object>  saveReport(@RequestBody Map paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+//		
+//		
+//		 paramMap.putAll((Map)new MapSession(session));
+//         if (   reportServiceMapper.saveReport(paramMap) > 0 )  {
+//             return new JsonResultMsgMap(true);
+//         }else {
+//	    	return new JsonResultMsgMap(false);
+//	   }
+//	} // saveReport
+	
+	
+	
+    @RequestMapping(value = "/getReportList" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  getReportList(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+    
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master",reportServiceMapper.getReportList(paramMap));    
+    } // getReportList
+    
+    @RequestMapping(value = "/getReportFileByReportNo" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  getReportFileByReportNo(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+    
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master",reportServiceMapper.getReportFileByReportNo(paramMap));    
+    } // getReportList
+    
+       
+    //getApproveStatus
+    @RequestMapping(value = "/getApproveStatus" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  getApproveStatus(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+    
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master",reportServiceMapper.getApproveStatus(paramMap));    
+    } // getApproveStatus
+    
+    //getApproveStatus
+    @RequestMapping(value = "/getApproveLine" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  getApproveLine(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+    
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master",reportServiceMapper.getApproveLine(paramMap));    
+    } // getApproveStatus
+    
+    
+    @RequestMapping(value = "/reportApprvTransportationList" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  reportApprvTransportationList(@RequestBody Map<String, Object> paramMap,HttpServletRequest request, HttpSession session) {
+    P.ln(paramMap.toString());
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master",reportServiceMapper.reportApprvTransportationList(paramMap));    
+    } // getReport
+}      

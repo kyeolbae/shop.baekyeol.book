@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper
+	namespace="com.ec.eframework.mapper.ex.bgt.BgtToSapServiceMapper">
+		
+<!-- 	Header (SAP CO 예산추가신청 API) -->
+	   <select id="getBdgtReqIsHeader" resultType="HashMap">
+	        SELECT 
+	        /* [com.ec.eframework.mapper.ex.bgt.BgtToSapServiceMapper.getBdgtReqIsHeader] */
+				NVL(GET_SAP_CONFIG(MAX(R.COMPANY_CODE), 'BUKRS'),"") AS BUKRS   	/* 회사코드*/
+				,NVL(LEFT(MAX(B.REF_YM), 4),"") AS GJAHR   							/* 년도 */
+				,NVL(R.REPORT_NO,"") AS REQDOC       								/* 문서번호 */
+				,NVL(MAX(B.REQTY),"")     AS REQTY        							/* 신청유형*/
+				,NVL(GET_SAP_CONFIG(MAX(R.COMPANY_CODE), 'REQSYS'),"")  AS REQSYS   /* E-ACCOUNTING 시스템코드 (EACC)*/
+				,NVL(MAX(R.REPORT_TITLE),"") AS TITLE     							/* 제목*/
+				,NVL(MAX(R.REGR_NM),"")  AS UNAME     								/* 신청자명*/
+				,NVL(MAX(E.ERP_CCTR_CD), "")  AS KOSTL     					/* 신청부서 (코스트센터)*/
+				,NVL(RIGHT(MAX(B.REF_YM), 2),"") AS PERIO   						/* 신청월*/
+				,''  AS TEST    											/* 테스트 실행여부*/
+				FROM EXPENSE_REPORT R
+				JOIN BDGT_MST B
+			  		ON R.REPORT_NO = B.REPORT_NO 
+			 		AND R.COMPANY_CODE  = B.COMPANY_CODE 
+				LEFT OUTER JOIN ADMIN_EMP E
+			  		ON B.REGR_ID  = E.USER_ID 
+			 		AND B.COMPANY_CODE  = E.COMPANY_CODE 
+				WHERE B.REPORT_NO = #{REPORT_NO}
+				AND B.COMPANY_CODE = #{g_comCd}
+				GROUP BY R.REPORT_NO;
+       </select>
+	
+<!-- 	Detail (SAP CO 예산추가신청 API) -->
+	   <select id="getBdgtReqItDetail" resultType="HashMap">
+	        SELECT 
+	        /* [com.ec.eframework.mapper.ex.bgt.BgtToSapServiceMapper.getBdgtReqItDetail] */
+				 ROW_NUMBER() OVER() AS SEQNO    	/* 순번 */
+				,NVL(RIGHT(B.BDGT_YM, 2),"")  AS PERIO   	/* 기간 */
+				,NVL(B.BDGT_DEPT_CD,"")       AS FICTR   	/* 예산부서 */
+				,NVL(B.BDGT_ACC_CD,"")        AS FIPEX  	/* 예산과목 */
+				,NVL(B.PS_CD,"")              AS POSID  	/* WBS */
+				,NVL(B.BDGT_AMT,"")           AS AMT    	/* 신청금액 */
+				,'KRW'   AS WAERS  					/* 통화유형 */
+				,NVL(B.RMK,"")                AS LTEXT 		/* 적요 */
+				,NVL(B.CCTR_CD,"")            AS KOSTL 		/* 코스트센터 */
+				,NVL(B.ACC_CD,"")             AS SAKNR 		/* 계정코드 */
+				,NVL(B.BA_CD,"")              AS GSBER 		/* 사업영역 */
+				FROM EXPENSE_REPORT R
+				JOIN BDGT_MST B
+				  	ON R.REPORT_NO = B.REPORT_NO 
+				 	AND R.COMPANY_CODE  = B.COMPANY_CODE 
+				WHERE B.REPORT_NO = #{REPORT_NO}
+				AND B.COMPANY_CODE = #{g_comCd}
+				ORDER BY B.BDGT_NO ASC;
+       </select>
+       
+<!--       Header (SAP CO 전용 API) -->
+	   <select id="getBdgtTrsIsHeader" resultType="HashMap">
+			SELECT 
+			/* [com.ec.eframework.mapper.ex.bgt.BgtToSapServiceMapper.getBdgtTrsHeader] */
+				NVL(GET_SAP_CONFIG(MAX(R.COMPANY_CODE), 'BUKRS'),"") AS BUKRS   	/* 회사코드 */
+				,NVL(LEFT(MAX(B.REF_YM), 4),"") AS GJAHR   							/* 년도 */
+				,NVL(R.REPORT_NO,"") AS REQDOC      								/* 문서번호 */
+				,NVL(MAX(B.REQTY),"")     AS REQTY        							/* 신청유형 */
+				,NVL(GET_SAP_CONFIG(MAX(R.COMPANY_CODE), 'REQSYS'),"")  AS REQSYS   /* E-ACCOUNTING 시스템코드 (EACC) */
+				,NVL(MAX(R.REPORT_TITLE),"") AS TITLE     							/* 제목 */
+				,NVL(MAX(R.REGR_NM),"")  AS UNAME     								/* 신청자명 */
+				,NVL(MAX(E.ERP_CCTR_CD), "")  AS KOSTL     					/* 신청부서 (코스트센터) */
+				,'' AS GSBER /* 사업영역 */
+				,NVL(RIGHT(MAX(B.REF_YM), 2),"") AS PERIO   						/* 신청월 */
+				FROM EXPENSE_REPORT R
+				JOIN BDGT_MST B
+				  	ON R.REPORT_NO = B.REPORT_NO 
+				 	AND R.COMPANY_CODE  = B.COMPANY_CODE 
+				LEFT OUTER JOIN ADMIN_EMP E
+				  	ON B.REGR_ID  = E.USER_ID 
+				 	AND B.COMPANY_CODE  = E.COMPANY_CODE 
+				WHERE B.REPORT_NO = #{REPORT_NO}
+				AND B.COMPANY_CODE = #{g_comCd}
+				GROUP BY R.REPORT_NO ;
+
+       </select>
+       
+<!--      Detail (SAP CO 전용 API) -->
+       <select id="getBdgtTrsItDetail" resultType="HashMap">
+				SELECT 
+				/* [com.ec.eframework.mapper.ex.bgt.BgtToSapServiceMapper.getBdgtTrsDetail] */
+				 ROW_NUMBER() OVER() AS SEQNO    		/* 순번 */
+				,NVL(RIGHT(B.BDGT_YM, 2),"")  AS PERIO    		/* 기간 */
+				,NVL(B.BDGT_DEPT_CD,"")       AS FICTR    		/* 예산부서 */
+				,NVL(B.BDGT_ACC_CD,"")        AS FIPEX  		/* 예산과목 */
+				,NVL(B.PS_CD,"")              AS POSID  		/* WBS */
+				,CASE 
+<![CDATA[			WHEN B.BDGT_AMT  < 0 THEN 'SEND'    ]]>
+					ELSE 'RECV' END AS PROCESS_9  			/* SEND : 센더, RECV:리시버 */
+				,NVL(B.BDGT_AMT,"")           AS AMT    		/* 신청금액 */
+				,'KRW'   AS WAERS  						/* 통화유형 */
+				,NVL(B.RMK,"")                AS LTEXT 			/* 적요 */
+				,NVL(B.CCTR_CD,"")            AS KOSTL 			/* 코스트센터 */
+				,NVL(B.ACC_CD,"")             AS SAKNR 			/* 계정코드 */
+				,NVL(B.BA_CD,"")              AS GSBER 			/* 사업영역 */
+				FROM EXPENSE_REPORT R
+				JOIN BDGT_MST B
+				  	ON R.REPORT_NO = B.REPORT_NO 
+				 	AND R.COMPANY_CODE  = B.COMPANY_CODE 
+				WHERE B.REPORT_NO = #{REPORT_NO}
+				AND B.COMPANY_CODE = #{g_comCd}
+				ORDER BY B.BDGT_NO ASC;
+       </select>
+       
+<!--        상신 : (IF ID -> "BDGT_FWD")  -->
+       <select id="getBdgtFwdIsHeader" resultType="HashMap">
+			SELECT 
+			/* [com.ec.eframework.mapper.ex.bgt.BgtToSapServiceMapper.getBdgtFwdHeader] */
+				NVL(GET_SAP_CONFIG(MAX(R.COMPANY_CODE), 'BUKRS'),"") AS BUKRS   	/* 회사코드 */
+				,NVL(LEFT(MAX(B.REF_YM), 4),"") AS GJAHR   							/* 년도 */
+				,NVL(R.REPORT_NO,"") AS REQDOC       								/* 문서번호 */
+				,NVL(MAX(B.REQTY),"")     AS REQTY        							/* 신청유형 */
+				,NVL(GET_SAP_CONFIG(MAX(R.COMPANY_CODE), 'REQSYS'),"")  AS REQSYS   /* E-ACCOUNTING 시스템코드 (EACC) */
+				,NVL(MAX(R.REPORT_TITLE),"") AS TITLE     							/* 제목 */
+				,NVL(MAX(R.REGR_NM),"")  AS UNAME     								/* 신청자명 */
+				,NVL(MAX(E.ERP_CCTR_CD), "")  AS KOSTL     					/* 신청부서 (코스트센터) */
+				,'' AS GSBER 												/* 사업영역 */
+				,NVL(RIGHT(MAX(B.REF_YM), 2),"") AS PERIO   						/* 신청월 */
+			FROM EXPENSE_REPORT R
+			JOIN BDGT_MST B
+			  	ON R.REPORT_NO = B.REPORT_NO 
+			 	AND R.COMPANY_CODE  = B.COMPANY_CODE 
+			LEFT OUTER JOIN ADMIN_EMP E
+			  	ON B.REGR_ID  = E.USER_ID 
+			 	AND B.COMPANY_CODE  = E.COMPANY_CODE 
+			WHERE B.REPORT_NO = #{REPORT_NO}
+			AND B.COMPANY_CODE = #{g_comCd}
+			GROUP BY R.REPORT_NO ;
+       </select>
+       
+       <select id="getBdgtFwdItDetail" resultType="HashMap">
+			SELECT 
+			/* [com.ec.eframework.mapper.ex.bgt.BgtToSapServiceMapper.getBdgtFwdDetail] */
+			    ROW_NUMBER() OVER() AS SEQNO    	/* 순번 */
+				,NVL(PERIO,"") AS	PERIO						/* 기간 */
+				,NVL(FICTR,"") AS   FICTR							/* 예산부서 */
+				,NVL(FIPEX,"") AS 	FIPEX						/* 예산과목 */
+				,NVL(POSID,"") AS 	POSID						/* WBS */
+				,NVL(PROCESS_9,"") AS PROCESS_9 						/* SEND : 센더 */
+				,NVL(AMT,"") AS  AMT 							/* 신청금액 */
+				,NVL(WAERS,"") AS 	WAERS						/* 통화유형 */
+				,NVL(LTEXT,"") 	AS	LTEXT						/* 적요 */
+				,NVL(KOSTL, "") AS	KOSTL							/* 코스트센터 */ 
+				,NVL(SAKNR,"") 	AS	SAKNR						/* 계정코드 */
+				,NVL(GSBER,"") 	AS	GSBER						/* 사업영역 */
+			FROM (
+			SELECT 
+				 B.BDGT_NO AS SEQNO    				/* 순번 */
+				,RIGHT(B.REF_YM, 2)  AS PERIO    	/* 기간 */
+				,B.BDGT_DEPT_CD       AS FICTR    	/* 예산부서 */
+				,B.BDGT_ACC_CD        AS FIPEX  	/* 예산과목 */
+				,B.PS_CD              AS POSID  	/* WBS */
+				,'SEND'               AS PROCESS_9  /* SEND : 센더 */
+				,-1*B.BDGT_AMT        AS AMT    	/* 신청금액 */
+				,'KRW'   			  AS WAERS  	/* 통화유형 */
+				,B.RMK                AS LTEXT 		/* 적요 */
+				,NVL(B.CCTR_CD, "")            AS KOSTL 		/* 코스트센터 */ 
+				,B.ACC_CD             AS SAKNR 		/* 계정코드 */
+				,B.BA_CD              AS GSBER 		/* 사업영역 */
+			FROM EXPENSE_REPORT R
+			JOIN BDGT_MST B
+			  	ON R.REPORT_NO = B.REPORT_NO 
+			 	AND R.COMPANY_CODE  = B.COMPANY_CODE 
+			WHERE B.REPORT_NO = #{REPORT_NO}
+			  	AND B.COMPANY_CODE = #{g_comCd}
+			UNION ALL
+			SELECT 
+				 B.BDGT_NO AS SEQNO    				/* 순번 */
+				,RIGHT(B.BDGT_YM, 2)  AS PERIO    	/* 기간 */
+				,B.BDGT_DEPT_CD       AS FICTR    	/* 예산부서 */
+				,B.BDGT_ACC_CD        AS FIPEX  	/* 예산과목 */
+				,B.PS_CD              AS POSID  	/* WBS */
+				,'RECV'               AS PROCESS_9  /* RECV : 리시버 */
+				,B.BDGT_AMT           AS AMT    	/* 신청금액 */
+				,'KRW'   AS WAERS  					/* 통화유형 */
+				,B.RMK                AS LTEXT 		/* 적요 */
+				,NVL(B.CCTR_CD, "")            AS KOSTL 		/* 코스트센터 */ 
+				,B.ACC_CD             AS SAKNR 		/* 계정코드 */
+				,B.BA_CD              AS GSBER 		/* 사업영역 */
+			FROM EXPENSE_REPORT R
+			JOIN BDGT_MST B
+			  	ON R.REPORT_NO = B.REPORT_NO 
+			 	AND R.COMPANY_CODE  = B.COMPANY_CODE 
+			WHERE B.REPORT_NO = #{REPORT_NO}
+			AND B.COMPANY_CODE = #{g_comCd} 
+			ORDER BY SEQNO) A ;
+       </select>
+       
+       <select id="getBdgtApprvIsHeader" resultType="HashMap">
+
+	        SELECT 
+	        /* [com.ec.eframework.mapper.ex.bgt.BgtToSapServiceMapper.getBdgtApprv] */
+				NVL(GET_SAP_CONFIG(MAX(R.COMPANY_CODE), 'BUKRS'),"") AS BUKRS   			/* 회사코드 */
+				,NVL(LEFT(MAX(B.REF_YM), 4),"") AS GJAHR   									/* 년도 */
+				,NVL(R.REPORT_NO,"") AS REQDOC       										/* 문서번호 */
+				,NVL(MAX(B.REQTY),"")     AS REQTY        									/* 신청유형 */
+				,NVL(GET_SAP_CONFIG(MAX(R.COMPANY_CODE), 'REQSYS'),"")  AS REQSYS    		/* E-ACCOUNTING 시스템코드 (EACC) */
+				,NVL(GET_SAP_CONFIG(MAX(R.COMPANY_CODE), CONCAT('WFSTAT', #{BDGT_STAT})),"") AS WFSTAT     /* 결재상태 */
+				FROM EXPENSE_REPORT R
+				JOIN BDGT_MST B
+				 	 ON R.REPORT_NO = B.REPORT_NO 
+				 	AND R.COMPANY_CODE  = B.COMPANY_CODE 
+				LEFT OUTER JOIN ADMIN_EMP E
+				  	ON B.REGR_ID  = E.USER_ID 
+				 	AND B.COMPANY_CODE  = E.COMPANY_CODE 
+				WHERE B.REPORT_NO = #{REPORT_NO}
+				AND B.COMPANY_CODE = #{g_comCd}
+				GROUP BY R.REPORT_NO ;
+       </select>
+    
+     <select id="getBdgtChitIsHeader" resultType="HashMap">
+    
+    select
+		RT.REPORT_NO as ZZAPPRV_NUMB     -- 결재번호
+		,BKPF.BUKRS  as BUKRS   -- 회사코드
+		,BKPF.BELNR  as BELNR   -- 전표번호
+		,BKPF.GJAHR  as GJAHR   -- 회계년도
+		,GET_SAP_CONFIG(RT.COMPANY_CODE, CONCAT('ZZAPPRV_STAT', #{BDGT_STAT})) as ZZAPPRV_STAT   -- 결재상태코드
+		,NVL(#{ZZAPPRV_DATE},"") as ZZAPPRV_DATE    -- 결재일 (예 : 20211001)
+		,NVL(#{ZZAPPRV_TIME},"") as ZZAPPRV_TIME     -- 결재시간  (예: 182001)
+		,NVL(#{g_empNo},"") as ZZAPPRV_USER
+		,NVL(#{g_empNm},"") as ZZAPPRV_USER_NAME
+		,NVL(#{g_deptCd},"") as INDEPT_CD
+		,NVL(#{g_deptNm},"") as INDEPT_NAME
+		,left(DATE_TO_STRING(SYSDATE()), 8) as TRANSFER_DATE   -- 시스템일자
+		,right(DATE_TO_STRING(SYSDATE()), 6) as TRANSFER_TIME   -- 시스템시간분초
+		from EXPENSE_REPORT RT, INBOX_BKPF BKPF
+		where RT.REPORT_NO = #{REPORT_NO} -- (문서번호 파라미터)
+		and RT.COMPANY_CODE = #{g_comCd}
+		and RT.REPORT_NO  = BKPF.REPORT_NO
+     </select>
+	
+</mapper>

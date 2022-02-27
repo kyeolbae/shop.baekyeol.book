@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+<meta charset="utf-8" />
+<!--   법인카드 -->
+</head>
+
+<body>
+	<section layout:fragment="content">
+
+		<form class="d-flex flex-column  p-r-10 p-l-10 justify-content-between h-100" th:id=${param.pgm_id}>
+
+				<div class="overflow-y h-100">
+					
+					<div class=" f-subtitle mt-2">
+						<i class="fa fa-circle text-maintheme f-s-8 mr-2"></i>나의정보
+					</div>
+					<div class="d-flex   mb-2">		
+						<div class="w-100 text-nowrap m-0 col-3 d-flex align-items-center">사원명</div>
+						<div class="form-control ec-mobile-input bg-white text-left">
+							 <span th:text="${session.g_empNo} "> </span>
+							  <span th:text="${session.g_userNm} "> </span>
+						</div>
+					</div>
+					
+					<div class="d-flex   mb-2">
+						<label class="w-100 text-nowrap m-0 col-3 d-flex align-items-center">부서명</label>
+						<div class="form-control ec-mobile-input bg-white text-left" >
+	                        <span th:text="${session.g_deptCd} "> </span>
+	                        <span th:text="${session.g_deptNm} "> </span>
+						</div>
+					</div>
+				
+				    <div class="d-flex   mb-2">
+						<label class="w-100 text-nowrap m-0 col-3 d-flex align-items-center">코스트센터</label>
+						<div class="form-control ec-mobile-input bg-white text-left">
+						        <span th:text="${session.g_cstCntrCd} "> </span>
+						        <span th:text="${session.g_cstCntrNm} "> </span>
+						</div>
+				    </div>
+				    
+				   <div class="d-flex   mb-4">
+						<label class="w-100 text-nowrap m-0 col-3 d-flex align-items-center">사업영역</label>
+						<div class="form-control ec-mobile-input bg-white text-left">
+						        <span th:text="${session.g_baCd} "> </span>
+						        <span th:text="${session.g_baNm} "> </span>
+						</div>
+				   </div>
+				    
+				<div class=" f-subtitle mt-2">
+				<i class="fa fa-circle text-maintheme f-s-8 mr-2"></i>법인카드 정보
+			</div>	
+				<div class="d-flex   mb-2">
+					<label class="w-100 text-nowrap m-0 col-4 d-flex align-items-center">법인카드</label>
+					<div class="d-flex w-100">
+						<div class="w-100" >
+						    <dropdown-tablecommon class="" ref="cardList" mobile="true" th:pgmid=${param.pgm_id}  selectid="getMyCardList" selectname="getMyCardList" tableid="getMyCardList" url="/ex/common/commonSelect/search"  formatstr="cardformat"  ></<dropdown-tablecommon>
+						</div>
+						
+					</div>
+				</div>
+				<div class="col-12 p-0 d-flex  justify-content-end ">
+							<a  @click="newCardOnclick()"  class="btn border w-100 rounded-0 f-subtitle-plane m-b-10 bg-maintheme"><i class="far fa-lg fa-fw icon-credit-card h3 m-b-3 m-r-5"></i>카드 수령 등록</a>
+							
+						</div>
+				
+				<div class=" f-subtitle mt-2">
+					<i class="fa fa-circle text-maintheme f-s-8 mr-2"></i>결재 정보
+				</div>
+				 <div class="d-flex mb-2">
+                       <label class="w-100 text-nowrap m-0 col-4 d-flex align-items-center">대결 설정</label>
+                       <div class="d-flex w-100">
+						<div class="w-100" >
+                        	<input type="text" name="APPROVE_ID" :id="pgmid+'approveid'" class="form-control ec-mobile-input bg-white text-left" disabled/>
+						    <input type="text" name="FR_DATE" :id="pgmid+'fr_date'" class="form-control ec-mobile-input bg-white text-left" disabled/>
+						</div> 
+                 		</div> 
+				</div>
+		<div class="d-flex flex-column  mb-2">
+		<div class="d-flex">
+			<div class="col-6  justify-content-center ec-col-input">
+				<a  v-if="$options.filters.isNotEmpty(approve_Name)==false" type="button" :id="pgmid+'AdOnclick'" @click="AdOnclick()" class="btn border w-100 rounded-0 f-subtitle-plane bg-maintheme"><i class="far fa-lg fa-fw icon-user h3 m-b-3 m-r-5 "></i>대결 설정</a>
+				<a v-if="$options.filters.isNotEmpty(approve_Name)" type="button" :id="pgmid+'AdDeleteOnclick'" @click="AdDeleteOnclick()"class="btn border w-100 rounded-0 f-subtitle-plane bg-maintheme"><i class="far fa-lg fa-fw icon-user-unfollow h3 m-b-3 m-r-5"></i>대결 취소</a>
+			</div>	
+			<div class="col-6  justify-content-center ec-col-input">
+				<a  @click="RecordOnclick()"  class="btn border w-100 rounded-0 f-subtitle-plane bg-maintheme"><i class="far fa-lg fa-fw icon-list h3 m-b-3 m-r-5 "></i>이력보기</a>
+			</div>
+		</div>
+		</div>
+						<div class="d-flex mb-2">
+					<label class="w-100 text-nowrap m-0 col-4 d-flex align-items-center">결재 알림 설정</label>
+					<div class="border-bottom col-lg-9 col-md-9 checkbox checkbox-css pl-1 pb-2">
+					      <input type="checkbox" :id="pgmid+'arrive_alarm'" @click="Alarm('Arrive')" />
+							  <label :for="pgmid+'arrive_alarm'" class="pb-2">도착 알림</label>&nbsp
+							  
+						  <input type="checkbox" :id="pgmid+'approve_alarm'" @click="Alarm('Approve')" />
+							  <label :for="pgmid+'approve_alarm'">완료 알림</label>&nbsp
+							  
+						  <input type="checkbox" :id="pgmid+'reject_alarm'" @click="Alarm('Reject')" />
+							  <label :for="pgmid+'reject_alarm'">반려 알림</label>&nbsp
+							  
+						  <input type="checkbox" :id="pgmid+'recall_alarm'" @click="Alarm('Recall')" />
+							  <label :for="pgmid+'recall_alarm'">회수 알림</label>
+					</div>
+					</div>
+		
+		
+<!-- 				신규 카드 수령 등록 modal -->
+				<div class="modal ec-modal h-100" data-backdrop="false" :id="pgmid+'modal_new_card'"   >
+                    <div class="modal-dialog modal-lg modal-dialog-centered h-100 m-0  ui-draggable" >
+                        <div class="modal-content h-100 border-0" >
+                            <div class="modal-header ec-modal-header ui-draggable-handle" style="z-index: 1;">
+                                <div class="modal-title f-title-plane">카드 수령 등록</div>
+                                <a class="close" aria-hidden="true" type="button" data-dismiss="modal"><i class="icon-cross2"></i></a>
+                            </div>
+                            <div class="modal-body h-100  d-flex flex-column justify-content-between p-b-25  " style="margin-top:-60px; padding-top: 70px;">     
+                	 			<!-- grid -->
+                   				<div class="p-0"  :id="pgmid+'ocrmstinputs'">
+									<div class="d-flex flex-column  mb-2">
+									     <label class="w-100 m-0">사원명</label>
+									          <div class=" mr-1">
+					       						 <span th:text="${session.g_userNm}" class="form-control ec-mobile-input bg-white text-left" > </span>
+									          </div>
+									</div> 
+									<div class="d-flex flex-column  mb-2">
+									     <label class="w-100 m-0">카드번호</label>
+									     <div class="col-12 pl-0 pr-4 d-flex ">
+									     <div class="col-3  ec-col-input "style="border-bottom:none">
+									                 <numberstring-component   ref="cardno1" required="required"    maxlength = "4" fontclass="f-subtitle"></numberstring-component>
+									     </div><h4 style="margin-top:auto">-</h4>
+									     <div class="col-3  ec-col-input "style="border-bottom:none">
+									                 <numberstring-component  ref="cardno2" required="required"    maxlength = "4" fontclass="f-subtitle"></numberstring-component>
+									     </div><h4 style="margin-top:auto">-</h4>
+									     <div class="col-3  ec-col-input "style="border-bottom:none">
+									                 <numberstring-component   ref="cardno3" required="required"    maxlength = "4" fontclass="f-subtitle"></numberstring-component>
+									     </div><h4 style="margin-top:auto">-</h4>
+									     <div class="col-3  ec-col-input "style="border-bottom:none">
+									                 <numberstring-component  ref="cardno4" required="required"    maxlength = "4" fontclass="f-subtitle"></numberstring-component>
+									     </div>
+									</div> 
+								  </div>
+								</div>
+								<div class="d-flex flex-row btn-row ec-btn-bottom-row" style="padding-top: 10px;">
+                                <a class="btn ec-btn-bottom w-100  bg-maintheme" @click="saveCard()">등록요청</a>
+							    </div>
+                             </div>
+                          <!--end of modal body -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 부재/결재 위임 설정 modal -->
+				<div class="modal ec-modal h-100" data-backdrop="false" :id="pgmid+'modal_ad'"   >
+                    <div class="modal-dialog modal-lg modal-dialog-centered h-100 m-0 ui-draggable" >
+                        <div class="modal-content h-100 border-0" >
+                            <div class="modal-header ec-modal-header ui-draggable-handle" style="z-index: 1;">
+                                <div class="modal-title f-title-plane">대결 설정</div>
+                                <a class="close" aria-hidden="true" type="button" data-dismiss="modal"><i class="icon-cross2"></i></a>
+                            </div>
+                            <div class="modal-body h-100  d-flex flex-column justify-content-between p-b-25 " style="margin-top:-60px; padding-top: 70px;">     
+                	 			<!-- grid -->
+                   				<div class=" p-0"  :id="pgmid+'ocrmstinputs'">
+									<div class="d-flex flex-column  mb-2">
+									     <label class="w-100 m-0 label-required">대결 사용</label>
+									     <div class="ec-col-input mb-2">
+<!--                                             <daterange-m-component-v1 ref="searchdt" th:id=${param.pgm_id} subname1="SEARCH_FR_DT" subname2="SEARCH_TO_DT"  required="true"  initval1="firstday-1m" initval2="lastday" loc="center"></daterange-m-component-v1> -->
+                    					 	<div class="checkbox checkbox-css p-0 ml-1">
+						  						<input type="checkbox" :id="pgmid+'USE_YN'" name="USE_YN" @click="USEYN" checked disabled/>
+						  						<label :for="pgmid+'USE_YN'">&nbsp</label>
+									 		</div>
+                      					 </div>
+                      					 
+                      					<div class="ec-grid-row m-0">
+									     	<label class="w-100 m-0 label-required">대결자</label>
+									          <div class="w-100 d-flex mb-2">
+                                    			<popup-m-code ref="popupemp" :pgmid="pgmid"  pgmnm="대결자" subname="POPUPEMP"  name="POPUPEMP" searchname="작성자"  columnlayout="popupemp"   tablename="USER"  required="true"  ></popup-m-code>
+									          </div>
+										</div> 
+										
+										<div class="ec-grid-row m-0">
+									     	<label class="w-100 m-0 label-required">대결 기간</label>
+									          <div class="w-100 d-flex mb-2">
+                                            		<daterange-m-component-v1 ref="daterange" th:id=${param.pgm_id} subname1="SEARCH_FR_DT" subname2="SEARCH_TO_DT"  required="true"  minval1 = 'today' minval2 = 'today' initval1="firstday-1m" initval2="lastday" loc="center"></daterange-m-component-v1>
+									          </div>
+										</div>
+                      					 
+									</div> 
+									<div class="d-flex flex-column  mb-2">
+									     <label class="w-100 m-0 label-required">사유</label>
+									         <div class=" mr-1">
+									             <input type="text" name="REASON_RMK" :id="pgmid+'REASON_RMK'"  class="form-control ec-mobile-input bg-white text-left" /> 
+									          </div>
+									</div> 
+<!-- 									<div class="text-center mt-3"> -->
+<!-- 											<a type="button" @click="saveEnrollmentOnclick()" class="btn btn-default">등록</a> -->
+<!-- 									</div> -->
+									
+								</div>
+								<div class="d-flex flex-row btn-row ec-btn-bottom-row">
+		                                <a  class="btn  ec-btn-bottom w-100  bg-maintheme" @click="saveEnrollmentOnclick">저장</a>
+									</div>
+                             </div>
+                          <!--end of modal body -->
+                        </div>
+				</div>
+			</div> 
+			
+			 <!-- 	이력보기 modal -->
+			<div class="modal ec-modal h-100" data-backdrop="false" :id="pgmid+'modal_record'"   >
+                    <div class="modal-dialog modal-lg modal-dialog-centered h-100 m-0 ui-draggable" >
+                        <div class="modal-content h-100 border-0" >
+                            <div class="modal-header ec-modal-header ui-draggable-handle" style="z-index: 1;">
+                                <div class="modal-title f-title-plane">이력보기</div>
+                                <a class="close" aria-hidden="true" type="button" data-dismiss="modal"><i class="icon-cross2"></i></a>
+                            </div>
+                            <div class="modal-body h-100" style="margin-top:-60px; padding-top: 70px; padding-bottom: 100px;">   
+                	 			<!-- grid -->
+                   			 <div class="flex-shrink-1 flex-grow-1  h-100">
+								   <grid-crud ref="gridmaster" :columnlayout="columnlayout" :pgmid="pgmid" subname="gridmaster"  buttons="" @searchgridrow="getMyInfo()" ></grid-crud>
+                             </div>
+		                    <div class="d-flex flex-row btn-row ec-btn-bottom-row" style="padding-top: 10px;">
+                                <a class="btn ec-btn-bottom w-100  btn-maintheme" @click="getMyInfo()">조회</a>
+							</div>
+									
+                          <!--end of modal body -->
+                        </div>
+				</div>
+			</div> 
+			</div>
+		  
+		  
+		  			<!-- end ec-grid-box  -->
+		  </div>
+		</form>
+
+		<!-- ================== BEGIN THIS PAGE JS ================== -->
+		<div th:replace="contents/ex/config/myinfo-js :: js"></div>
+
+	</section>
+
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<!--     <meta charset="utf-8" /> -->
+</head>
+  <body>
+   
+   <div :class="{'d-flex': curItem.TYPE =='TOLL' }" class="d-none w-100 flex-column flex-sm-row" th:fragment="html">
+   
+       <!-- begin modal 이미지,  삭제금지-->
+                         <div class="d-flex flex-column p-0 receipt-m-box-modal" :id="pgmid+'bizcard-clon-receipt'">
+<!--                            <div v-if="$options.filters.isNotEmpty(curItem.FILE_NO)  &&  curItem.TYPE =='TOLL' &&  curItem.FILE_TYPE =='PDF' " data-toggle="modal" :data-target="'#'+pgmid+'tollpdfmodal'"  class="btn mb-1"  >   -->
+<!--                                <canvas :id="tollCanvasId" ></canvas >  -->
+<!--                            </div>   -->
+									<div class="receipt-box-modal d-flex flex-column" >
+							          <ec-img  ismobile="true" ref="tollimg" v-show="$options.filters.isNotEmpty(curItem.FILE_NO)  &&  curItem.TYPE =='TOLL' " 
+							            source="TO" autoprocess="false"    @successupload="saveServer"  @pdffileadded="tollUploaded"   addfile="true"> </ec-img>
+									</div>                                    
+                         </div>
+                         <div class="" :id="pgmid+'tollmodalbody'">
+                         
+		                             <div class="d-flex flex-column  mb-2">
+		                                    <label class="w-100 m-0">청구자<span class="text-danger">*</span></label>
+		                                    <popup-m-code ref="popuptollemp" :pgmid="pgmid"  pgmnm="비용청구자" subname="popuptollemp"  name="EMP_NO_TOLL" searchname="청구자"  required="true" columnlayout="popupemp"   tablename="EMP"  readonly="readonly"   @codechanged="empNoChange"  ></popup-m-code>
+		                             </div> 
+                                     <div class="d-flex flex-column  mb-2">
+                                            <label class="w-100 m-0">증빙일<span class="text-danger">*</span></label>
+                                            <date-m-component-v1  ref="RECEIPT_DT_TOLL" th:pgmid="${param.pgm_id}" subname="RECEIPT_DT_TOLL"  required="true" ></date-m-component-v1>
+                                     </div> 
+                                     <div class="d-flex flex-column  mb-2">
+                                            <label class="w-100 m-0">금액<span class="text-danger">*</span></label>
+                                            <input type="text" name="EXPENSE_AMT_TOLL" :id="pgmid+'EXPENSE_AMT_TOLL'" class="form-control ec-mobile-input bg-white text-right" disabled/>
+                                     </div> 
+                           
+	                             <div class="d-flex flex-column  mb-2">
+	                                    <label class="w-100 m-0">비용항목<span class="text-danger">*</span></label>
+	                                    <popup-m-code ref="popupexptoll" :pgmid="pgmid"  pgmnm="비용항목" subname="popupexptoll"  name="EXPENSE_CD_TOLL" searchname="비용항목"  columnlayout="popupexpcard"   tablename="EXTOLL" required="true" readonly="readonly"  @codechanged="receiptExpCdChange"  ></popup-m-code>
+	                             </div> 
+                             
+                             <span v-show="receiptbelongtype != '0'">
+                                <div class="d-flex flex-column  mb-2">
+                                <label class="w-100 m-0">귀속<span class="text-danger">*</span></label>
+                                  <div class='d-flex flex-column'>
+	                                    <div class=" p-0 d-flex">
+	                                               <dropdown-m-syscommon  ref="TOLL_CCENTER_TP" class="w-100 p-0 flex-shrink-0"  :pgmid="pgmid"  
+	                                                       dropdownlabel=""  selectid="TOLL_CCENTER_TP" selectname="TOLL_CCENTER_TP" 
+	                                                       clcd="EX_CCENTER_TP"   @changed="ccenterTpChange"></dropdown-m-syscommon>
+	                                   </div>
+	                                    <div class=" p-0 d-flex">
+	                                        <span v-show="receiptcosttype=='1'" class="w-100"><popup-m-code  ref="popupcostcentertoll" :pgmid="pgmid"  pgmnm="코스트센터" subname="popupcostcenter-toll"   name="CCTR_CD_TOLL" searchname="코스트센터"   columnlayout="popupcostcenter"  readonly="readonly" tablename="CCTR" @codechanged="costCenterCdChange"  ></popup-m-code></span>
+	                                        <span v-show="receiptcosttype=='2'" class="w-100"><popup-m-code  ref="popupprojecttoll" :pgmid="pgmid"  pgmnm="프로젝트" subname="popupproject-toll"   name="PROJECT_TOLL" searchname="프로젝트"  columnlayout="popupproj"   tablename="PROJ" readonly="readonly"   @codechanged="projectCdChange" ></popup-m-code></span>
+	                                   </div>
+                                   </div>
+                             </div> 
+                             </span>   
+                             
+                             <div v-for="item in receiptMngList " class="d-flex flex-column  mb-2">
+                                 <label class="w-100 m-0">{{item.MNG_NM}}<span v-show="item.MUST_YN=='1'" class="text-danger">*</span></label>  
+                                 <div v-if="item.INPUT_FORMAT_CD !='01' &&  item.INPUT_FORMAT_CD !='05'  &&  item.INPUT_FORMAT_CD !='02'" class="w-100">
+                                     <input type="text"  :id="pgmid+'popuptollmng'+item.MNG_CD" 
+                                     :class="{required : item.MUST_YN=='1'}" class="form-control ec-mobile-input"  /> 
+                                 </div>                                                                                              
+                                 <div v-if="item.INPUT_FORMAT_CD=='01'" class="w-100">
+                                     <popup-m-code  :ref="'popuptollmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-toll"   name="CCTR_CD_TOLL" 
+                                     :searchname="item.MNG_NM"  :required="item.MUST_YN=='1' ?  'true' : '' "  :columnlayout="item.COLUMN_LAYOUT"   :tablename="item.TABLE_CD" :codecl="item.COMM_CL_CD" readonly="readonly" 
+                                      ></popup-m-code>
+                                 </div>
+                                 <div v-if="item.INPUT_FORMAT_CD=='02'" class="w-100">
+                                      <inputnumber-m-component  :ref="'popuptollmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-toll" :required="item.MUST_YN=='1' ?  'true' : '' "  ></inputnumber-m-component>
+                                 </div>                                 
+                                 <div v-if="item.INPUT_FORMAT_CD=='05'" class="w-100">
+                                     <date-m-component-v1  :ref="'popuptollmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-toll"   name="CCTR_CD_TOLL" 
+                                     :searchname="item.MNG_NM"  :required="item.MUST_YN=='1' ?  'true' : '' "  readonly="readonly" 
+                                      ></date-m-component-v1>
+                                 </div>                                 
+                            </div> 
+                                    
+                             <div class="d-flex flex-column  mb-2">
+                                    <label class="w-100 m-0">적요</label>
+                                    <div class="w-100">
+                                        <input type="text" name="RMK_TOLL" :id="pgmid+'RMK_TOLL'" class="form-control ec-mobile-input " :value="curItem.RMK " />
+                                    </div>
+                             </div>  
+                             <div class="d-none flex-column  mb-2">
+                                   <label class="w-100 m-0">영수증 목록</label>
+                                   <div v-for="(item, index) in tollOcrList" class="border-top d-flex justify-content-between " >
+                                          <div class=" d-flex flex-column justify-content-between">
+		                                          <div class=" p-0">{{item.DH }}</div>
+		                                          <div class=""> {{item.BIZ_NM}} </div> 
+                                          </div>   
+                                          <div class= " d-flex justify-content-end"><strong>{{item.TOT_AMT  | numberformat('0,000') }}원 </strong></div>                                                          
+                                   </div>
+                             </div>   
+                             <div  class="d-none">
+                                    <grid-r1 ref="gridtoll" :columnlayout="columnlayouttoll" :pgmid="pgmid+'gridtoll'" subname="gridtoll"  ></grid-r1> 
+                             </div>                 
+                               
+                         </div>
+          <!-- end of popup 영수증-->            
+   
+   </div> 
+   
+  </body>
+</html>

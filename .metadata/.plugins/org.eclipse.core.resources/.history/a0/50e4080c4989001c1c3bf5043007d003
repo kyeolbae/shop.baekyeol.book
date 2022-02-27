@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<!--     <meta charset="utf-8" /> -->
+</head>
+  <body>
+   
+    <div  :class="{'d-flex': curItem.TYPE =='PREPAID' }" class="d-none w-100 flex-column flex-sm-row" th:fragment="html">
+   
+       <!-- begin modal 이미지-->
+                         
+			          <div class="d-flex flex-column p-0 receipt-m-box-modal " :id="pgmid+'bizcard-clon-receipt'">
+						    <ec-img ref="prepaidimg"   ismobile="true" v-show="$options.filters.isNotEmpty(curItem.FILE_NO)  &&  curItem.TYPE =='PREPAID' " 
+							     source="PD" @edited="receiptimgedited" @clickmainfile="receiptClickMainFile"
+							     autoprocess="false"  @multiupload="saveServer"   @autoupload="getImgFilesNo"  @clicktrash="deleteEcImg"> 
+						    </ec-img>  
+			          </div>      
+                         
+                         <div class="" :id="pgmid+'prepaidmodalbody'">
+                         
+                                     <div class="my-3">
+                                            <div class="d-flex flex-column  mb-2">
+                                                <label class="w-100 m-0">전기일<span class="text-danger">*</span></label>
+                                                <div class="w-100">
+                                                    <date-m-component-v1  ref="RECEIPT_DT_PREPAID"  th:pgmid="${param.pgm_id}" subname="RECEIPT_DT_PREPAID"  required="true" readonly="readonly"  @changedate="changeReceiptDate"  ></date-m-component-v1>
+                                                </div>
+                                           </div>      
+                                                               
+                                            <div class="d-flex flex-column  mb-2">
+                                                <label class="w-100 m-0">금액<span class="text-danger">*</span></label>
+                                                <div class='d-flex flex-nowrap'>
+                                                     <dropdown-tablecommon  ref="PREPAID_CURRENCY" class="col-3 p-0"  :pgmid="pgmid"  
+                                                             mobile="true" dropdownlabel=""  selectid="PREPAID_CURRENCY" selectname="PREPAID_CURRENCY"  tableid="getCurrency"   @dropdownchanged="curCdChange"></dropdown-tablecommon>
+                                                     <div class="col-9   p-0">
+<!--                                                          <input type="text" name="CURRENCY_AMT" :id="pgmid+'CURRENCY_AMT_PREPAID'"  class="form-control ec-mobile-input text-right required" />   -->
+                                                         <inputnumber-m-component ref="CURRENCY_AMT_PREPAID" required="required"  @inputchange="curAmtChg" ></inputnumber-m-component> 
+                                                     </div>                                                           
+                                                 </div>
+
+                                           </div> 
+                                          <div :class="{'d-none': currencyCd == curItem.BASE_CURRENCY_CD }" class="w-100 text-right" >
+                                                 <div><span>환율일자:</span><strong><span>{{currencyDt | dateformat('card-week')  }}</span></strong></div>   
+                                                 <div><span>1{{currencyCd}}=</span><span>{{currencyRate  }}{{curItem.BASE_CURRENCY_CD}}</span></div>   
+                                                 <div><span></span><strong><h4 class="text-red">{{expenseAmt | numberformat('0,000')}}{{curItem.BASE_CURRENCY_CD}}</h4></strong></div>  
+                                          </div>                                          
+                                             <div class="d-flex flex-column  mb-2">
+                                                <label class="w-100 m-0">거래처<span class="text-danger">*</span></label>
+                                                <div class="w-100">
+                                                    <popup-m-code searchinput="true"  ref="popupbizprepaid" :pgmid="pgmid"  pgmnm="거래처" subname="popupbizprepaid"  name="popupbizprepaid"   searchname="거래처"  columnlayout="popupbiz"  readonly="readonly" tablename="BIZ"  required="true" @codechanged="bizCdChange" ></popup-m-code>
+                                                </div>
+                                           </div>                                           
+
+                                            <div class="d-flex flex-column  mb-2">
+                                                <label class="w-100 m-0">항목<span class="text-danger">*</span></label>
+                                                <div class="w-100">
+                                                    <popup-m-code  ref="popupexpprepaid" :pgmid="pgmid"  pgmnm="항목" subname="popupexpprepaid"  name="EXPENSE_CD_PREPAID"   searchname="항목" required="true" readonly="readonly" columnlayout="popupexpcard"   tablename="EXPREPAID"  @codechanged="etcExpCdChange" ></popup-m-code>
+                                                </div>
+                                           </div> 
+
+                                           <span v-show="receiptbelongtype != '0'">
+                                              <div class="d-flex flex-column  mb-2">
+                                                 <label class="w-100 m-0">귀속<span class="text-danger">*</span></label>                                                
+                                                 <div class='d-flex flex-column'>
+                                                   <div class=" p-0 d-flex">
+                                                             <dropdown-m-syscommon  ref="PREPAID_CCENTER_TP" class="w-100 p-0 flex-shrink-0"  :pgmid="pgmid"  
+                                                                     dropdownlabel=""  selectid="PREPAID_CCENTER_TP" selectname="PREPAID_CCENTER_TP" 
+                                                                     clcd="EX_CCENTER_TP"   @changed="ccenterTpChange"></dropdown-m-syscommon>
+                                                 </div>
+                                                 <div class=" p-0 d-flex">  
+                                                  <span v-show="receiptcosttype=='1'" class="w-100"><popup-m-code  ref="popupcostcenterprepaid" :pgmid="pgmid"  pgmnm="코스트센터" subname="popupcostcenter-prepaid"   name="CCTR_CD_PREPAID" searchname="코스트센터"   columnlayout="popupcostcenter"  readonly="readonly"  tablename="CCTR" @codechanged="costCenterCdChange"  ></popup-m-code></span>
+                                                  <span v-show="receiptcosttype=='2'" class="w-100"><popup-m-code  ref="popupprojectprepaid" :pgmid="pgmid"  pgmnm="프로젝트" subname="popupproject-prepaid"   name="PROJECT_PREPAID" searchname="프로젝트"  columnlayout="popupproj"   tablename="PROJ"  readonly="readonly"   @codechanged="projectCdChange" ></popup-m-code></span>
+                                                </div>
+                                                </div>
+                                           </div> 
+                                           </span>
+                                           
+                                            <div v-for="item in receiptMngList " class="d-flex flex-column  mb-2">
+                                                <label class="w-100 m-0"><span v-show="item.MUST_YN=='1'" class="text-danger">*</span>{{item.MNG_NM}}</label>  
+                                                <div v-if="item.INPUT_FORMAT_CD !='01' &&  item.INPUT_FORMAT_CD !='05'  &&  item.INPUT_FORMAT_CD !='02'" class="w-100">
+                                                    <input type="text"  :id="pgmid+'prepaidmng'+item.MNG_CD" 
+                                                    :class="{required : item.MUST_YN=='1'}" class="form-control ec-mobile-input "  /> 
+                                                </div>                                                                                              
+                                                <div v-if="item.INPUT_FORMAT_CD=='01'" class="w-100">
+                                                    <popup-m-code  :ref="'popupprepaidmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-prepaid"   name="CCTR_CD_PREPAID" 
+                                                    :searchname="item.MNG_NM"  :required="item.MUST_YN=='1' ?  'true' : '' "  readonly="readonly" :columnlayout="item.COLUMN_LAYOUT"   :tablename="item.TABLE_CD" :codecl="item.COMM_CL_CD" 
+                                                     ></popup-m-code>
+                                                </div>
+                                                 <div v-if="item.INPUT_FORMAT_CD=='02'" class="w-100">
+                                                      <inputnumber-m-component  :ref="'popupprepaidmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-prepaid" :required="item.MUST_YN=='1' ?  'true' : '' "  ></inputnumber-m-component>
+                                                 </div>                                                  
+			                                 <div v-if="item.INPUT_FORMAT_CD=='05'" class="w-100">
+			                                     <date-m-component-v1  :ref="'popupprepaidmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-prepaid"   name="CCTR_CD_PREPAID" 
+			                                     :searchname="item.MNG_NM"  :required="item.MUST_YN=='1' ?  'true' : '' "  readonly="readonly" 
+			                                      ></date-m-component-v1>
+			                                 </div>                                                    
+                                           </div>                                            
+                                           
+
+                                            <div class="d-flex flex-column  mb-2">
+                                                <label class="w-100 m-0">적요</label>  
+                                                <div class="w-100">
+                                                    <input type="text" name="RMK_RECEIPT" :id="pgmid+'RMK_PREPAID'"  class="form-control ec-mobile-input"  /> 
+                                                </div>
+                                           </div> 
+                                    </div>
+                            </div>
+          <!-- end of popup 법인카드-->            
+
+   
+   
+   </div> 
+   
+  </body>
+</html>

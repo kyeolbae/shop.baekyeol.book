@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+  <meta charset="utf-8" />
+</head>
+
+<body>
+  <section layout:fragment="content">
+
+   <form class="d-flex col ui-sortable  flex-column h-100 ui-sortable p-0 " th:id=${param.pgm_id}>
+                  <div class="ec-grid-box-search ">
+                           <div class="ec-grid-lastrow">
+                               <label class="col-lg-1  col-md-2 ec-col-label-first-search justify-content-md-end">기준연도<span class="text-danger">*</span></label>
+                               <div class="col-lg-2 col-md-10 ec-col-input">
+                                   <date-new-component-v1  th:pgmid="${param.pgm_id}" subname="YYYY"  required="true"  initval="today" format="YYYY"></date-new-component>
+                               </div>
+                           </div>
+                </div> 
+   
+   
+                    <!-- 에이유아이 그리드가 이곳에 생성됩니다. -->
+                    <div class="d-flex-shrink-1 flex-grow-1 mb-1" :id="pgmid+'firstgrid'">
+                        <grid-crud  ref="gridcard" gridcaption="정산대상" :columnlayout="columnlayoutcard" :pgmid="pgmid" subname="gridcard"  :newitem="newgriditem" buttons="cidqs" @searchgridrow="searchCard()" @savegridrow="saveCard()"></grid-crud> 
+                    </div>
+ 
+                    <!-- 에이유아이 그리드가 이곳에 생성됩니다. -->
+                    <div class="d-flex-shrink-1 flex-grow-1" :id="pgmid+'secondgrid'">
+                        <grid-crud  ref="gridcarddt" gridcaption="이월대상" :columnlayout="columnlayoutcarddt" :pgmid="pgmid" subname="gridcarddt"  :newitem="newgriditem" buttons="cidqs" @searchgridrow="searchCardPost()" @savegridrow="saveCardPost()"></grid-crud> 
+                    </div>
+   </form>
+           
+	  	<!-- ================== BEGIN THIS PAGE JS ================== -->
+ 	<div th:insert="contents/ex/config/cardpostdt-js :: js"></div>  
+   </section>
+
+</body>
+</html>

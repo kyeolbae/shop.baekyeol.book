@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<!--     <meta charset="utf-8" /> -->
+</head>
+  <body>
+   
+   <div  :class="{'d-flex': curItem.TYPE =='CARD' }" class="d-none flex-column flex-md-row" th:fragment="html">
+   
+       <!-- begin modal 법인카드-->
+                        <div class="col-12 col-md-6 p-0 " :id="pgmid+'bizcard-clon-card'"  style="height:650px;">
+<!--                              <div style="position:relative"><div class="d-flex justify-content-center w-100 exp-modalbox-bgicon"><i class="icon-credit-card f-s-160 text-blue-transparent-2"></i></div></div> -->
+
+                         <div v-show="isCardEvidShow"  class="h-100"   :id="pgmid+'card-tab-2'">
+                                      <div class="receipt-box-modal flex-column" >
+                                        <ec-img ref="cardimg" ocryn="true" source="CA"  v-show="$options.filters.isNotEmpty(curItem.FILE_NO)  &&  curItem.TYPE =='CARD'"  @edited="receiptimgedited" @clickmainfile="receiptClickMainFile"
+                                        autoprocess="false"  @multiupload="saveServer"   @autoupload="getImgFilesNo"  @clicktrash="deleteEcImg"   addfile="true">
+                                        </ec-img>
+                                      </div>
+                                      
+                         </div>
+                                         <!--  end of tab content2 -->                         
+                          <ul v-show="!isCardEvidShow" class="nav nav-pills h-100 p-25 ">
+<!-- 	                             <li class="nav-item align-items-center d-flex"> -->
+<!-- 			                            <a :href="'#'+pgmid+ 'card-tab-1'" data-toggle="tab" class="nav-link  p-5 active nav-link p-5 active rounded-0 btn-sm f-plane"> -->
+<!-- 			                                <span class="">승인내역</span> -->
+<!-- 			                            </a> -->
+<!-- 	                             </li>   -->
+<!-- 	                             <li class="nav-item align-items-center d-flex"> -->
+<!-- 	                                    <a :href="'#'+pgmid+ 'card-tab-2'" data-toggle="tab" class="nav-link p-5 nav-link p-5  rounded-0 btn-sm f-plane"> -->
+<!-- 	                                        <span class="">이미지</span> -->
+<!-- 	                                    </a> -->
+<!-- 	                             </li>                          -->
+	                                                
+                             
+                             <div class="tab-content w-100 h-100">
+                                       <div class="tab-pane fade  h-100 active show"  :id="pgmid+'card-tab-1'">
+				                             <div class=" ec-grid-box-search border  h-100" >
+				                                  <div class="ec-grid-row">
+				                                      <label class="col-4  ec-col-label-0 justify-content-md-end">상호</label>
+				                                      <div class="col-8  ec-col-input-0 flex-column">
+				                                          <input type="text" name="GIRO_NO" class="form-control form-control-sm   input-label f-subtitle" :value="curItem.BIZ_NM"  disabled  />
+				                                      </div>
+				                                 </div>
+				                                  <div class="ec-grid-row">
+				                                      <label class="col-4  ec-col-label-0 justify-content-md-end">사용일시</label>
+				                                      <div class="col-8  ec-col-input-0 flex-column">
+				                                          <input type="text" name="GIRO_NO" class="form-control form-control-sm   input-label " :value="$options.filters.dateformat(curItem.RECEIPT_DT,'card-week')+$options.filters.dateformat(curItem.RECEIPT_DT,'card-time')"  disabled  />
+				                                      </div>
+				                                 </div>
+				                                  <div class="ec-grid-row">
+				                                      <label class="col-4  ec-col-label-0 justify-content-md-end">공급가</label>
+				                                      <div class="col-8  ec-col-input-0 flex-column">
+				                                          <input type="text" name="GIRO_NO" class="form-control form-control-sm   input-label text-right" :value="$options.filters.numberformat(curItem.SUPPLY_AMT,'0,000')"  disabled  />
+				                                      </div>
+				                                 </div>
+				                                  <div class="ec-grid-row">
+				                                      <label class="col-4  ec-col-label-0 justify-content-md-end">부가세</label>
+				                                      <div class="col-8  ec-col-input-0 flex-column">
+				                                          <input type="text" name="GIRO_NO" class="form-control form-control-sm   input-label  text-right" :value="$options.filters.numberformat(curItem.VAT_AMT,'0,000')"  disabled  />
+				                                      </div>
+				                                 </div>
+				                                  <div v-show="curItem.ETC_AMT > 0" class="ec-grid-row">
+				                                      <label class="col-4  ec-col-label-0 justify-content-md-end">봉사료</label>
+				                                      <div class="col-8  ec-col-input-0 flex-column">
+				                                          <input type="text" name="GIRO_NO" class="form-control form-control-sm   input-label  text-right" :value="$options.filters.numberformat(curItem.ETC_AMT,'0,000')"  disabled  />
+				                                      </div>
+				                                 </div>
+				                                  <div class="ec-grid-row">
+				                                      <label class="col-4  ec-col-label-0 justify-content-md-end">합계</label>
+				                                      <div class="col-8  ec-col-input-0 flex-column">
+				                                          <input type="text" name="GIRO_NO" class="form-control form-control-sm   input-label f-subtitle  text-right text-red" :value="$options.filters.numberformat(curItem.TOT_AMT,'0,000')"  disabled  />
+				                                      </div>
+				                                 </div>
+				                                  <div class="ec-grid-row">
+				                                      <label class="col-4  ec-col-label-0 justify-content-md-end">카드번호</label>
+				                                      <div class="col-8  ec-col-input-0 flex-column">
+				                                          <input type="text" name="GIRO_NO" class="form-control form-control-sm   input-label f-subtitle text-blue" :value="$options.filters.cardformat(curItem.CARD_NO)"  disabled  />
+				                                      </div>
+				                                 </div>
+				                                  <div class="ec-grid-row">
+				                                      <label class="col-4  ec-col-label-0 justify-content-md-end">승인번호</label>
+				                                      <div class="col-8  ec-col-input-0 flex-column">
+				                                          <input type="text" name="GIRO_NO" class="form-control form-control-sm   input-label " :value="curItem.CARD_BILL_NO"  disabled  />
+				                                      </div>
+				                                 </div>                                 
+				                                  <div class="ec-grid-row">
+				                                      <label class="col-4  ec-col-label-0 justify-content-md-end">사업자번호</label>
+				                                      <div class="col-8  ec-col-input-0 flex-column">
+				                                          <input type="text" name="GIRO_NO" class="form-control form-control-sm   input-label " :value="$options.filters.biznoformat(curItem.BIZ_NO)"  disabled  />
+				                                      </div>
+				                                 </div>
+				                                  <div class="ec-grid-row">
+				                                      <label class="col-4  ec-col-label-0 justify-content-md-end">업종</label>
+				                                      <div class="col-8  ec-col-input-0 flex-column">
+				                                          <input type="text" name="GIRO_NO" class="form-control form-control-sm   input-label " :value="curItem.BIZ_CATEGORY + ' '+  curItem.BIZ_TYPE"  disabled  />
+				                                      </div>
+				                                 </div>                                
+				                                  <div class="ec-grid-row">
+				                                      <label class="col-4  ec-col-label-0 justify-content-md-end">주소</label>
+				                                      <div class="col-8  ec-col-input-0 flex-column">
+				                                          <input type="text" name="GIRO_NO" class="form-control form-control-sm   input-label " :value="curItem.BIZ_ADDR"  disabled  />
+				                                      </div>
+				                                 </div>
+				                                  <div class="ec-grid-row">
+				                                      <label class="col-4  ec-col-label-0 justify-content-md-end"></label>
+				                                      <div class="col-8  ec-col-input-0 flex-column">
+				                                          <input type="text" name="GIRO_NO" class="form-control form-control-sm   input-label "   disabled  />
+				                                      </div>
+				                                 </div>				                                 
+                                         </div>
+                                        </div>
+                                         <!--  end of tab content1 -->
+                                 </div>
+                              
+                            </ul>    
+                         </div>
+                         <div class="col-12 col-md-6 d-flex flex-column p-25 border-left" :id="pgmid+'cardmodalbody'" style="height:650px;">
+                           <popup-help visible="false" ref="cardmodalhelp" th:helpkey="${param.pgm_id}+'cardmodalbody'" th:pgmid=${param.pgm_id} th:subname="cardmodalbody"  ></popup-help>
+			               <div class="text-nowrap modal-header d-flex flex-column p-0" :class="pgmid+'modal-header-receipt'">
+	                          <div class="d-flex w-100 justify-content-between">
+	                                  <div class="d-flex">
+				                          <div  v-show="curItem.SOURCE_TP_NM!=undefined" class="f-title-plane d-flex align-items-center">{{curItem.SOURCE_TP_NM}}&nbsp <span v-show="curItem.INDEX!=undefined">상세</span>
+		                                      <a class="ml-2 btn" @click="$refs.cardmodalhelp.clickOpenModal()"><i class="icon-question"></i></a>
+		                                      <exp-log class="px-0" ref="expLogCard" th:pgmid=${param.pgm_id} subname="log" @clicklog="clickExpDetailLog('expLogCard')" ></exp-log>
+				                          </div>
+				                          
+			                          </div>
+			                          <a class="close h-100" aria-hidden="true" type="button" data-dismiss="modal"><i class="mi-close mi-3x"></i></a>
+	                          </div>
+	                          <div class="d-flex w-100 flex-wrap  justify-content-between mb-3">
+	                        
+			                        <div class="d-flex align-items-center flex-nowrap  f-s-12">
+			                            <a v-for="item in approveStatus" :class="[{'text-blue  font-weight-bold' : item.CODE == curItem.APPROVE_STATUS},
+			                                                                       ]"   
+			                                                                     class="breadcrumb-item">{{item.NAME}}</a>
+			                        </div>  
+			                        
+		                          <!-- 페이저 -->
+		                          <div  class="d-flex justify-content-end ">
+		                                  <div v-if="curItem.INDEX!=undefined" class="d-flex  m-0" >
+	                                            <div class="badge text-white bg-black-transparent-4 m-3 f-plane p-5"><span class="f-s-12">{{curItem.INDEX+1}}/{{receiptList.length}}</span></div>
+	                                            <a  class="btn btn-white btn-sm border-0" @click="previousItem"><i class="icon-arrow-left"></i></a>
+	                                            <a  class="btn btn-white btn-sm border-0 pr-1" @click="nextItem"><i class="icon-arrow-right"></i></a>
+		                                  </div>
+		                          </div>          
+	                          </div> 
+	                      </div>
+                      <!-- end of header  -->
+                      <hr>             
+                          <div class="h-100 overflow-y ec-scrollbar ">           
+                             <div class="d-flex justify-content-between align-items-between mb-2">
+       							<!-- begin custom-switches -->
+								<div class="custom-control custom-switch">
+									  <input type="checkbox" class="custom-control-input" :id="pgmid+'cardevidswitch'" @click="changeCardEvidSwitch()">
+									  <label class="custom-control-label" :for="pgmid+'cardevidswitch'">증빙</label>
+								</div>
+        						<!-- end custom-switches -->                             
+                                 <div v-if="curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4'"   class="d-flex align-items-center">
+	                                 <div class="f-plane checkbox checkbox-css p-0 mr-4">
+	                                      <input type="checkbox" :id="pgmid+'privateUseCheck'" @change="privatUseCheckChanged" />
+	                                      <label :for="pgmid+'privateUseCheck'">정산제외</label>
+	                                 </div>
+	                                 <div class="d-flex">  
+			                                 <popup-code  ref="popupcardsharedemp" :pgmid="pgmid"  pgmnm="비용처리자" subname="popupcardsharedemp"   name="EMP_NO_SHARED" searchname="사용자ID"  columnlayout="popupuser"   tablename="USER" @codechanged="saveCardSharedEmp" inputvisible="false"  ></popup-code>
+		                                     <label class="m-l-5 f-plane m-0 text-center d-flex align-items-center">정산위임</label>
+                                     </div>  
+                                 </div>
+                             </div>
+                             
+<!--                              <div class="ec-grid-box  mb-1" :id="pgmid+'cardmodalbody'"> -->
+<!--                                   <div class="h-100"> -->
+                                            <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white">증빙일</label>
+                                                <div class="col-9  ec-col-input border-0">
+                                                    <date-new-component-v1 ref="RECEIPT_DT_CARD" th:pgmid="${param.pgm_id}" subname="RECEIPT_DT_CARD"    disabled="disabled"></date-new-component>
+                                                </div>
+                                           </div>                              
+                                            <div class="d-none ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white">비용/부가세</label>
+                                                <div class="col-9  ec-col-input border-0">
+                                                     <input type="text" name="EXPENSE_AMT_CARD" :id="pgmid+'EXPENSE_AMT_CARD'" class="form-control form-control-sm text-right col-7 mr-1 required"   disabled  />
+                                                     <input type="text" name="EXPENSE_VAT_AMT_CARD" :id="pgmid+'EXPENSE_VAT_AMT_CARD'" class="form-control form-control-sm text-right"   disabled  /> 
+                                                </div>
+                                           </div> 
+
+                                            <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white label-required">비용항목</label>
+                                                <div class="col-9  ec-col-input border-0">
+                                                    <popup-new-code class="w-100"  ref="popupexpcard" :pgmid="pgmid"  pgmnm="비용항목" subname="popupexpcard"  name="EXPENSE_CD_CARD"   searchname="비용항목"  columnlayout="popupexpcard"   tablename="EXCARD"  @codechanged="receiptExpCdChange" required="true" ></popup-new-code>
+                                                </div>
+                                           </div> 
+                                           <span v-show="receiptbelongtype != '0'">
+                                            <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white label-required">비용귀속</label> 
+                                                <div class="col-9 flex-column  ec-col-input border-0">
+                                                
+                                                  <div class="w-100   p-0 mb-1 d-flex">
+                                                             <dropdown-syscommon  ref="CARD_CCENTER_TP" class="w-100 p-0 flex-shrink-0"  :pgmid="pgmid"  
+                                                                     dropdownlabel=""  selectid="CARD_CCENTER_TP" selectname="CARD_CCENTER_TP" 
+                                                                     clcd="EX_CCENTER_TP"   @changed="ccenterTpChange"></dropdown-tablecommon>
+                                                 </div>                                                
+                                                  <div class="w-100   p-0  d-flex">
+	                                                  <span class="w-100" v-show="receiptcosttype=='1'" ><popup-code class="w-100" ref="popupcostcentercard" :pgmid="pgmid"  pgmnm="코스트센터" subname="popupcostcenter-card"   name="CCTR_CD_CARD" searchname="코스트센터"   columnlayout="popupcostcenter"   tablename="CCTR" @codechanged="costCenterCdChange"  ></popup-code></span>
+	                                                  <span class="w-100" v-show="receiptcosttype=='2'" ><popup-code class="w-100"  ref="popupprojectcard" :pgmid="pgmid"  pgmnm="프로젝트" subname="popupproject-card"   name="PROJECT_CARD" searchname="프로젝트"  columnlayout="popupproj"   tablename="PROJ"  @codechanged="projectCdChange" ></popup-code></span>
+                                                  </div>    
+                                                </div>
+                                           </div> 
+                                           </span>
+                                           
+                                             <div v-for="item in receiptMngList " class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white" :class="{'label-required' : item.MUST_YN=='1' }">{{item.MNG_NM}}</label>
+                                                <div v-if="item.INPUT_FORMAT_CD !='01' &&  item.INPUT_FORMAT_CD !='05'  &&  item.INPUT_FORMAT_CD !='02'" class="col-9  ec-col-input border-0">
+                                                    <input type="text"  :id="pgmid+'popupcardmng'+item.MNG_CD" :value="item.MNGVAL_NM"
+                                                    :class="{required : item.MUST_YN=='1'}" class="form-control form-control-sm "  /> 
+                                                </div>                                                                                              
+                                                <div v-if="item.INPUT_FORMAT_CD=='01'" class="col-9  ec-col-input border-0">
+                                                    <popup-code class="w-100"  :ref="'popupcardmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-card"   name="CCTR_CD_CARD" 
+                                                    :searchname="item.MNG_NM"  :required="item.MUST_YN=='1' ?  'true' : '' "  :columnlayout="item.COLUMN_LAYOUT"   :tablename="item.TABLE_CD" :codecl="item.COMM_CL_CD" 
+                                                     ></popup-code>
+                                                </div>
+                                                <div v-if="item.INPUT_FORMAT_CD=='02'" class="col-9  ec-col-input border-0">
+                                                     <inputnumber-component  :ref="'popupcardmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-card" :required="item.MUST_YN=='1' ?  'true' : '' "  ></inputnumber-component>
+                                                </div>                                                  
+                                                <div v-if="item.INPUT_FORMAT_CD=='05'" class="col-9  ec-col-input border-0">
+                                                     <date-new-component-v1  :ref="'popupcardmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-card"   
+                                                       :required="item.MUST_YN=='1' ?  'true' : '' "  readonly="readonly"   ></date-new-component>  
+                                                </div>                                                 
+                                                
+                                           </div>                                                
+                                           
+                                            <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white">적요</label>
+                                                <div class="col-9  ec-col-input border-0">
+                                                    <input type="text" name="RMK_CARD" :id="pgmid+'RMK_CARD'" class="form-control form-control-sm" /> 
+                                                </div>
+                                           </div> 
+                                    </div>
+                                    
+                                    
+		                    <div class="d-flex flex-row btn-row ec-btn-bottom-row">
+<!--                                 <a v-if="curItem.PRIVATE_YN !='1' && curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' && curItem.PRIVATE_YN !='1'"  class="btn ec-btn-bottom w-100  bg-light " @click="newCurItem">신규</a> -->
+                                <a v-if="curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' && curItem.PRIVATE_YN !='1'" class="btn ec-btn-bottom w-100  bg-grey-lighter" @click="deleteExpMst(curItem, curItem.INDEX)">삭제</a>
+                                <a v-if="curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' && curItem.PRIVATE_YN !='1'" class="btn  ec-btn-bottom w-100  btn-maintheme" @click="saveCurItem">저장</a>
+							</div>                       
+                  </div>
+          <!-- end of popup 법인카드-->            
+   </div> 
+   
+  </body>
+</html>

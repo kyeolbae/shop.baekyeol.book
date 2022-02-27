@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<!--     <meta charset="utf-8" /> -->
+</head>
+  <body>
+   <div th:fragment="html">
+
+		<div class="border d-flex text-center mb-3">
+			<div class="col-2 bg-light py-2">신청부서</div><div class="col-2 border-left py-2">{{selectedReport.REGR_DEPT_NM}}</div>
+			<div class="col-2 bg-light border-left py-2">기안자</div><div class=" border-left col-2 py-2">{{selectedReport.REGR_NM}}</div>
+			<div class="col-2 bg-light border-left py-2">문서번호</div><div class="border-left col-2 py-2">{{selectedReport.REPORT_NO}}</div>
+		</div>
+
+
+		<report-readonly-comp ref="expListComponent"></report-readonly-comp>              
+   </div>
+  </body>
+</html>

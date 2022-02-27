@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+	<meta charset="utf-8" />
+</head>
+  <body>
+   <div th:fragment="js">
+    <script type="text/javascript" >
+	  var [[${param.pgm_id}]] = new Vue({
+		  el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************		  
+		  data: {  pgmid : "[[${param.pgm_id}]]",
+			       columnlayoutexpsource : [],
+			       columnlayoutexpmng : [],
+			       newgriditem : { USE_YN:"1", } ,
+			       gridexpsource : "",
+			       gridexpmng : "",
+			       timerId : 0, //master-detail구조에서만 사용, 민감도
+			       masterBeforeRowIndex : 0, //master-detail구조에서만 사용
+			       masterBeforeColIndex : 0, //master-detail구조에서만 사용
+			       
+		  },//data
+		  created () { //초기화================================================================
+			  
+			    //그리드 초기화
+// 				initGridDropDownBox("CATEGORY_TP","/common/syscommon/selectSystemCommonCode", auiDropDownCallBack,{ COMM_CL_CD:"EX_CATEGORY_TP" }); // 비용항목구분
+				initGridDropDownBox("EX_SOURCE_TPEX_TAX_SOURCE_TP","/common/syscommon/selectSystemCommonCode", auiDropDownCallBack,{ COMM_CL_CD:"EX_SOURCE_TP", COMM_CL_CD1:"EX_TAX_SOURCE_TP"  }); // 원천구분
+				initGridDropDownBox("INPUT_FORMAT_CD","/common/syscommon/selectSystemCommonCode", auiDropDownCallBack,{ COMM_CL_CD:"IN_FMT" }); // 입력유형, 시스템 공통코드
+				initGridDropDownBox("VAT_DEDUCTION_TP","/common/syscommon/selectSystemCommonCode", auiDropDownCallBack,{ COMM_CL_CD:"EX_VAT_DEDUCTION_TP" }); // 입력유형, 시스템 공통코드
+				initGridDropDownBox("BELONGING_TP","/common/syscommon/selectSystemCommonCode", auiDropDownCallBack,{ COMM_CL_CD:"EX_BELONGING_TP" }); // 입력유형, 시스템 공통코드
+				initGridDropDownBox("REPORT_TP","/ex/common/commonSelect/search", auiDropDownCallBack,{ SELECT_ID :"getExReportTp" }); // 비용마감일구분
+				initGridDropDownBox("CLOSING_TP","/ex/common/commonSelect/search", auiDropDownCallBack,{ SELECT_ID :"getExClosingTp" }); // 비용마감일구분
+				initGridDropDownBox("SLIP_TP","/common/syscommon/selectToCommonDropBox", auiDropDownCallBack,{ COMM_CL_CD:"SLIP_CL" }); // 회사공통
+				
+		    	this.columnlayoutexpsource =   
+		    	[   
+		    		{dataField : "USE_YN",   headerText : "사용",  width: 80, editable : true, renderer : auiCheckboxRenderer(), filter : { showIcon : true}},
+			        {dataField : "SOURCE_TP",     headerText : "원천유형",   width: 120 , editRenderer : gridDropdownRenderer['EX_SOURCE_TPEX_TAX_SOURCE_TP'], labelFunction : auiDrodownLabelFunction, dropdownKey:"EX_SOURCE_TPEX_TAX_SOURCE_TP" , filter : { showIcon : true}},
+			        {dataField : "EXPENSE_CD",   headerText : "코드",  width: 180, editable : true, filter : { showIcon : true}},
+			        {dataField : "EXPENSE_NM",   headerText : "항목명",  width: 120, editable : true, filter : { showIcon : true}},
+			        {dataField : "ORD",   headerText : "순서",  width: 120, editable : true, filter : { showIcon : true}},
+			        {dataField : "CLOSING_TP",     headerText : "마감유형",   width: 100 ,editable : true , editRenderer : gridDropdownRenderer['CLOSING_TP'], labelFunction : auiDrodownLabelFunction , filter : { showIcon : true}}, 
+			        {dataField : "REPORT_TP",     headerText : "보고서유형",   width: 100 ,editable : true , editRenderer : gridDropdownRenderer['REPORT_TP'], labelFunction : auiDrodownLabelFunction , filter : { showIcon : true}}, 
+			        {dataField : "VAT_DEDUCTION_TP",     headerText : "부가세공제구분",   width: 150 ,editable : true ,editRenderer : gridDropdownRenderer['VAT_DEDUCTION_TP'], labelFunction : auiDrodownLabelFunction , filter : { showIcon : true}}, 
+			        {dataField : "BELONGING_TP",     headerText : "귀속구분",   width: 150 ,editable : true , editRenderer : gridDropdownRenderer['BELONGING_TP'], labelFunction : auiDrodownLabelFunction , filter : { showIcon : true}}, 
+			        
+			        {dataField : "EVID_YN",   headerText : "증빙필수",  width: 100, editable : true, renderer : auiCheckboxRenderer(), filter : { showIcon : true}},
+			        {dataField : "DEFAULT_AMT_YN",   headerText : "고정금액여부",  width: 100, editable : true, renderer : auiCheckboxRenderer(), filter : { showIcon : true}},
+			        {dataField : "DEFAULT_AMT",   headerText : "고정금액",  width: 120, editable : true, filter : { showIcon : true}},
+                    {dataField : "LIMIT_AMT_YN",   headerText : "금액한도여부",  width: 100, editable : true, renderer : auiCheckboxRenderer(), filter : { showIcon : true}},
+                    {dataField : "LIMIT_AMT",   headerText : "금액한도",  width: 120, editable : true, filter : { showIcon : true}},			        
+			        {dataField : "DEFAULT_CCTR_YN",   headerText : "고정코스트센터여부",  width: 100, editable : true, renderer : auiCheckboxRenderer(), filter : { showIcon : true}},
+			        {dataField : "DEFAULT_COSTCENTER",   headerText : "고정코스트센터",  width: 120, editable : true, filter : { showIcon : true}},
+			        {dataField : "PREPAY_YN",   headerText : "선지급정산가능",  width: 100, editable : true, renderer : auiCheckboxRenderer(), filter : { showIcon : true}},
+			        {dataField : "SLIP_TP",     headerText : "전표유형",   width: 150 ,editable : true , editRenderer : gridDropdownRenderer['SLIP_TP'], labelFunction : auiDrodownLabelFunction , filter : { showIcon : true}}, 
+			        {dataField : "RMK",   headerText : "설명",  width: 120, editable : true, filter : { showIcon : true}},
+		        ];//columnlayout
+		    
+		    // 선택 변경 이벤트 바인딩 (master-detail구조에서 필요)
+		     this.columnlayoutexpmng =
+		        [
+		            {dataField : "USE_YN",   headerText : "사용여부",  width: 80, editable : true, renderer : auiCheckboxRenderer(), filter : { showIcon : true}},
+			        {dataField : "ORD",   headerText : "순서",  width: 60,editable : true, style : "aui_col_center", filter : { showIcon : true}},
+			        {dataField : "MNG_CD",   headerText : "관리항목코드",  width: 110,editable : false, style : "aui_col_center", filter : { showIcon : true}},
+			        {dataField : "MNG_NM",   headerText : "관리항목명",  width: 100,editable : false, style : "aui_col_center", filter : { showIcon : true}},
+			        {dataField : "INPUT_FORMAT_CD",     headerText : "입력형식",   width: 150 ,editable : false ,editRenderer : gridDropdownRenderer['INPUT_FORMAT_CD'], labelFunction : auiDrodownLabelFunction , filter : { showIcon : true}}, 
+			        {dataField : "MUST_YN",   headerText : "필수여부",  width: 80, editable : true, renderer : auiCheckboxRenderer(), filter : { showIcon : true}},
+		        ];
+		    	
+		  }, // created		  
+		  methods : {  // ======================================================================================
+			  searchExpenseSource : function() {
+				  
+                  var param = {
+                          svcId:"searchExpenseSource",
+                          strUrl:"/ec/ex/config/expensecode/searchExpenseSource",   
+                          param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+                          pCall : this.tranCallBack, 
+                          pLoad : true         
+                      };
+                      //트랜젝션 실행
+                  ajaxReadJsonData(param);
+                  
+              },
+              searchExpenseMng : function() {
+            	  
+            	  var selectedItems = AUIGrid.getSelectedItems(this.gridexpsource);
+            	  
+                  var param = {
+                          svcId:"searchExpenseMng",
+                          strUrl:"/ec/ex/config/expensecode/searchExpenseMng",   
+                          param : {EXPENSE_CD : selectedItems[0].item.EXPENSE_CD , SOURCE_TP : selectedItems[0].item.SOURCE_TP }, 
+                          pCall : this.tranCallBack, 
+                          pLoad : true         
+                      };
+                      //트랜젝션 실행
+                  ajaxReadJsonData(param);
+                  
+              },
+              saveExpenseSource : function() {
+            	  
+//                   // 그리드 필수항목 체크
+//                   if (auiValidateGridData(this.gridexpsource, ["VAT_DEDUCTION_TP", "BELONGING_TP"] ) == false){
+//                        return;
+//                   }           	  
+            	  
+                  // 변경된 데이터가 있는지 없는지 체크
+                  var    ds_master = getCRUDdata(this.gridexpsource);
+                  
+                  if (ds_master['data'].length == 0 ) {
+                       customAlert('','알림','변경된 데이터가 없습니다.');
+                       return;
+                  }
+                  // Confirmation dialog, 시스템 설정에 따라 보이고 안보이고
+                  bootboxSaveConfirm(this.saveExpenseSourceCallback);                  	  
+              },
+              saveExpenseSourceCallback : function() {
+            	  
+                  saveColumnLayout(this.gridexpsource);
+                  
+                  // 저장할 데이터 만들기
+                  var ds_data = {};
+                  ds_data['ds_detail'] = getCRUDdata(this.gridexpsource);
+                  
+                  if(!ds_data){ return; }
+                  
+                  var param = {
+                      svcId:"saveExpenseSource", 
+                      strUrl: "/ec/ex/config/expensecode/saveExpenseSource",   //전송 url 
+                      param : ds_data,        // 전송할 파라미터
+                      pCall : this.tranCallBack, 
+                      pLoad : true          // 로딩이미지 노출 여부  
+                  };
+
+                  //트랜젝션 실행
+                  ajaxReadJsonData(param);             	  
+            	  
+              },
+              
+              saveExpenseMng : function() {
+                  // 변경된 데이터가 있는지 없는지 체크
+                  var    ds_master = getCRUDdata(this.gridexpmng);
+                  
+                  if (ds_master['data'].length == 0 ) {
+                       customAlert('','알림','변경된 데이터가 없습니다.');
+                       return;
+                  }
+                  // Confirmation dialog, 시스템 설정에 따라 보이고 안보이고
+                  bootboxSaveConfirm(this.saveExpenseMngCallback);                     
+              },
+              saveExpenseMngCallback : function() {
+                  
+                  saveColumnLayout(this.gridexpmng);
+                  
+                  // 저장할 데이터 만들기
+                  var ds_data = {};
+                  ds_data['ds_detail'] = getCRUDdata(this.gridexpmng);
+                  
+                  if(!ds_data){ return; }
+                  
+                  var param = {
+                      svcId:"saveExpenseMng", 
+                      strUrl: "/ec/ex/config/expensecode/saveExpenseMng",   //전송 url 
+                      param : ds_data,        // 전송할 파라미터
+                      pCall : this.tranCallBack, 
+                      pLoad : true          // 로딩이미지 노출 여부  
+                  };
+
+                  //트랜젝션 실행
+                  ajaxReadJsonData(param);                
+                  
+              },			  
+			  
+		  auiGridSelectionChangeHandler : function(event) {
+		    // 200ms 보다 빠르게 그리드 선택자가 변경된다면 데이터 요청 안함
+		    if(this.timerId) {
+		        clearTimeout(this.timerId);
+		    }
+		    var ref = this;
+		    
+		    // 신규행 초기값  
+		    //ref.$refs.gridexpmng.blankobj = {USE_YN:"1",  ACC_CD: AUIGrid.getSelectedItems(ref.gridacct)[0]['item']['ACC_CD'],};
+		    
+		    this.timerId = setTimeout(function() {
+		        // 선택 대표 셀 정보 
+		        var primeCell = event.primeCell;
+		        
+		        // 대표 셀에 대한 전체 행 아이템
+		        var rowItem = primeCell.item;
+		        var comm_cl_cd = rowItem.EXPENSE_CD; // 선택한 행의 고객 ID 값
+                
+		        if (ref.masterBeforeRowIndex != primeCell.rowIndex) {
+		            ref.searchDetail(comm_cl_cd, rowItem.SOURCE_TP ,primeCell.rowIndex, primeCell.columnIndex  );
+		        }
+		        if (ref.masterBeforeRowIndex == primeCell.rowIndex && ref.masterBeforeColIndex != primeCell.columnIndex) {
+		        ref.masterBeforeColIndex = primeCell.columnIndex ;
+		        }
+		    }, 200);  // 현재 200ms 민감도....환경에 맞게 조절하세요.		  
+		  },//auiGridSelectionChangeHandler
+		  
+					  
+			searchDetailCallback : function(expense_cd, source_tp ,rowIndex, colIndex) {
+                      var param = {
+                          svcId:"searchDetail",
+                          strUrl:"/ec/ex/config/expensecode/searchExpenseMng",   
+                          param : {EXPENSE_CD: expense_cd, SOURCE_TP : source_tp},
+                          pCall : this.tranCallBack,  
+                          pLoad : true
+                      };
+                      
+                      this.masterBeforeRowIndex = rowIndex;
+                      this.masterBeforeColIndex = colIndex;
+                      
+                      //트랜젝션 실행
+                      ajaxReadJsonData(param);
+                }, // end of searchButtonOnClick					  
+					  
+             searchDetail	: function(expenseCd, source_tp ,rowIndex, colIndex) {
+              
+                 var ref = this;
+                 var    ds_master = getCRUDdata(this.gridexpmng);
+                 if (ds_master['data'].length > 0 ){
+                   // rowId 에 맞는 디테일 데이터 요청 후 디테일 그리드에 삽입
+                   bootbox.confirm({
+                       animate : false,
+                       size : 'small',
+                       centerVertical : true,
+                       title: '데이터 변경',
+                       message: '데이터가 변경 되었습니다. 저장할까요?',
+                       buttons: {
+                           confirm: {
+                               label: parent.jQuery.i18n.prop('label.yes') ,
+                               className: 'btn-primary'
+                           },
+                           cancel: {
+                               label: parent.jQuery.i18n.prop('label.cancel'),
+                               className: 'btn-link'
+                           }
+                       },
+                       callback: function (result) {
+                           if (result==false) {
+                               ref.searchDetailCallback(expenseCd,source_tp ,rowIndex, colIndex);
+                               }
+                           if (result==true) {
+                               ref.saveDetail(this.masterBeforeRowIndex, this.masterBeforeColIndex);
+                               }
+                       }
+                   });    
+              }else{
+                    this.searchDetailCallback(expenseCd, source_tp,rowIndex, colIndex)
+              }              
+            }, // searchDetail
+			
+			tranCallBack : function(svcId, data, errCd, msgTp, msgCd, msgText) { //******************************
+				
+                      if(svcId =="searchDetail"){
+                             this.$refs.gridexpmng.setGridData(data["ds_detail"]['data']);
+				      }else if(svcId =="searchExpenseSource"){
+				    	  this.$refs.gridexpsource.setGridData(data["ds_master"]['data']);
+                          // detail 조회
+                          if (data["ds_master"]['data'].length > 0) {
+                                this.searchDetailCallback(AUIGrid.getSelectedItems(this.gridexpsource)[0]['item']['EXPENSE_CD'], AUIGrid.getSelectedIndex(this.gridexpsource)[0], AUIGrid.getSelectedIndex(this.gridexpsource)[1]    );
+                          }else{
+                                AUIGrid.clearGridData(this.gridexpmng);
+                          }			    	  
+				      }else if(svcId =="searchExpenseMng"){
+				    	  this.$refs.gridexpmng.setGridData(data["ds_detail"]['data']);
+                      }else if(svcId =="saveExpenseSource"){
+                          this.searchExpenseSource(); // 재조회  
+                          saveGritter();				    	  
+					  }else if(svcId =="saveExpenseMng"){
+							this.searchExpenseMng();	// 재조회	
+							saveGritter();
+                      } // end if
+					},	// tranCallBack
+		  }, // end of methods
+
+		  mounted: function() {
+			 
+		       var ref = this;
+               this.$nextTick(function () {
+                   ref.gridexpsource = ref.$refs.gridexpsource.myGridID;
+                   ref.gridexpmng = ref.$refs.gridexpmng.myGridID;
+                   // 선택 변경 이벤트 바인딩 (master-detail구조에서 필요)
+                   AUIGrid.bind(ref.gridexpsource, "selectionChange", ref.auiGridSelectionChangeHandler);
+                   
+                   Split(['#'+ref.pgmid+'firstgrid', '#'+ref.pgmid+'secondgrid'],
+                           {  direction: 'vertical',
+                              onDrag: function() {
+                                  AUIGrid.resize(ref.gridexpsource);
+                                  AUIGrid.resize(ref.gridexpmng);
+                              },                      
+                           }
+                         )
+            	   
+            	   
+            	   
+
+
+                    
+			  }); // nextTick
+//**********************************************************************************************	
+             vueArr.push(this);
+			},
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

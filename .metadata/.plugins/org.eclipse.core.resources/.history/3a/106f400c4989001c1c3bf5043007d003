@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper
+	namespace="com.ec.eframework.mapper.ex.sap.common.SapSlipSearchServiceMapper">
+	
+	<resultMap id="helptexttype" type="HashMap">
+        <result property="HELP_TEXT" column="HELP_TEXT" jdbcType="CLOB" javaType="java.lang.String" />
+    </resultMap>
+	
+
+	<!-- DataHub Token 등록 -->
+	<insert id="saveFile">
+		INSERT INTO INBOX_BKPF_FILE
+		(
+		BELNR,
+		GJAHR,
+		BUKRS,
+		FILE_NO,
+		REGR_DH,
+		REGR_ID
+		) VALUES (
+		#{BELNR},
+		#{GJAHR},
+		#{g_comCd},
+		#{fileNo},
+		REGR_DH(),
+		#{g_userId}
+		) 
+		;
+	</insert>
+	
+     <delete id="deleteSlipYn">
+        DELETE  
+        FROM INBOX_BKPF_FILE 
+        where BUKRS = #{g_comCd}
+        and FILE_NO = #{fileNo};
+      
+		UPDATE ADMIN_FILE SET USE_YN = '0', DEL_DH = REGR_DH(), DEL_ID = #{g_userId}
+        WHERE FILE_NO = #{fileNo}
+        AND COMPANY_CODE = #{g_comCd};
+        
+    </delete>
+     
+    
+	
+	
+	
+	
+</mapper>

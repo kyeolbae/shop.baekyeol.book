@@ -1,0 +1,141 @@
+<!-- 
+	-- 프로그램명 : 수집처리 - VAN법인카드
+	-- 날짜 : 
+	-- 수정 : 2021.08.17 by hshwang (cardAcquire2CardCategoryOnclick 버튼 추가(법인카드_매입-카드업종저장)) 
+	-- 수정 : 2021.09.10 by hshwang (각 정보별 삭제 function 추가)
+	-- 수정 : 2021.12.06 by hshwang (법인카드 청구내역 날짜를 "월"에서 "From일자~To일자"로 변경)
+-->
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+<meta charset="utf-8" />
+<!-- VAN법인카드 -->
+</head>
+<body>
+
+	<section layout:fragment="content">
+
+		<form style="overflow: auto" class="d-flex  flex-column h-100 align-items-center" th:id=${param.pgm_id}>
+			<div class="ec-grid-box-search w-100">
+			
+				<div class="ec-grid-row">
+					<label class="col-lg-2 col-md-6 col-12 ec-col-label-first-search justify-content-center">법인카드 마스터</label>
+					<div class="col-lg-4 col-md-6 col-0 justify-content-center ec-col-input"></div>
+					<div class="col-lg-2 col-md-3 col-6 justify-content-center ec-col-input">
+						<a type="button" v-on:click="cardBasicOnclick" class="btn btn-default btn-block">수집하기</a>
+					</div>
+					<div class="col-lg-1 col-md-3 col-6 justify-content-center ec-col-input">
+						<input type="text" name="CARDBASIC" :id="pgmid+'CARDBASIC'" class="w-100" placeholder=" KEY" disabled  />
+					</div>
+					<div class="col-lg-1 col-md-3 col-6 justify-content-center ec-col-input">
+						<a type="button" v-on:click="cardBasicMasterOnclick" class="btn btn-default btn-block">마스터저장</a>
+					</div>
+					<div class="col-lg-1 col-md-3 col-6 justify-content-center ec-col-input">
+						<a type="button" v-on:click="cardBasicSapOnclick" class="btn btn-default btn-block">SAP전송</a>
+					</div>
+					<div class="col-lg-1 col-md-12 col-12 justify-content-center ec-col-input">
+						<a type="button" v-on:click="deleteCardBasicOnclick" class="btn btn-default btn-block">삭제</a>
+					</div>
+				</div>
+				
+				<div class="ec-grid-row">
+					<label class="col-lg-2 col-md-6 col-12 ec-col-label-first-search justify-content-center">법인카드 한도</label>
+					<div class="col-lg-4 col-md-6 col-0 justify-content-center ec-col-input"></div>
+					<div class="col-lg-2 col-md-3 col-6 justify-content-center ec-col-input">
+						<a type="button" v-on:click="cardLimitOnclick" class="btn btn-default btn-block">수집하기</a>
+					</div>
+					<div class="col-lg-1 col-md-3 col-6 justify-content-center ec-col-input">
+						<input type="text" name="CARDLIMIT" :id="pgmid+'CARDLIMIT'" class="w-100" placeholder=" KEY" disabled  />
+					</div>
+					<div class="col-lg-1 col-md-3 col-6 justify-content-center ec-col-input">
+						<a type="button" v-on:click="cardLimitMasterOnclick" class="btn btn-default btn-block">마스터저장</a>
+					</div>
+					<div class="col-lg-1 col-md-3 col-6 justify-content-center ec-col-input">
+						<a type="button" v-on:click="cardLimitSapOnclick" class="btn btn-default btn-block">SAP전송</a>
+					</div>
+					<div class="col-lg-1 col-md-12 col-12 justify-content-center ec-col-input">
+						<a type="button" v-on:click="deleteCardLimitOnclick" class="btn btn-default btn-block">삭제</a>
+					</div>
+				</div>
+				
+				<div class="ec-grid-row">
+					<label class="col-lg-2 col-md-6 col-12 ec-col-label-first-search justify-content-center">법인카드 승인</label>
+					<div class="col-lg-4 col-md-6 col-12 justify-content-center ec-col-input">
+						<daterange-m-component-v1 th:pgmid="${param.pgm_id}" subname1="SEARCH_FR_DT1" subname2="SEARCH_TO_DT1" required="true" initval1="firstday" initval2="today"></daterange-m-component-v1>
+					</div>
+					<div class="col-lg-2 col-md-3 col-6 justify-content-center ec-col-input">
+						<a type="button" v-on:click="cardApprovalOnclick" class="btn btn-default btn-block">수집하기</a>
+					</div>
+					<div class="col-lg-1 col-md-3 col-6 justify-content-center ec-col-input">
+						<input type="text" name="CARDAPPR" :id="pgmid+'CARDAPPR'" class="w-100" placeholder=" KEY" disabled  />
+					</div>
+					<div class="col-lg-1 col-md-3 col-6 justify-content-center ec-col-input">
+						<a type="button" v-on:click="cardApprovalMasterOnclick" class="btn btn-default btn-block">INBOX저장</a>
+					</div>
+					<div class="col-lg-1 col-md-3 col-6 justify-content-center ec-col-input">
+						<a type="button" v-on:click="cardApprovalSapOnclick" class="btn btn-default btn-block">SAP전송</a>
+					</div>
+					<div class="col-lg-1 col-md-12 col-12 justify-content-center ec-col-input">
+						<a type="button" v-on:click="deleteCardApprovalOnclick" class="btn btn-default btn-block">삭제</a>
+					</div>
+				</div>
+				
+				<div class="ec-grid-row">
+					<label class="col-lg-2 col-md-6 col-12 ec-col-label-first-search justify-content-center">법인카드 매입</label>
+					<div class="col-lg-4 col-md-6 col-12 justify-content-center ec-col-input">
+						<daterange-m-component-v1 th:pgmid="${param.pgm_id}" subname1="SEARCH_FR_DT2" subname2="SEARCH_TO_DT2" required="true" initval1="firstday" initval2="today"></daterange-m-component-v1>
+					</div>
+					<div class="col-lg-1 col-md-3 col-6 justify-content-center ec-col-input">
+						<a type="button" v-on:click="cardAcquireOnclick" class="btn btn-default btn-block">수집하기</a>
+					</div>
+					<div class="col-lg-1 col-md-3 col-6 justify-content-center ec-col-input">
+						<input type="text" name="CARDACQ" :id="pgmid+'CARDACQ'" class="w-100" placeholder=" KEY" disabled  />
+					</div>
+					<div class="col-lg-1 col-md-2 col-4 justify-content-center ec-col-input">
+						<a type="button" v-on:click="cardAcquireMasterOnclick" class="btn btn-default btn-block">INBOX저장</a>
+					</div>
+					<div class="col-lg-1 col-md-2 col-4 justify-content-center ec-col-input">
+						<a type="button" v-on:click="cardAcquire2CardCategoryOnclick" class="btn btn-default btn-block">카드업종저장</a>
+					</div>
+					<div class="col-lg-1 col-md-2 col-4 justify-content-center ec-col-input">
+						<a type="button" v-on:click="cardAcquireSapOnclick" class="btn btn-default btn-block">SAP전송</a>
+					</div>
+					<div class="col-lg-1 col-md-12 col-12 justify-content-center ec-col-input">
+						<a type="button" v-on:click="deleteCardAcquireOnclick" class="btn btn-default btn-block">삭제</a>
+					</div>
+				</div>
+				
+				<div class="ec-grid-row">
+					<label class="col-lg-2 col-md-6 col-12 ec-col-label-first-search justify-content-center">법인카드 청구</label>
+					<div class="col-lg-4 col-md-6 col-12 justify-content-center ec-col-input">
+						<daterange-m-component-v1 th:pgmid="${param.pgm_id}" subname1="SEARCH_FR_DT3" subname2="SEARCH_TO_DT3" required="true" initval1="firstday" initval2="today"></daterange-m-component-v1>
+					</div>
+<!-- 					<div class="col-lg-4 col-md-6 col-12 justify-content-center ec-col-input"> -->
+<!-- 						<div class="d-flex date p-0"> -->
+<!-- 							<date-new-component-v1  th:pgmid="${param.pgm_id}" subname="YYYY"  required="true"  initval="today" format="YYYY-MM" style="width:240px"></date-new-component-v1> -->
+<!-- 						</div> -->
+<!-- 					</div> -->
+					<div class="col-lg-2 col-md-3 col-6 justify-content-center ec-col-input">
+						<a type="button" v-on:click="cardBillOnclick" class="btn btn-default btn-block">수집하기</a>
+					</div>
+					<div class="col-lg-1 col-md-3 col-6 justify-content-center ec-col-input">
+						<input type="text" name="CARDBILL" :id="pgmid+'CARDBILL'" class="justify-content-center w-100" placeholder=" KEY" disabled  />
+					</div>
+					<div class="col-lg-1 col-md-3 col-6 justify-content-center ec-col-input">
+						<a type="button" v-on:click="cardBillMasterOnclick" class="btn btn-default btn-block">INBOX저장</a>
+					</div>
+					<div class="col-lg-1 col-md-3 col-6 justify-content-center ec-col-input">
+						<a type="button" v-on:click="cardBillSapOnclick" class="btn btn-default btn-block">SAP전송</a>
+					</div>
+					<div class="col-lg-1 col-md-12 col-12 justify-content-center ec-col-input">
+						<a type="button" v-on:click="deleteCardBillOnclick" class="btn btn-default btn-block">삭제</a>
+					</div>
+				</div>								
+			</div>
+		</form>
+		<!-- ================== BEGIN THIS PAGE JS ================== -->
+		<div th:insert="contents/ex/datahub/datahub-proc-vancard-js :: js"></div>
+	</section>
+
+</body>
+</html>

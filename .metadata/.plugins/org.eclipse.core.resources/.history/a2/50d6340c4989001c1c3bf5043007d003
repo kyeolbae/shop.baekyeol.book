@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper
+	namespace="com.ec.eframework.mapper.ex.config.CardCatServiceMapper">	
+	
+	<update id="updateCardCat">
+	/* com.ec.eframework.mapper.pay.config.CardCatServiceMapper.updateCardCat 2021.07.07 by 배고현 */
+	    UPDATE EXPENSE_CARD_BIZ_CAT         
+        SET
+         NO_VAT_YN= #{NO_VAT_YN},
+         EVID_YN= #{EVID_YN},
+         NO_POSTING_YN= #{NO_POSTING_YN},
+         RMK= #{RMK},
+         MOD_DH= REGR_DH(),
+         MOD_ID= #{g_userId}
+        where COMPANY_CODE = #{g_comCd}
+        and BIZ_CATEGORY_CD = #{BIZ_CATEGORY_CD}
+        </update>
+    
+	
+	 
+	
+	
+	 <select id="searchCardCat" resultType="HashMap">
+	 	/* com.ec.eframework.mapper.pay.config.CardCatServiceMapper.searchCardCat 2021.07.07 by 배고현 */
+		SELECT
+		ROW_NUMBER() OVER() AS ID
+    	,COMPANY_CODE
+    	,CARD_CORP
+    	,BIZ_CATEGORY_CD
+    	,CARD_CORP_NM
+    	,BIZ_CATEGORY
+    	,NO_VAT_YN
+    	,EVID_YN
+    	,NO_POSTING_YN
+    	,RMK
+    	,DATE_FORMAT(REGR_DH, '%Y-%m-%d %T') REGR_DH
+    	,DATE_FORMAT(MOD_DH, '%Y-%m-%d %T') MOD_DH
+    	,REGR_NM(REGR_ID) AS REGR_NM
+    	,REGR_NM(MOD_ID) AS MOD_NM
+		FROM EXPENSE_CARD_BIZ_CAT
+		WHERE COMPANY_CODE = #{g_comCd}
+	</select> 
+	
+	<insert id="saveInBoxCard">
+	insert into EXPENSE_CARD_BIZ_CAT(
+	COMPANY_CODE,
+			CARD_CORP,
+			CARD_CORP_NM,
+			BIZ_CATEGORY_CD,
+			BIZ_CATEGORY,
+			NO_VAT_YN,
+			EVID_YN,
+			NO_POSTING_YN,
+			REGR_DH,
+			REGR_ID
+
+		)
+	select unique COMPANY_CODE , #{card_corp}, '국민카드' as card_corp_nm  ,#{BIZ_CATEGORY_CD} ,  #{BIZ_CATEGORY}, '0','0','0', REGR_DH() , #{REGR_ID}
+	from EXPENSE_INBOX_CARD  where 
+	 COMPANY_CODE  = #{g_comCd}
+	 and regr_dh between  DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 1 MONTH),'%Y%m%d%H%i%s') and  regr_dh()
+	 and (card_corp, BIZ_CATEGORY_CD) not in (select card_corp,  BIZ_CATEGORY_CD from EXPENSE_CARD_BIZ_CAT where COMPANY_CODE  = #{g_comCd})
+	 and (BIZ_CATEGORY_CD is not null and  BIZ_CATEGORY_CD != '')
+	 order by BIZ_CATEGORY_CD
+	
+	
+	</insert>
+	
+<!-- 	<delete id="deleteCardCat"> -->
+<!--         DELETE   -->
+<!--         FROM expense_card_biz_cat  -->
+<!--         where COMPANY_CODE = #{COMPANY_CODE} -->
+<!--         and CARD_CORP = #{CARD_CORP} -->
+<!--         and BIZ_CATEGORY_CD =  #{BIZ_CATEGORY_CD} -->
+<!--     </delete> -->
+	
+	
+	
+</mapper>

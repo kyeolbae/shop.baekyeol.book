@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+ 
+      var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************        
+          
+          data: {  pgmid : "[[${param.pgm_id}]]",
+                   columnlayout : [],
+                   newgriditem : {USE_YN:"1"},
+                   gridView : '',
+          },//data
+          created () { //초기화================================================================
+                //그리드 초기화
+//                 initGridDropDownBox("CLOSING_TP","/ex/common/commonSelect/search", auiDropDownCallBack,{ SELECT_ID :"getExClosingTp" }); // 비용마감일구분
+//                 //initGridDropDownBox("TIME_LIST","/ex/common/commonSelect/search", auiDropDownCallBack,{ SELECT_ID :"getExTimeList" }); // 마감시간
+//                 //그리드 select column 초기화
+//                 initGridDropDownBox("AFTER_CLOSING_HH","/common/syscommon/selectSystemCommonCode", auiDropDownCallBack,{ COMM_CL_CD:"LIST_TIME" }); // 비용항목구분
+//                 initGridDropDownBox("CARD_POSTING_TP","/common/syscommon/selectToCommonDropBox", auiDropDownCallBack,{ COMM_CL_CD:"CARD_POSTING_TP" });
+                this.columnlayout =   
+                   [    
+                	   {dataField : "CARD_NO",   headerText : "법인카드번호",style : "bg-light", editable : false,labelFunction : function( rowIndex, columnIndex, value, headerText, item ) { return cardformat(nvl(value,''));}, width: 150, filter : { showIcon : true}},
+                	   {dataField : "COOP_NM",   headerText : "제휴카드명", editable : false,style : "bg-light", width: 300 , filter : { showIcon : true}},
+                	   {dataField : "STATUS_CD",   headerText : "카드상태",  width: 150, editable : false , filter : { showIcon : true}},
+                	   {dataField : "STATUS_NM",   headerText : "카드상태명",  width: 150, editable : false , filter : { showIcon : true}},
+                	   {dataField : "CCTR_NM",   headerText : "코스트센터명",  width: 220 ,editable : true , renderer : {type : "TemplateRenderer" }, pgmid: this.pgmid,  gridname : "costcenter" , labelFunction : auiPopupCode ,filter : { showIcon : true}},
+                   	   {dataField : "OIL_CARD_CCTR_CD",   headerText : "코스트센터코드",  width: 120,style : "bg-light", editable : false,filter : { showIcon : true}},
+                   	   {dataField : "OIL_CARD_RMK",   headerText : "비고",  width: 150, editable : true , editRenderer : {maxlength : 50} , filter : { showIcon : true}},
+                ] ;//columnlayout
+                  
+          }, // created       
+          methods : {  // ======================================================================================
+              searchButtonOnClick : function() {
+              
+                            var param = {
+                                svcId:"searchExpOilCard",
+                                strUrl:"/ec/ex/config/expcard/searchExpOilCard",   //전송 url    
+                                inDs :  "" ,  
+                                param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+                                pCall : this.tranCallBack, 
+                                pLoad : true          
+                            };
+                            //트랜젝션 실행
+                            ajaxReadJsonData(param);
+                      }, // end of searchButtonOnClick
+              
+              saveButtonOnClick : function() {
+                            // 그리드 필수항목 체크
+//                             if (auiValidateGridData(this.gridView, ["CLOSING_TP", "RECEIPT_FR_DT","RECEIPT_TO_DT"
+//                                 ,"CLOSING_DH","CLOSING_HH","AFTER_CLOSING_DH","AFTER_CLOSING_HH","AFTER_POSTING_DT"] ) == false){
+//                                  return;
+//                             }
+                            
+                            // 변경된 데이터가 있는지 없는지 체크
+                            var    ds_master = getCRUDdata(this.gridView);
+                            
+                            if (ds_master['data'].length == 0 ) {
+                                customAlert('','','변경된 데이터가 없습니다.');
+                                return;
+                            }
+                            // Confirmation dialog, 시스템 설정에 따라 보이고 안보이고
+                            bootboxSaveConfirm(this);             
+              },  //saveButtonOnClick
+              
+              saveButtonOnClickCallback(){
+                
+                   saveColumnLayout(this.gridView);
+                
+                // 저장할 데이터 만들기
+                var    ds_master = {};
+                ds_master['ds_master'] = getCRUDdata(this.gridView);
+                
+                if(!ds_master){ return; }
+                
+                var param = {
+                    svcId:"saveExpOilCard", 
+                    strUrl: "/ec/ex/config/expcard/saveExpOilCard",   //전송 url 
+                    inDs : {
+                        ds_master:ds_master
+                    },
+                    param : ds_master,        // 전송할 파라미터
+                    pCall : this.tranCallBack, 
+                    pLoad : true          // 로딩이미지 노출 여부  
+                };
+                //트랜젝션 실행
+                ajaxReadJsonData(param); 
+            }, //   saveButtonOnClickCallback         
+              
+                tranCallBack : function(svcId, data, errCd, msgTp, msgCd, msgText) { //******************************
+                      if(svcId=="searchExpOilCard"){
+                            if(data["ds_master"]['data'].length >= 0) {
+                                this.$refs.gridmaster.setGridData(data["ds_master"]['data']);
+                            }
+                      }else if(svcId =="saveExpOilCard"){
+                            this.searchButtonOnClick(); // 재조회  
+                            saveGritter();
+                      } // end if
+                    },  // tranCallBack
+                    
+          }, // end of methods
+
+          mounted: function() {
+             var ref = this;
+             this.$nextTick(function () {
+                   ref.gridView = ref.$refs.gridmaster.myGridID;
+                   // pk컬럼(신규는 가능, update불가)
+                   auiSetAddedRowEnabledCell(ref.gridView,['CARD_CD']
+                  );
+              });
+             
+//**********************************************************************************************              
+             vueArr.push(this);
+            },
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

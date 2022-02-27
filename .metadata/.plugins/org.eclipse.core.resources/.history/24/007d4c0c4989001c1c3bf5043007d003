@@ -1,0 +1,144 @@
+/* 
+	-- 프로그램명 : 증빙이미지
+	-- 날짜 : 2021.06	    by hcho
+	-- 수정 : 2021.07.27 by hshwang (delImgpage, restoreImg 추가)
+	-- 수정 : 2021.08.18 by hshwang (updateSharedEmp, simultaneityControl 추가)
+*/
+package com.ec.eframework.ex.exp;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.ec.eframework.common.CommonService;
+import com.ec.eframework.ex.report.ExpenseMstService;
+import com.ec.eframework.lib.JsonDataMap;
+import com.ec.eframework.lib.JsonResultMsgMap;
+import com.ec.eframework.lib.MapSession;
+import com.ec.eframework.lib.P;
+import com.ec.eframework.mapper.ex.expense.ExpImgServiceMapper;
+
+
+@Controller
+@RequestMapping("ex/exp/expimg")
+public class ExpImgController  {
+
+
+	/**
+	 * 증빙 이미지 페이지 호출 
+	 */
+	    @RequestMapping(value = "/page")
+	    public String page() {
+	
+	     return "contents/ex/exp/exp_img";
+	    }
+	    
+	    @RequestMapping(value = "/del_page")
+	    public String delImgPage() {
+	
+	     return "contents/ex/exp/exp_del_img";
+	    }
+	    
+		@Autowired
+		private ExpImgServiceMapper expImgServiceMapper;
+		
+		
+		@RequestMapping(value = "/search", produces = MediaType.APPLICATION_JSON_VALUE)
+		@ResponseBody
+		public Map<String, Object>  search(@RequestBody Map<String, String> paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+			 paramMap.putAll((Map)new MapSession(session));
+	         return new JsonDataMap("ds_master", expImgServiceMapper.getExpImgList(paramMap));
+		} // search
+		
+		
+		@RequestMapping(value = "/ocrSearch", produces = MediaType.APPLICATION_JSON_VALUE)
+		@ResponseBody
+		public Map<String, Object>  ocrSearch(@RequestBody Map<String, String> paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+
+			 paramMap.putAll((Map)new MapSession(session));
+			 
+			 JsonDataMap m = new JsonDataMap("ds_detail", expImgServiceMapper.getExpImgOcrDetail(paramMap));
+			 m.setJsonDataMap("ds_master", expImgServiceMapper.getExpImgOcrList(paramMap));
+
+	         return m;	         	         
+		} // ocrSearch
+		
+		@RequestMapping(value = "/infoSearch", produces = MediaType.APPLICATION_JSON_VALUE)
+		@ResponseBody
+		public Map<String, Object>  infoSearch(@RequestBody Map<String, String> paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+
+			 paramMap.putAll((Map)new MapSession(session));
+			 
+			 JsonDataMap m = new JsonDataMap("ds_expense", expImgServiceMapper.getExpImgExpense(paramMap));
+			 
+		//	 String reportNo = m.get("ds_expense")
+			 if ( paramMap.get("REPORT_NO") != null && !( paramMap.get("REPORT_NO").toString().equals("") )  ) {
+			     m.setJsonDataMap("ds_report",expImgServiceMapper.getExpImgReport(paramMap));
+			 }
+			 
+	         return m;
+		} // getCenterExp
+		
+		
+		//영수증 파일 복원
+		@RequestMapping(value = "/restoreImg", produces = MediaType.APPLICATION_JSON_VALUE)
+		@ResponseBody
+		public Map<String, Object>  restoreImg(@RequestBody Map<String, String> paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+			 paramMap.putAll((Map)new MapSession(session));
+			 
+			 if(expImgServiceMapper.restoreImg(paramMap) > 0) {
+				 return  new JsonResultMsgMap(true, "복원되었습니다.");
+			 } 
+			 
+			 return  new JsonResultMsgMap(false, "복원에 실패하였습니다."); 
+		}
+		
+		//정산위임 저장
+		@RequestMapping(value = "/updateSharedEmp", produces = MediaType.APPLICATION_JSON_VALUE)
+		@ResponseBody
+		public Map<String, Object> updateSharedEmp(@RequestBody Map<String, String> paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+
+			 paramMap.putAll((Map)new MapSession(session));
+			 
+			 if(expImgServiceMapper.updateSharedEmp(paramMap) > 0) {
+				 return  new JsonResultMsgMap(true, "저장되었습니다.");
+			 } 
+			 
+			 return  new JsonResultMsgMap(false, "저장되지 않았습니다."); 
+		}
+		
+		@Autowired 
+		CommonService commonService;
+		
+		@Autowired
+		ExpenseMstService expenseMstService;
+		//동시성 제어
+		@RequestMapping(value = "/simultaneityControl", produces = MediaType.APPLICATION_JSON_VALUE)
+		@ResponseBody
+		public Map<String, Object> simultaneityControl(@RequestBody Map paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {				 
+			List<Map<String, String>> list = new ArrayList<Map<String, String>>();
+			list.add(paramMap);
+			
+			Map map = new HashMap();
+			map.put("FILE_LIST", list);
+			paramMap.put("TYPE", "");
+			map.putAll(paramMap);
+			map = expenseMstService.saveExpenseItem(map, request, response, session);
+			if(map != null) paramMap.put("RESULT", map.getOrDefault("RESULT", ""));
+			
+			 return new JsonDataMap("ds_master", paramMap);
+		}
+}
+

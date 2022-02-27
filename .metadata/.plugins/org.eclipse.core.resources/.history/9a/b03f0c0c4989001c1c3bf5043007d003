@@ -1,0 +1,138 @@
+<!-- 
+	-- 프로그램명 : 비용관리 / 분개유형
+	-- 날짜 : 2021.07.30 by hshwang
+	-- 수정 : 
+-->
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+  <meta charset="utf-8" />
+<!--   분개유형 -->
+</head>
+<body> 
+	<section layout:fragment="content">
+		<form class="d-flex  flex-column h-100 overflow-y ec-scrollbar" th:id=${param.pgm_id}>
+              <div class="ec-grid-box-search ">
+                  <div class="ec-grid-row">
+                      <label class="col-lg-3 col-md-2 ec-col-label-first-search justify-content-md-end"><span class='text-danger'>*</span>구분</label>
+                      <div class="col-lg-6 col-md-10 ec-col-input">
+                        <div class="mx-auto w-75">
+	                        <div class="ec-grid-row">
+								<div class="radio radio-css radio-inline mx-auto">
+									<input type="radio" :name="slipTypeRadio" th:id="${param.pgm_id}+'slipTypeRadio_1'" value="1" checked>
+									<label th:for="${param.pgm_id}+'slipTypeRadio_1'">개인용</label>
+								</div>
+								<div class="radio radio-css radio-inline mx-auto">
+									<input type="radio" :name="slipTypeRadio" th:id="${param.pgm_id}+'slipTypeRadio_2'" value="2">
+									<label th:for="${param.pgm_id}+'slipTypeRadio_2'">공용</label>
+								</div>								
+							</div>
+						</div>
+                      </div>
+                  </div>
+                  <div class="ec-grid-row">
+                      <label class="col-lg-3 col-md-2 col-sm-2 ec-col-label-first-search justify-content-md-end"><span class='text-danger'>*</span>분개유형명</label>
+                      <div class="col-lg-6 col-md-8 col-sm-10 ec-col-input">
+                          <input type="text" name="SLIP_TYPE_NM" id="${param.pgm_id}+'SLIP_TYPE_NM'" class="form-control form-control-sm" /> 
+                      </div>
+	      				<div class="col-lg-2 col-md-2 col-sm-12 justify-content-center ec-col-input">
+							<a type="button" v-on:click="" class="btn btn-default btn-block">코드채번</a>
+						</div>
+                  </div> 
+                  <div class="ec-grid-row">
+                      <label class="col-lg-3 col-md-2 ec-col-label-search justify-content-md-end"><span class='text-danger'>*</span>전표 유형</label>
+                      <div class="col-lg-6 col-md-10 ec-col-input">
+                          <div  class="w-100"> 
+			                  <select class="col form-control form-control-sm select-ios ec-scrollbar" id="${param.pgm_id}+'SLIP_TPYE'"  name="SLIP_TPYE"  @change="dropdownchanged"> 
+			                    <option v-for="lang in slipTypeArr" :value="lang.NAME">{{ lang.NAME }}</option> 
+			                  </select> 
+			              </div> 
+                      </div>        
+                  </div>
+                  <div class="ec-grid-row">
+                      <label class="col-lg-3 col-md-2 ec-col-label-first-search justify-content-md-end"><span class='text-danger'>*</span>전표 적요</label>
+                      <div class="col-lg-6 col-md-10 ec-col-input">
+                          <input v-model="slip_summary" type="text" name="SLIP_SUMMARY" id="${param.pgm_id}+'SLIP_SUMMARY'" class="form-control form-control-sm"/> 
+                      </div>
+                  </div>   
+              </div>   
+                      
+            <div class=" f-subtitle mt-2">
+				<i class="fa fa-circle text-maintheme f-s-8 mr-2"></i>[AP 계정]
+			</div>       
+              <div class="ec-grid-box-search ">
+                  <div class="ec-grid-row">
+                      <label class="col-lg-3 col-md-2 ec-col-label-search justify-content-md-end"><span class='text-danger'>*</span>AP계정</label>
+                      <div class="col-lg-6 col-md-10 ec-col-input">
+                          <div  class="w-100"> 
+			                  <select class="col form-control form-control-sm select-ios ec-scrollbar" id="${param.pgm_id}+'AP_ACCOUNT'"  name="AP_ACCOUNT"  @change="dropdownchanged"> 
+			                    <option v-for="lang in apAccountArr" :value="lang.NAME">{{ lang.NAME }}</option> 
+			                  </select> 
+			              </div> 
+                      </div>        
+                  </div>
+                  <div class="ec-grid-row">
+                      <label class="col-lg-3 col-md-2 ec-col-label-first-search justify-content-md-end"><span class='text-danger'>*</span>AP 적요</label>
+                      <div class="col-lg-6 col-md-10 ec-col-input">
+                          <input type="text" name="AP_SUMMARY" id="${param.pgm_id}+'AP_SUMMARY'" class="form-control form-control-sm"/> 
+                      </div>
+                  </div>     
+              </div> 
+              
+           <div class=" f-subtitle mt-2">
+				<i class="fa fa-circle text-maintheme f-s-8 mr-2"></i>[부가세 계정]
+			</div>       
+              <div class="ec-grid-box-search ">
+                  <div class="ec-grid-row">
+                      <label class="col-lg-3 col-md-2 ec-col-label-search justify-content-md-end"><span class='text-danger'>*</span>세금코드</label>
+                      <div class="col-lg-6 col-md-10 ec-col-input">
+                          <div  class="w-100"> 
+			                  <select class="col form-control form-control-sm select-ios ec-scrollbar" id="${param.pgm_id}+'SLIP_TAX_CD'"  name="SLIP_TAX_CD"  @change="dropdownchanged"> 
+			                    <option v-for="lang in slipTaxCodeArr" :value="lang.NAME">{{ lang.NAME }}</option> 
+			                  </select> 
+			              </div> 
+                      </div>        
+                  </div>
+                  <div class="ec-grid-row">
+                      <label class="col-lg-3 col-md-2 ec-col-label-first-search justify-content-md-end"><span class='text-danger'>*</span>부가세 적요</label>
+                      <div class="col-lg-6 col-md-10 ec-col-input">
+                          <input type="text" name="VAT_SUMMARY" id="${param.pgm_id}+'VAT_SUMMARY'" class="form-control form-control-sm"/> 
+                      </div>
+                  </div>  
+              </div>
+              
+              <div class=" f-subtitle mt-2">
+				<i class="fa fa-circle text-maintheme f-s-8 mr-2"></i>[비용계정]
+			</div>       
+              <div class="ec-grid-box-search h-100 position-relative">
+           			<div class="ec-col-input right-0 position-absolute" style="right: 115px">
+                           <select v-model="amt_distribution" class="form-control form-control-sm select" style="width:150px" data-container-css-class="select-sm"  name="AMT_DISTRIBUTION"  th:id="${param.pgm_id}+'AMT_DISTRIBUTION'"   >
+                               <option value=""  >금액 배부-비율(%)</option>
+                               <option value="100">100</option>
+                               <option value="75">75</option>
+                               <option value="50">50</option>
+                               <option value="25">25</option>
+                               <option value="0">0</option>
+                           </select>
+                   </div> 
+                   <div class="flex-shrink-1 flex-grow-1 h-100">
+	                     <div class="ec-col-input w-100" style="height:200px">
+	                          <grid-crud ref="gridmaster" gridcaption="" :columnlayout="columnlayout" :pgmid="pgmid" subname="gridmaster"  :newitem="newgriditem" buttons="ce"></grid-crud> 
+	                    	
+	                    	<!-- PayAccount   -->
+		                    <popup-gridcode ref="PayAccount" :pgmid="pgmid"  pgmnm="PayAccount" subname="PAY_ACCOUNT"  name="PayAccount" searchname="undefined2"  columnlayout="popupcommon"   tablename="" codecl=""  :parentgrid="gridView" codecol="undefined3" namecol="undefined2" ></popup-gridcode>
+		                    
+		                    <!-- CostCenter   -->
+		                    <popup-gridcode ref="CostCenter" :pgmid="pgmid"  pgmnm="CostCenter" subname="COSTCENTER"  name="CostCenter" searchname="undefined4"  columnlayout="popupcommon"   tablename="" codecl=""  :parentgrid="gridView" codecol="undefined5" namecol="undefined4" ></popup-gridcode>
+	                   	</div>
+                   </div>
+              </div>
+               
+		</form>
+
+	  	<!-- ================== BEGIN THIS PAGE JS ================== -->
+	 	<div th:replace="contents/ex/sap/config/sliptype-js :: js"></div>  
+	</section>
+</body>
+</html>

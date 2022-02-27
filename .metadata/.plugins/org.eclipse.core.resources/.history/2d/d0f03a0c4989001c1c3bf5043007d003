@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<!--     <meta charset="utf-8" /> -->
+</head>
+  <body> 
+   
+   <div  :class="{'d-flex': curItem.TYPE =='ETAX' }" class="d-none  flex-column flex-md-row" th:fragment="html">
+   
+       <!-- begin modal 법인카드-->
+                         <div class="col-12 col-md-6 p-25 border-right" :id="pgmid+'bizcard-clon-card'"  style="height:650px;">
+                         
+<!--                          <div class="f-subtitle mt-2"><i class="fa fa-circle text-blue f-s-8 mr-2"></i>공급자</div> -->
+                                  <div class="ec-grid-row">
+                                      <label class="col-3  ec-col-label-0 bg-white">발행일</label>
+                                      <div class="col-9  ec-col-input-0 flex-column">
+                                          <input type="text" name="GIRO_NO" class="form-control form-control-sm   input-label " :value="$options.filters.dateformat(curItem.RECEIPT_DT,'card-week')"  disabled  />
+                                      </div>
+                                 </div> 
+                                  <div class="ec-grid-row">
+                                      <label class="col-3  ec-col-label-0 bg-white">공급자(상호)</label>
+                                      <div class="col-9  ec-col-input-0 flex-column">
+                                          <input type="text" name="GIRO_NO"  class="form-control form-control-sm   input-label f-subtitle" :value="curItem.BIZ_NM"  disabled  />
+                                      </div>
+                                 </div> 
+                                   <div class="ec-grid-row">
+                                      <label class="col-3  ec-col-label-0 bg-white">사업자번호</label>
+                                      <div class="col-9  ec-col-input-0 flex-column">
+                                          <input type="text" name="GIRO_NO"  class="form-control form-control-sm   input-label f-subtitle text-red " :value="$options.filters.biznoformat(curItem.BIZ_NO) "  disabled  />
+                                      </div>
+                                 </div>                                                           
+                                   <div class="ec-grid-row">
+                                      <label class="col-3  ec-col-label-0 bg-white">주소</label>
+                                      <div class="col-9  ec-col-input-0 flex-column">
+                                          <input type="text" name="GIRO_NO"  class="form-control form-control-sm   input-label text-wrap" :value="curItem.BIZ_ADDR"  disabled  />
+                                      </div>
+                                 </div>                    
+                                  <div class="ec-grid-row">
+                                      <label class="col-3  ec-col-label-0 bg-white">공급가</label>
+                                      <div class="col-9  ec-col-input-0 flex-column">
+                                          <input type="text" name="GIRO_NO"  class="form-control form-control-sm   input-label  text-right" :value="$options.filters.numberformat(curItem.SUPPLY_AMT,'0,000')"  disabled  />
+                                      </div>
+                                 </div>  
+                                  <div class="ec-grid-row">
+                                      <label class="col-3  ec-col-label-0 bg-white">부가세</label>
+                                      <div class="col-9  ec-col-input-0 flex-column">
+                                          <input type="text" name="GIRO_NO"  class="form-control form-control-sm   input-label  text-right" :value="$options.filters.numberformat(curItem.VAT_AMT,'0,000')"  disabled  />
+                                      </div>
+                                 </div>
+                                  <div class="ec-grid-row">
+                                      <label class="col-3  ec-col-label-0 bg-white">합계</label>
+                                      <div class="col-9  ec-col-input-0 flex-column">
+                                          <input type="text" name="GIRO_NO"  class="form-control form-control-sm   input-label f-subtitle text-red text-right" :value="$options.filters.numberformat(curItem.TOT_AMT,'0,000')"  disabled  />
+                                      </div>
+                                 </div>  
+                                  <div class="ec-grid-row">
+                                      <label class="col-3  ec-col-label-0 bg-white">품목</label>
+                                      <div class="col-9  ec-col-input-0 flex-column">
+                                          <input type="text" name="BIZ_ITEM"  class="form-control form-control-sm   input-label text-wrap" :value="curItem.BIZ_ITEM"  disabled  />
+                                      </div>
+                                 </div>        
+                                  <div class="ec-grid-row">
+                                      <label class="col-3  ec-col-label-0 bg-white">홈택스 승인번호</label>
+                                      <div class="col-9  ec-col-input-0 ">
+                                          <input type="text" name="HOMETAX_NO"  class="form-control form-control-sm   input-label text-wrap" :value="curItem.EVID_NO"  disabled  />
+                                          <a class="ec-btn btn btn-sm btn-white text-nowrap ml-2"> 출력</a>
+                                      </div>
+                                 </div>                                                                                                                  
+                              <hr>   
+<!--                               <div class=" f-subtitle mt-2"><i class="fa fa-circle text-aqua f-s-8 mr-2"></i>공급받는 자</div> -->
+                                  <div class="ec-grid-row">
+                                      <label class="col-3  ec-col-label-0 bg-white">상호</label>
+                                      <div class="col-9  ec-col-input-0 flex-column">
+                                          <input type="text" name="GIRO_NO"  class="form-control form-control-sm   input-label " :value="curItem.RECEIVE_BIZ_NM"  disabled  />
+                                      </div>
+                                 </div>    
+                                   <div class="ec-grid-row">
+                                      <label class="col-3  ec-col-label-0 bg-white">사업자번호</label>
+                                      <div class="col-6  ec-col-input-0 flex-column">
+                                          <input type="text" name="RECEIVE_BIZ_NO"  class="form-control form-control-sm   input-label f-subtitle text-blue " :value="$options.filters.biznoformat(curItem.RECEIVE_BIZ_NO) "  disabled  />
+                                      </div>
+                                      <div v-if="$options.filters.isNotEmpty(curItem.RECEIVE_SUB_BIZ_NO)" class="col-2  ec-col-input-0 flex-column">
+                                          <input type="text" name="RECEIVE_SUB_BIZ_NO"  class="form-control form-control-sm   bg-white text-center " :value="curItem.RECEIVE_SUB_BIZ_NO"  disabled  />
+                                      </div>                                      
+                                 </div>                                      
+                                  <div class="ec-grid-row">
+                                      <label class="col-3  ec-col-label-0 bg-white">주소</label>
+                                      <div class="col-9  ec-col-input-0 flex-column">
+                                          <input type="text" name="GIRO_NO"  class="form-control form-control-sm   input-label text-wrap" :value="curItem.RECEIVE_BIZ_ADDR"  disabled  />
+                                      </div>
+                                 </div>    
+
+
+                         </div>
+<!--                          <div class="col-12 col-md-7 h-100"> -->
+                         <div class="col-12 col-md-6 d-flex flex-column p-25" :id="pgmid+'cardmodalbody'" style="height:650px;">
+                         
+   			               <div class="text-nowrap modal-header d-flex flex-column p-0">
+	                          <div class="d-flex w-100 justify-content-between">
+	                                  <div class="d-flex">
+				                          <div  v-show="curItem.SOURCE_TP_NM!=undefined" class="f-title-plane d-flex align-items-center">{{curItem.SOURCE_TP_NM}}&nbsp <span v-show="curItem.INDEX!=undefined">상세</span>
+		                                      <popup-help th:helpkey="${param.pgm_id}+'cardmodalbody'" th:pgmid=${param.pgm_id} th:subname="cardmodalbody"  ></popup-help>
+		                                      <exp-log class="px-0" ref="expLogCard" th:pgmid=${param.pgm_id} subname="log" @clicklog="clickExpDetailLog('expLogCard')" ></exp-log>
+				                          </div>
+				                          
+			                          </div>
+			                          <a class="close h-100" aria-hidden="true" type="button" data-dismiss="modal"><i class="mi-close mi-3x"></i></a>
+	                          </div>
+	                          <div class="d-flex w-100 flex-wrap  justify-content-between mb-3">
+	                        
+			                        <div class="d-flex align-items-center flex-nowrap  f-s-12">
+			                            <a v-for="item in approveStatus" :class="[{'text-blue  font-weight-bold' : item.CODE == curItem.APPROVE_STATUS},
+			                                                                       ]"   
+			                                                                     class="breadcrumb-item">{{item.NAME}}</a>
+			                        </div>  
+			                        
+		                          <!-- 페이저 -->
+		                          <div  class="d-flex justify-content-end ">
+		                                  <div v-if="curItem.INDEX!=undefined" class="d-flex  m-0" >
+	                                            <div class="badge text-white bg-black-transparent-4 m-3 f-plane p-5"><span class="f-s-12">{{curItem.INDEX+1}}/{{receiptList.length}}</span></div>
+	                                            <a  class="btn btn-white btn-sm border-0" @click="previousItem"><i class="icon-arrow-left"></i></a>
+	                                            <a  class="btn btn-white btn-sm border-0 pr-1" @click="nextItem"><i class="icon-arrow-right"></i></a>
+		                                  </div>
+		                          </div>          
+	                          </div> 
+	                      </div>
+                      <!-- end of header  -->
+                      <hr>  
+                         <div class="h-100 overflow-y ec-scrollbar">  
+                         
+                                     <div class="" :id="pgmid+'etaxmodalbody'">
+                                            <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white">증빙일</label>
+                                                <div class="col-9  ec-col-input">
+                                                    <date-new-component-v1 ref="RECEIPT_DT_ETAX" th:pgmid="${param.pgm_id}" subname="RECEIPT_DT_ETAX"    disabled="disabled"></date-new-component>
+                                                </div>
+                                           </div>
+                                            <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white">과세구분</label>
+                                               <div class="col-9 ec-col-input justify-content-center">
+                                                   <radio-syscommon ref="EX_TAX_TP" th:pgmid=${param.pgm_id}    selectid="EX_TAX_TP" selectname="EX_TAX_TP" clcd="EX_TAX_TP" @changed=""   disabled="disabled"> </radio-syscommon> 
+                                               </div>                                                
+                                           </div>                                                                           
+                                            <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white">공급가액</label>
+                                                <div class="col-9  ec-col-input">
+                                                     <input type="text" name="EXPENSE_AMT_ETAX" :id="pgmid+'EXPENSE_AMT_ETAX'" class="form-control form-control-sm text-right  "  :value="curItem.SUPPLY_AMT | numberformat('0,000') " disabled  />
+                                                </div>
+                                           </div> 
+                                            <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white">부가세</label>
+                                                <div class="col-9  ec-col-input">
+<!--                                                      <input type="text" name="EXPENSE_VAT_AMT_ETAX" :id="pgmid+'EXPENSE_VAT_AMT_ETAX'" class="form-control form-control-sm text-right col-7 mr-1"  :value="(curItem.EXPENSE_NO == '') ? $options.filters.numberformat(curItem.VAT_AMT ,'0,000') : $options.filters.numberformat(curItem.EXPENSE_VAT_AMT ,'0,000') " disabled  />  -->
+                                                     <input type="text" name="EXPENSE_VAT_AMT_ETAX" :id="pgmid+'EXPENSE_VAT_AMT_ETAX'" class="form-control form-control-sm text-right "  :value="curItem.VAT_AMT ,'0,000' | numberformat('0,000')" disabled  /> 
+<!--                                                      <label  v-show="curItem.VAT_DEDUCTION_TP == '2'" class="w-100 m-0 text-center text-red f-s-17"><strong>불공제</strong></label> -->
+                                                </div>
+                                                
+                                           </div> 
+
+
+                                            <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white">총지급액</label>
+                                                <div class="col-9  ec-col-input">
+                                                     <input type="text" name="TOT_AMT_ETAX" :id="pgmid+'TOT_AMT_ETAX'" :value="(curItem.SUPPLY_AMT + curItem.VAT_AMT) | numberformat('0,000' )" class="form-control form-control-sm text-right" disabled  />
+                                                </div>
+                                           </div> 
+                                            <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white required">거래처</label>
+                                                <div class="col-9  ec-col-input">
+                                                    <popup-code class="w-100" ref="popupbiz" :pgmid="pgmid"  pgmnm="거래처" subname="popupbiz"  name="popupbiz"   searchname="거래처"  columnlayout="popupbiz"   tablename="BIZ" required="true"   @codechanged="bizCdChange" ></popup-code>
+                                                </div>
+                                           </div> 
+                                            <div class="ec-grid-row">
+                                                <label class="col-3  ec-col-label-0 bg-white required">지급방법</label>
+                                                <div class="col-9  ec-col-input">
+                                                    <a class="ec-btn btn btn-sm btn-white text-nowrap">등록</a>
+                                                </div>
+                                           </div>    
+<!--                                            <div v-if="split_yn == '0'"> -->
+                                           
+					                                           <div class="ec-grid-row">
+					                                                <label class="col-3  ec-col-label-0 bg-white required">비용항목
+<!-- 					                                                   <a class="ec-btn btn btn-sm btn-white text-nowrap  ml-1" @click="splitExpense"><i class="ion ion-md-add"></i></a> -->
+					                                                </label>
+					                                                <div v-if="split_yn == '0'" class="col-9  ec-col-input">
+					                                                    <popup-code class= "w-100" ref="popupexpetax" :pgmid="pgmid"  pgmnm="비용항목" subname="popupexpetax"  name="EXPENSE_CD_ETAX"   searchname="비용항목"  columnlayout="popupexpcard"   tablename="EXETAX"   required="true" @codechanged="etcExpCdChange" ></popup-code>
+					                                                </div>
+					                                                <div v-if="split_yn == '1'" class="col-9  ec-col-input d-flex justify-content-end">
+					                                                    <div class="f-subtitle" >합계:{{getEtaxSplitedSumAmt | numberformat('0,000') }}원({{ splitedExpenseList.length  }}건)</div>
+					                                                </div>				                                                
+					                                           </div> 
+					                                             <span v-if="split_yn == '0'" v-show="receiptbelongtype != '0'">
+					                                              <div   class="ec-grid-row">
+					                                                <label class="col-3  ec-col-label-0 bg-white required">비용귀속</label>                                                
+					                                                <div class="col-9 flex-column  ec-col-input">
+					                                                
+					                                                <div class="w-100   p-0 mb-1 d-flex">
+					                                                             <dropdown-syscommon  ref="ETAX_CCENTER_TP" class="w-100 p-0 flex-shrink-0"  :pgmid="pgmid"  
+					                                                                     dropdownlabel=""  selectid="ETAX_CCENTER_TP" selectname="ETAX_CCENTER_TP" 
+					                                                                     clcd="EX_CCENTER_TP"   @changed="ccenterTpChange"></dropdown-tablecommon>
+					                                                 </div>
+					                                                <div class="w-100   p-0 mb-1 d-flex">   
+						                                                  <span class="w-100" v-show="receiptcosttype=='1'" ><popup-code class="w-100" ref="popupcostcenteretax" :pgmid="pgmid"  pgmnm="코스트센터" subname="popupcostcenter-etax"   name="CCTR_CD_ETAX" searchname="코스트센터"   columnlayout="popupcostcenter"   tablename="CCTR" @codechanged="costCenterCdChange"  ></popup-code></span>
+						                                                  <span class="w-100" v-show="receiptcosttype=='2'" ><popup-code class="w-100" ref="popupprojectetax" :pgmid="pgmid"  pgmnm="프로젝트" subname="popupproject-etax"   name="PROJECT_ETAX" searchname="프로젝트"  columnlayout="popupproj"   tablename="PROJ"    @codechanged="projectCdChange" ></popup-code></span>
+					                                                </div>
+					                                               </div>
+					                                           </div> 
+					                                           </span>                                              
+                                           
+                                           
+					                                            <div v-if="split_yn == '0'" v-for="item in receiptMngList " class="ec-grid-row">
+					                                                <label class="col-3  ec-col-label-0 bg-white"><span v-show="item.MUST_YN=='1'" class="text-danger">*</span>{{item.MNG_NM}}</label>  
+					                                                <div v-if="item.INPUT_FORMAT_CD !='01' &&  item.INPUT_FORMAT_CD !='05'  &&  item.INPUT_FORMAT_CD !='02'" class="col-9  ec-col-input">
+					                                                    <input type="text"  :id="pgmid+'etaxmng'+item.MNG_CD" 
+					                                                    :class="{required : item.MUST_YN=='1'}" class="form-control form-control-sm "  /> 
+					                                                </div>                                                                                              
+					                                                <div v-if="item.INPUT_FORMAT_CD=='01'" class="col-9  ec-col-input">
+					                                                    <popup-code class="w-100"  :ref="'popupetaxmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-etax"   name="CCTR_CD_ETAX" 
+					                                                    :searchname="item.MNG_NM"  :required="item.MUST_YN=='1' ?  'true' : '' "  :columnlayout="item.COLUMN_LAYOUT"   :tablename="item.TABLE_CD" :codecl="item.COMM_CL_CD" 
+					                                                     ></popup-code>
+					                                                </div>
+					                                                <div v-if="item.INPUT_FORMAT_CD=='02'" class="col-9  ec-col-input">
+					                                                     <inputnumber-component  :ref="'popupetaxmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-etax" :required="item.MUST_YN=='1' ?  'true' : '' "  ></inputnumber-component>
+					                                                </div>                                                  
+					                                                <div v-if="item.INPUT_FORMAT_CD=='05'" class="col-9  ec-col-input">
+					                                                     <date-new-component-v1  :ref="'popupetaxmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-etax"   
+					                                                       :required="item.MUST_YN=='1' ?  'true' : '' "  readonly="readonly"   ></date-new-component>  
+					                                                </div>                                                   
+					                                                
+					                                           </div>  
+					                                            <div v-if="split_yn == '0'" class="ec-grid-row">
+					                                                <label class="col-3  ec-col-label-0 bg-white">적요</label>
+					                                                <div class="col-9  ec-col-input">
+					                                                    <input type="text" name="RMK_ETAX" :id="pgmid+'RMK_ETAX'" :value="curItem.RMK"  class="form-control form-control-sm" /> 
+					                                                </div>
+					                                           </div> 
+                                    </div>
+                                    
+                                    
+                                           
+									<!-- 분할건 -->
+									<div v-if="split_yn =='1'" class="accordion h-100 overflow-y ec-scrollbar" :id="pgmid+'accordionSplit'" style="height:250px !important">
+									  <div v-for="(splititem, index) in splitedExpenseList" class="card">
+									    <div class="card-header p-0" id="headingOne">
+									      <h2 class="mb-0">
+									        <button class="btn  py-0 px-2 btn-block text-left collapsed" type="button" data-toggle="collapse" :data-target="'#collapseSplitedItem'+pgmid+index" aria-expanded="true" aria-controls="collapseOne">
+									            <div class="d-flex justify-content-between align-items-center">
+									                  <div>{{index+1}}. &nbsp 비용항목 : {{splititem.EXPENSE_NM}}</div>
+									                  <div><span> {{splititem.EXPENSE_AMT | numberformat('0,000')}}원</span>
+									                   <div @click.stop="deleteSplitExpense(index)" class="ml-3 ec-btn btn btn-sm btn-white text-nowrap" ><i class="ion ion-md-remove"></i></div>
+									            </div>
+									            
+									        </button>
+									      </h2>
+									    </div>
+									
+									    <div :id="'collapseSplitedItem'+pgmid+index" class="collapse" aria-labelledby="headingOne" :data-parent="'#'+pgmid+'accordionSplit'">
+									      <div class="card-body p-0">
+														                                            <div class="ec-grid-row">
+														                                                <label class="col-3  ec-col-label-0 bg-white required">비용항목</label>
+														                                                <div class="col-9  ec-col-input">
+														                                                    <popup-code class="w-100" :ref="'popupexpetaxsplit'+index" :pgmid="pgmid+index"  pgmnm="비용항목" :subname="'popupexpetax'+index"  name="EXPENSE_CD_ETAX"   searchname="비용항목"  columnlayout="popupexpcard"   tablename="EXETAX"   required="true" @codechanged="splitEtcExpCdChange(arguments, splititem , index)" ></popup-code>
+														                                                </div>
+														                                           </div> 
+														                                             <span v-show="receiptbelongtype != '0'">
+														                                              <div   class="ec-grid-row">
+														                                                <label class="col-3  ec-col-label-0 bg-white required">비용귀속</label>                                                
+														                                                <div class="col-9 flex-column  ec-col-input">
+														                                                
+														                                                <div class="w-100   p-0 mb-1 d-flex">
+														                                                             <dropdown-syscommon  :ref="'ETAX_CCENTER_TP_SPLIT'+index" class="w-100 p-0 flex-shrink-0"  :pgmid="pgmid+index"  
+														                                                                     dropdownlabel=""  selectid="ETAX_CCENTER_TP" selectname="ETAX_CCENTER_TP" 
+														                                                                     clcd="EX_CCENTER_TP"   @changed="splitCcenterTpChange($event, index)"></dropdown-tablecommon>
+														                                                 </div>
+														                                                <div class="w-100   p-0 mb-1 d-flex">   
+															                                                  <span v-show="splititem.receiptcosttype=='1'" ><popup-code class="w-100" :ref="'popupcostcenteretax'+index" :pgmid="pgmid+index"  pgmnm="코스트센터" subname="popupcostcenter-etax"   name="CCTR_CD_ETAX" searchname="코스트센터"   columnlayout="popupcostcenter"   tablename="CCTR" @codechanged="costCenterCdSplitChange(arguments, index)"  ></popup-code></span>
+															                                                  <span v-show="splititem.receiptcosttype=='2'" ><popup-code class="w-100" :ref="'popupprojectetax'+index" :pgmid="pgmid+index"  pgmnm="프로젝트" subname="popupproject-etax"   name="PROJECT_ETAX" searchname="프로젝트"  columnlayout="popupproj"   tablename="PROJ"    @codechanged="projectCdSplitChange(arguments, index)" ></popup-code></span>
+														                                                </div>
+														                                               </div>
+														                                           </div> 
+														                                           </span>                                              
+									                                           
+									                                           
+														                                            <div v-for="item in splitedExpenseList[index].receiptMngList " class="ec-grid-row">
+														                                                <label class="col-3  ec-col-label-0 bg-white"><span v-show="item.MUST_YN=='1'" class="text-danger">*</span>{{item.MNG_NM}}</label>  
+														                                                <div v-if="item.INPUT_FORMAT_CD !='01' &&  item.INPUT_FORMAT_CD !='05'  &&  item.INPUT_FORMAT_CD !='02'" class="col-9  ec-col-input">
+														                                                    <input type="text"  :id="pgmid+ index +'etaxmng'+item.MNG_CD" 
+														                                                    :class="{required : item.MUST_YN=='1'}" class="form-control form-control-sm "  /> 
+														                                                </div>                                                                                              
+														                                                <div v-if="item.INPUT_FORMAT_CD=='01'" class="col-9  ec-col-input">
+														                                                    <popup-code  class="w-100" :ref="'popupetaxmng'+ index +item.MNG_CD" :pgmid="pgmid + index +item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-etax"   name="CCTR_CD_ETAX" 
+														                                                    :searchname="item.MNG_NM"  :required="item.MUST_YN=='1' ?  'true' : '' "  :columnlayout="item.COLUMN_LAYOUT"   :tablename="item.TABLE_CD" :codecl="item.COMM_CL_CD" 
+														                                                     ></popup-code>
+														                                                </div>
+														                                                <div v-if="item.INPUT_FORMAT_CD=='02'" class="col-9  ec-col-input">
+														                                                     <inputnumber-component  :ref="'popupetaxmng'+index+item.MNG_CD" :pgmid="pgmid+ index +item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-etax" :required="item.MUST_YN=='1' ?  'true' : '' "  ></inputnumber-component>
+														                                                </div>                                                  
+														                                                <div v-if="item.INPUT_FORMAT_CD=='05'" class="col-9  ec-col-input">
+														                                                     <date-new-component-v1  :ref="'popupetaxmng'+ index +item.MNG_CD" :pgmid="pgmid+ index +item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-etax"   
+														                                                       :required="item.MUST_YN=='1' ?  'true' : '' "  readonly="readonly"   ></date-new-component>  
+														                                                </div>                                                   
+														                                                
+														                                           </div>  
+														                                            <div class="ec-grid-row">
+														                                                <label class="col-3  ec-col-label-0 bg-white">비용금액</label>
+														                                                <div class="col-9  ec-col-input">
+									<!-- 					                                                     <input type="text" name="EXPENSE_AMT_ETAX" :id="pgmid + index +'EXPENSE_AMT_ETAX'" class="form-control form-control-sm text-right"  :value="splititem.EXPENSE_AMT | numberformat('0,000') "  /> -->
+														                                                     <inputnumber-component :ref="'EXPENSE_AMT_ETAX'+index" required="required"  @inputchange="splitedEtaxAmtChg($event, index)" ></inputnumber-component>
+														                                                </div>
+														                                           </div> 
+														                                           
+														                                            <div class="ec-grid-row">
+														                                                <label class="col-3  ec-col-label-0 bg-white">적요</label>
+														                                                <div class="col-9  ec-col-input">
+														                                                    <input type="text" name="RMK_ETAX" :id="pgmid+index+'RMK_ETAX'" :value="splititem.RMK"  class="form-control form-control-sm" /> 
+														                                                </div>
+														                                           </div> 
+														                                           
+									      </div>
+									    </div>
+									  </div>
+									<!--   card end -->
+									</div>                                 
+									                                           
+								</div>                           
+                                    
+                                    
+                        	<div class="d-flex flex-row btn-row ec-btn-bottom-row">
+                                <a v-if="curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' && curItem.PRIVATE_YN !='1'" class="btn ec-btn-bottom w-100  bg-grey-lighter" @click="deleteExpMst(curItem, curItem.INDEX)">삭제</a>
+                                <a v-if="curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' && curItem.PRIVATE_YN !='1'" class="btn  ec-btn-bottom w-100  btn-maintheme" @click="saveCurItem">저장</a>
+							</div>                                       
+                                    
+                            </div>
+          <!-- end of popup etax -->            
+
+   
+   
+   </div> 
+   
+  </body>
+</html>

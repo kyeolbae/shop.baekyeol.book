@@ -1,0 +1,140 @@
+<!-- 
+	-- 프로그램명 : 비용관리 / 분개유형
+	-- 날짜 : 2021.07.30 by hshwang
+	-- 수정 : 
+-->
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+
+      var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************		  
+		  //sap전표
+		  data: {  pgmid : "[[${param.pgm_id}]]",
+			       columnlayout : [],
+			       newgriditem : {} ,
+			       gridView : "",
+			       slipTypeArr : [],
+			       apAccountArr : [],
+			       slipTaxCodeArr: [],
+			       slipTypeRadio : objId(),
+			       amt_distribution : "",
+			       slip_summary : "#{세금계산서일} 관리용역"
+		  },//data
+		  created () { //초기화================================================================
+			  
+			  //그리드 초기화
+
+		    	this.columnlayout =   
+		     	   [   
+		    		   {dataField : "undefined1", headerText : "순번",  width: "10%", minWidth: 50, editable : false, style : "aui_col_center"  },
+		    		   {dataField : "undefined2", headerText : "<span class='text-danger'>*</span>계정명",  width: "15%", minWidth: 100, editable : false, renderer : {type : "TemplateRenderer" }, pgmid: this.pgmid,  gridname : "PayAccount" , labelFunction : auiPopupCode },
+		    		   {dataField : "undefined3", headerText : "계정코드",  width: "15%", minWidth: 100, editable : false, style : "aui_col_left",  },
+		    		   {dataField : "undefined4", headerText : "<span class='text-danger'>*</span>코스트센터명",  width: "15%", minWidth: 100, editable : false, renderer : {type : "TemplateRenderer" }, pgmid: this.pgmid,  gridname : "CostCenter" , labelFunction : auiPopupCode },
+		    		   {dataField : "undefined5", headerText : "코스트센터코드",  width: "15%", minWidth: 100, editable : false, style : "aui_col_left",  },
+		    		   {dataField : "undefined6", headerText : "<span class='text-danger'>*</span>적요",  width: "15%", minWidth: 150, style : "aui_col_center",},
+		    		   {dataField : "undefined7", headerText : "금액 배부-비율(%)", width: "15%", minWidth: 100, editRenderer : {maxlength : 3, onlyNumeric : true}, style : "aui_col_center",},
+		    		   
+	             ] ;//columnlayout
+		    	
+		  }, // created		  
+		  methods : {  // ======================================================================================
+			  
+			  searchButtonOnClick : function(slipno) {
+                    var param = {
+                            svcId:"search",
+                            strUrl:"/ec/ex/sap/config/sliptype/search",  
+                            inDs :  "" ,  
+                            param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+                            pCall : this.tranCallBack, 
+                            pLoad : true          
+                        };
+                        //트랜젝션 실행
+                   ajaxReadJsonData(param);							
+							
+			  }, // end of searchButtonOnClick
+			  
+			  saveButtonOnClick : function() {
+				  
+				  
+				    // 저장할 데이터 만들기
+				    var    ds_data = {};
+				    ds_data['ds_master'] = getCRUDdata(this.gridView);
+				    
+				    if(!ds_data){ return; }
+				    
+				  var param = {
+					        svcId:"save", 
+					        strUrl: "/ec/ex/sap/config/sliptype/save",   //전송 url 
+					        param : serializeObjectX($('#[[${param.pgm_id}]]'), ds_data),       // 전송할 파라미터
+					        pCall : this.tranCallBack, 
+					        pLoad : true          // 로딩이미지 노출 여부  
+					    };
+
+					    //트랜젝션 실행
+					    ajaxReadJsonData(param); 		  
+	  			},  //saveButtonOnClick
+	  			
+	  			user1ButtonOnClick : function() {		//전표 참조 분개 버튼 클릭
+	  				var param = {
+					        svcId:"refDocJournal", 
+					        strUrl: "/ec/ex/sap/config/sliptype/refDocJournal",   //전송 url 
+					        param : serializeObjectX($('#[[${param.pgm_id}]]')),       // 전송할 파라미터
+					        pCall : this.tranCallBack, 
+					        pLoad : true          // 로딩이미지 노출 여부  
+					    };
+
+					    //트랜젝션 실행
+					    ajaxReadJsonData(param); 	
+	  			},	//전표 참조 분개 버튼 클릭 end
+			  
+				tranCallBack : function(svcId, data, errCd, msgTp, msgCd, msgText) { //******************************
+					  if(svcId=="search"){
+							if(data["ds_master"]['data'].length >= 0) {
+							}
+					  } else if(svcId=="save"){
+						  
+					  } else if ("refDocJournal") {
+					
+					  }
+				},		//	 tranCallBack
+					
+				dropdownchanged : function(event) {
+                    this.$emit('changed',event.target.value);
+                 },
+		  }, // end of methods
+
+		  mounted: function() {
+			  
+			 var ref = this;
+             this.$nextTick(function () {
+                 ref.gridView = ref.$refs.gridmaster.myGridID;
+                 
+			  }); // nextTick
+			  
+			  initDropDownBox("SLIP_TPYE", "/slip/common/commonSelect/selectSlipTypeToDropBox" , dropDownCallBack, {});
+              this.slipTypeArr = dropdownRenderer["SLIP_TPYE"];
+			  
+              initDropDownBox("AP_ACCOUNT", "/slip/common/commonSelect/selectApAccountToDropBox" , dropDownCallBack, {});
+              this.apAccountArr = dropdownRenderer["AP_ACCOUNT"];
+              
+              initDropDownBox("SLIP_TAX_CD", "/slip/common/commonSelect/selectSlipTaxCodeToDropBox" , dropDownCallBack, {PURCHASE_SALE : "P"});
+              this.slipTaxCodeArr = dropdownRenderer["SLIP_TAX_CD"];
+//**********************************************************************************************			  
+             vueArr.push(this);
+			},
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

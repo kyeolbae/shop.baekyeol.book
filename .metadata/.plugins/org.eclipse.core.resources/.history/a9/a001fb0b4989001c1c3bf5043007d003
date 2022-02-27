@@ -1,0 +1,102 @@
+<!-- 
+	-- 프로그램명 : 비용관리 / 전자세금계산서
+	-- 날짜 : 2021.08.10 by hshwang
+	-- 수정 : 전표 report 조회 2021.12.03 by kbae
+-->
+
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+<meta charset="utf-8" />
+</head>
+
+<body>
+  <section layout:fragment="content">
+
+	        <form class="w-100 overflow-y ec-scrollbar" th:id=${param.pgm_id}>
+	            <div class="ec-grid-box-search mb-1">
+                       <div class="ec-grid-lastrow">
+                           <label class="col-lg-1 col-md-2 ec-col-label-first-search justify-content-md-end">전표번호<span class="text-danger">*</span></label>
+                           <div class="col-lg-2 col-md-3 ec-col-input">
+                               <input type="text" name="BELNR" :id="pgmid+'BELNR'" class="form-control form-control-sm ec-max-width-200"  /> 
+                           </div>
+                           <label class="col-lg-1  col-md-2 ec-col-label-first-search justify-content-md-end">회계년도<span class="text-danger">*</span></label>
+                           <div class="col-lg-2 col-md-3 ec-col-input">
+                               <input type="text" name="GJAHR" :id="pgmid+'GJAHR'" class="form-control form-control-sm ec-max-width-100"   /> 
+                           </div>
+                       </div>
+                </div>  
+                <div class="d-flex split" style="height: 600px;">
+	            	<div :id="pgmid+'leftPanel'">  
+	            	
+	<!-- 			          리포트 -->
+						<div class="" style="display: flex; height: 88%;">
+		               			<iframe :id="pgmid+'realreport'" class="row panel" src="about:blank" style="width: 100%; "></iframe>       
+	      				</div>	
+	       				<div class="ec-grid-box-search">
+		       				<div class="ec-grid-row  justify-content-center">
+		                      <label class="col-lg-2  col-md-2 ec-col-label justify-content-md-end text-nowrap">첨부파일</label>
+		                         <div class="col-lg-10 col-md-10 ec-col-input">
+		                            <div class="w-100">
+		                            	 <input type="file"  multiple="multiple"  name="files[]"  class="form-control-file btn btn-xs border " :id="pgmid+'BoardFile'">
+		                            </div>
+		                            
+		                            
+		                            <div class="btn-group ml-1">
+			                              <a class="btn btn-sm border text-nowrap" @click="resetSlipFile()">초기화</a>
+			                        </div>
+			                        <div class="btn-group ml-1">
+			                              <a class="btn btn-sm border text-nowrap" @click="saveSlipFile()">저장</a>
+		                            </div>
+		                         </div>
+		                  	</div> 
+		                    
+		                    <div    class="ec-grid-row  justify-content-center">
+			                     <label class="col-lg-2  col-md-2 ec-col-label justify-content-md-end text-nowrap">파일</label>
+			                      <div class="col-lg-10 col-md-10 ">
+			                       <div  v-for="(item,index) in fileList" class="w-100"  >
+			                            <a :href="'/ec/common/syscommon/fileupload/downloadFile/'+item.fileNo" > {{ item.orgName }}  </a>
+			                            <div  class="btn-group ml-1">
+			                            	<a class="btn btn-sm border p-4 text-nowrap"  @click="deletefile( item.fileNo   )">삭제</a>
+			                      		</div>
+			                       </div>
+			                      </div>
+		                    </div>
+					  	</div>
+			          
+			       </div>  
+			       
+		       
+	              <div :id="pgmid+'rightPanel'">
+	              	<div class="d-flex flex-column h-100" >
+						<div class="justify-content-center" style= "height : 557px;" >
+						    <ec-img ref="receiptimg"  ocryn="true"  v-show="$options.filters.isNotEmpty(curItem.FILE_NO)  &&  curItem.TYPE =='RECEIPT' " 
+						         source="RE" @edited="receiptimgedited" @clickmainfile="receiptClickMainFile"
+						         autoprocess="false"  @multiupload="saveServer"   @autoupload="getImgFilesNo"  @clicktrash="deleteEcImg"> 
+						    </ec-img>
+						</div>
+					    <div class="ec-grid-row ec-grid-box-search d-flex m-0" >
+					    	<label class="col-3 ec-col-label justify-content-md-end text-nowrap">증빙서</label>
+							<div class="col-9 ec-col-input">
+                     			<dropdown-common class="w-100 mr-1" :pgmid="pgmid"   all="NO" selectid="EX_COM_EVID_DOC_TP" selectname="EX_COM_EVID_DOC_TP" clcd="EX_COM_EVID_DOC_TP"></dropdown-common> 
+                   				<div class="btn-group">
+	                             <a class="btn btn-sm border text-nowrap" >저장</a>
+                            	</div>
+                   			</div>
+						</div>						
+                    </div>
+				</div>
+
+			
+			</div>
+			</form>
+		    
+	  	<!-- ================== BEGIN THIS PAGE JS ================== -->
+ 	<div th:replace="contents/ex/sap/sap-slipsearch-js :: js"></div>
+ 	
+ 	
+   </section>
+
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!-- 
+	-- 프로그램명 : 수집처리 - 홈텍스
+	-- 날짜 : 
+	-- 수정 : 2021.10.18 by hshwang (전가세금계산서, 현금영수증 SAP 전송, 삭제 기능 추가)
+-->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8" />
+</head>
+<body>
+	<div th:fragment="js">
+		<script type="text/javascript">
+	  var [[${param.pgm_id}]] = new Vue({
+		  el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************		  
+		  data: {	pgmid : "[[${param.pgm_id}]]",
+			  	 	columnlayout : [],
+			  	 	gridView : "",
+			  	 	searchtypename : objId(),
+		  },//data
+		  created()  {},
+		  methods : {  // ======================================================================================
+			eTaxOnclick : function() {   
+				
+				var o = {};
+				o.SEARCH_TYPE = $("input[name='"+ this.searchtypename + "']:checked").val();
+				var param = {
+                        svcId:"eTaxOnclick",
+                        strUrl:"/ec/ex/kwichub/proc/inserteTax",   
+                        param : Object.assign(o, serializeObjectX($('#[[${param.pgm_id}]]'))), 
+                        pCall : this.eTaxOnclickCallBack, 
+                        pLoad : true         
+                    };
+                    //트랜젝션 실행
+                ajaxReadJsonData(param);
+			  },
+			  eTaxOnclickCallBack : function(svcId, data, errCd, msgTp, msgCd, msgText) { //******************************
+				  customAlert('','',data["data_result"].data.MSG);
+					$('#' + this.pgmid + 'KHETAX').val(data["data_result"].data.HUB_IF_KEY);
+				},
+				
+			
+			getCorpStateOnclick : function() { 
+				if ($('#' + this.pgmid+'CORP_NO').val().length > 0){
+					var param = {
+	                        svcId:"insertCorpState",
+	                        strUrl:"/ec/ex/kwichub/proc/insertCorpState",   
+	                        param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+	                        pCall : this.getCorpStateOnclickCallBack, 
+	                        pLoad : true ,
+	                        async : false,
+	                    };
+	                    //트랜젝션 실행
+	                ajaxReadJsonData(param);
+				} else {
+					customAlert("","","내용을 입력해주세요");
+				}
+			},
+			getCorpStateOnclickCallBack : function(svcId, data) { //******************************
+				customAlert('','',data.SVC_ERR_MSG_TEXT);
+				$('#' + this.pgmid + 'CORP_NO').val("");	
+			},
+			
+			//현금영수증 수집
+			getKhCashListOnclick : function() { 
+				var param = {
+                        svcId:"insertKHCashList",
+                        strUrl:"/ec/ex/kwichub/proc/insertKHCashList",   
+                        param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+                        pCall : this.getKhCashListOnclickCallBack, 
+                        pLoad : true ,
+                        async : false,
+                    };
+                    //트랜젝션 실행
+                ajaxReadJsonData(param);
+			},
+			getKhCashListOnclickCallBack : function(svcId, data) { //******************************
+				customAlert('','',data["data_result"].data.MSG);
+				$('#' + this.pgmid + 'KHCASH').val(data["data_result"].data.HUB_IF_KEY);
+			},
+			
+			bulkCorpStateRequestOnclick : function() {   
+				var param = {
+                        svcId:"requestBulkCorpState",
+                        strUrl:"/ec/ex/kwichub/proc/requestBulkCorpState",   
+                        param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+                        pCall : this.bulkCorpStateRequestOnclickCallBack, 
+                        pLoad : true ,
+                        async : false,
+                    };
+                    //트랜젝션 실행
+                ajaxReadJsonData(param);
+			},
+			bulkCorpStateRequestOnclickCallBack : function(svcId, data) { //******************************
+				customAlert('','',data.SVC_ERR_MSG_TEXT);
+			},
+			
+			bulkCorpStateResultOnclick : function() {   
+				if ($('#' + this.pgmid+'DOC_NO').val().length > 0){
+					var param = {
+	                        svcId:"updateBulkCorpStateResult",
+	                        strUrl:"/ec/ex/kwichub/proc/updateBulkCorpStateResult",   
+	                        param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+	                        pCall : this.bulkCorpStateResultOnclickCallBack, 
+	                        pLoad : true ,
+	                        async : false,
+	                    };
+	                    //트랜젝션 실행
+	                ajaxReadJsonData(param);
+				} else {
+					customAlert("","","내용을 입력해주세요");
+				}
+			},
+			bulkCorpStateResultOnclickCallBack : function(svcId, data) { //******************************
+				customAlert('','',data.SVC_ERR_MSG_TEXT);
+				$('#' + this.pgmid + 'DOC_NO').val("");
+			},
+			
+// *********************  삭제 **************************************************************
+
+				deleteETaxOnclick : function() {
+					var o = {};
+					o.KH_NAME = "KH_TAX_LIST";
+					o.SUB_KH_NAME = "KH_TAX_ITEM_LIST"
+					o.HUB_IF_KEY = $('#' + this.pgmid + 'KHETAX').val();
+					if(o.HUB_IF_KEY == '') {
+						customAlert('','','데이터 수집 후 삭제 가능합니다.');
+						return null;
+					}
+					var param = {
+	                        svcId:"deleteCardBasic",
+	                        strUrl:"/ec/ex/kwichub/proc/deleteKHCardList",   
+	                        param : o, 
+	                        pCall : this.deleteETaxOnclickCallBack, 
+	                        pLoad : true 
+	                    };
+	                    //트랜젝션 실행
+	                ajaxReadJsonData(param);
+				},
+				deleteETaxOnclickCallBack : function(svcId, data) { //******************************
+					customAlert('','',data["data_result"].data.MSG);
+					$('#' + this.pgmid + 'KHETAX').val("");
+				},
+				
+				deleteKhCashOnclick : function() {
+					var o = {};
+					o.KH_NAME = "KH_CASH_LIST";
+					o.HUB_IF_KEY = $('#' + this.pgmid + 'KHCASH').val();
+					if(o.HUB_IF_KEY == '') {
+						customAlert('','','데이터 수집 후 삭제 가능합니다.');
+						return null;
+					}
+					var param = {
+	                        svcId:"deleteCardBasic",
+	                        strUrl:"/ec/ex/kwichub/proc/deleteKHCardList",   
+	                        param : o, 
+	                        pCall : this.deleteKhCashOnclickCallBack, 
+	                        pLoad : true 
+	                    };
+	                    //트랜젝션 실행
+	                ajaxReadJsonData(param);
+				},
+				deleteKhCashOnclickCallBack : function(svcId, data) { //******************************
+					customAlert('','',data["data_result"].data.MSG);
+					$('#' + this.pgmid + 'KHCASH').val("");
+				},
+
+
+// *******************  SAP 저장 ************************************************************
+			
+			eTaxSapOnclick : function() {
+				var o = {};
+				o.funcId = 'KHETAX';
+				o.HUB_IF_KEY = $('#' + this.pgmid + 'KHETAX').val();
+				if(o.HUB_IF_KEY == '') {
+					customAlert('','','데이터 수집 후 저장 가능합니다.');
+					return null;
+				}
+				this.saveSap(o);
+			},
+			
+			khCashSapOnclick : function() {
+				var o = {};
+				o.funcId = 'KHCASH';
+				o.HUB_IF_KEY = $('#' + this.pgmid + 'KHCASH').val();
+				if(o.HUB_IF_KEY == '') {
+					customAlert('','','데이터 수집 후 저장 가능합니다.');
+					return null;
+				}
+				this.saveSap(o);
+			},
+
+			// SAP 저장
+			saveSap : function(o) {
+				var param = {
+                        svcId: o.funcId,
+                        strUrl:"/ec/ex/kwichub/proc/saveSap",   
+                        param : o, 
+                        pCall : this.saveSapOnclickCallBack, 
+                        pLoad : true         
+                    };
+                    //트랜젝션 실행
+                ajaxReadJsonData(param);
+			},
+			saveSapOnclickCallBack : function(svcId, data) {
+				var result = data["data_result"].data;
+				if(result.RESULT == 'OK') {
+					customGritter(result.MSG);
+				} else {
+					customAlert('','', result.MSG);
+				}
+			},
+			
+		  }, // end of methods
+			mounted: function() {
+				var ref = this;
+				this.$nextTick(function () {
+				}); // nextTick
+	//**********************************************************************************************	
+			vueArr.push(this);
+			},
+
+	  }) // end of new Vue
+		</script>
+	</div>
+
+</body>
+</html>

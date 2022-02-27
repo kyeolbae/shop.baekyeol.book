@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="utf-8" />
+</head>
+<body>
+   
+<script th:fragment="js">
+
+
+// 상신용 비용리스트(결재화면)
+Vue.component('report-apprv-expense-list', { // ==================================================================
+    data: function () { 
+    return {
+              //필수 변수
+    	      id : objId(),
+              refHeader : objId(),
+          	  refMng : objId(),
+              refFile: objId(),
+          	  
+              //
+              reportFiles : [],
+              reportNo : '',
+              reportTp : '',
+              reportTpNm : '',
+              
+              expFiles : [],
+              expenseList : [],
+              reportMngList : [],
+              expListCard : [],
+              expListTravel : [],
+              expListGas : [],
+              expListToll : [],
+              expListReceipt : [],
+              expListEtax : [],
+              expListPtax : [],
+              expListEtc : [],
+              
+              reportTitle : '',
+              reportRmk : '',
+              paySumAmt : '',
+              imgid: objId(),
+      }
+    },
+
+    props: {pgmid : String ,subname:String, ismobile : String  }, 
+    template: 
+    '<div class=""  > \
+    \
+    \
+	    <div v-if="ismobile == \'true\'" > \
+	    \
+	     	       <report-header-comp :ref="refHeader" v-show="true"  title="true" ismobile="true"></report-header-comp> \
+	      	       <report-mng-comp :ref="refMng" v-show="true" ismobile="true" ></report-mng-comp> \
+	      		   \
+				   \
+                   <div class=" form-horizontal p-0 flex-column w-100  f-s-13 " :id="\'accordionexpDetail\'+pgmid" >  \
+		                   <div v-if="expenseList.length > 0">   \
+			                      <div class="d-flex justify-content-between mb-1">  \
+			                          <div class="text-maintheme"><i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expenseList[0].SOURCE_TP_NM}}</div>  \
+			                          <div class="collapsed" data-toggle="collapse" :data-target="\'#expDetailCard\'+pgmid" ><i class="icon-arrow-down mr-2"></i></div>  \
+			                      </div>  \
+		                          <div v-for="(item, index) in expenseList" class="rounded-0 card  row border-right-0 border-left-0 border-bottom-0    m-0 p-0"  >  \
+				                          <div class="bg-black-transparent-1 d-flex align-content-center flex-wrap p-0 p-t-5 border-0 collapsed" data-toggle="collapse" :data-target="\'#expDetailCard\'+pgmid+index">    \
+				                                 <div class="d-inline-flex w-100">  \
+				                                   <span class="col-6 mb-1 text-nowrap">비용항목&nbsp<strong>{{item.EXPENSE_NM}}</strong></span>  \
+				                                   <span class="col-6 mb-1 text-right">금액&nbsp<strong>{{item.PAY_AMT | numberformat(\'0,000\')}}원</strong></span>  \
+				                                 </div>   \
+				                                 <div class="d-inline-flex w-100">  \
+				                                   <p class="col-12 mb-1">사용일시&nbsp<strong>{{item.RECEIPT_DH | dateformat(\'card-week\')}}&nbsp{{item.RECEIPT_DH | dateformat(\'card-time\')}}</strong></p>  \
+				                                 </div>  \
+				                          </div>  \
+				                          <div :id="\'expDetailCard\'+pgmid" class="collapse bg-light " :class="\'expDetailCard\'+pgmid" :data-parent="\'#accordionexpDetail\'+pgmid"  >  \
+				                                  <div class="w-100">  \
+						                                     <div class="d-flex justify-content-between col" ><span class="f-plane-bold">상호</span><span>{{item.BIZ_NM}}</span></div>  \
+						                                     <div class="d-flex justify-content-between col" ><span class="f-plane-bold">업종</span><span>{{item.BIZ_CATEGORY}}</span></div>  \
+						                                     <div class="d-flex justify-content-between col" ><span class="f-plane-bold text-nowrap mr-2">주소</span><span>{{item.BIZ_ADDR}}</span></div>  \
+						                                     <div class="d-flex justify-content-between col" ><span class="f-plane-bold">비고</span><span>{{item.RMK}}</span></div>  \
+						                                     \
+						                                     <div  class="d-flex flex-wrap justify-content-around">  \
+						                                             <img  v-if="item.FILE_NO != null" @click.stop="fileClick(item,0)" :src="\'/ec/common/syscommon/fileupload/downloadFile/\'+item.FILE_NO" height="150" >  \
+						                                     </div>   \
+				                                  </div>  \
+				                          </div>  \
+		                           </div>    \
+		                   </div>  \
+                   </div>  \
+                   <img-modal ref="imgmodal" :pgmid="imgid" subname="imgmodal" ></img-modal> \
+                   <report-file-comp v-show="false" :ref="refFile"></report-file-comp> \
+                   \
+        </div>    \
+         \
+    \
+    \
+      <div v-if="ismobile != \'true\'" > \
+        \
+        <report-header-comp  :ref="refHeader"  v-show="true"  title="true" ></report-header-comp> \
+        <report-mng-comp :ref="refMng" v-show="true"  ></report-mng-comp> \
+          \
+          \
+       <div  class="table-responsive">  \
+	       <div class="d-flex f-plane-bold border-black border-bottom p-10">  \
+	           <div class="col-3 text-left" >비용항목</div> \
+	           <div class="col-3 text-center">증빙일</div> \
+	           <div class="col-2 text-center">코스트센터</div> \
+	           <div class="col-2 text-right">지급액</div> \
+	           <div class="col-2 text-right">사원명</div> \
+	       </div> \
+           <div v-if="expenseList.length > 0" class="d-flex flex-column  m-t-10" >  \
+               <div> <i class="fa fa-fw f-s-8 m-r-5 fa-circle text-aqua mr-1"></i>{{expenseList[0].SOURCE_TP_NM}} </div> \
+	           <div v-for="(item, index) in expenseList" class="d-flex border-top"> \
+		               <div class="w-100 d-flex flex-column"> \
+				                   <div class="d-flex "> \
+					                    <div class="col-3 text-left">{{item.EXPENSE_NM}}</div> \
+					                    <div class="col-3 text-right">{{item.RECEIPT_DH | dateformat("card-week")}}&nbsp{{item.RECEIPT_DH | dateformat("card-time")}}</div> \
+					                    <div class="col-2 text-left">{{item.CCTR_NM}}</div> \
+					                    <div class="col-2 text-right">{{item.PAY_AMT | numberformat("0,000")}}원</div> \
+					                    <div class="col-2 text-right">{{item.EMP_NM}} </div> \
+				                   </div> \
+		               </div> \
+	           </div> \
+           </div> \
+           \
+           \
+       </div> \
+          <report-file-comp :ref="refFile" v-show="true"  >   </report-file-comp> \
+       </div> \
+     </div> \
+    \
+    \
+    \
+	</div>',
+	created () { 
+                
+        },
+   methods : {
+	   initData: function() {  // 필수함수
+		   this.$refs[this.refHeader].initData();
+		   this.$refs[this.refMng].initData();
+		   this.$refs[this.refFile].initData();
+	   },
+	   sendObj: function( o ) {  // 필수함수
+		   // 1. report, 2. 관리항목 * 추가 처리 데이터는 반드시 ds_etcList : { data :setArrChangeFlag( this.expenseList ,'U')}
+	        log('this.reportFiles');
+	        log(this.$refs[this.refHeader].getObj() );
+	        //    ajaxUploadFile('#'+this.pgmid+'reportAddedFile', null ,this.procApproveCallback);
+			return Object.assign(  {COMPONENT_ID : this.$options.name // 필수(변경x)
+			                     , ds_report : this.$refs[this.refHeader].getObj() 
+			                     , ds_etcList : { data : this.expenseList, CHG_MSG : "비용항목에 변경된 데이터가 있습니다. 조회 후 다시 처리하세요."}
+			                     , ds_files : this.reportFiles
+			                     }, this.$refs[this.refMng].getObj()   );
+			 
+		   },	   
+	   setObj : function( o ) { // 필수함수
+		   this.expenseList = o;
+	       
+           // 비용item 첨부파일
+		   var arr = []
+		   this.expenseList.forEach( function (item) {
+			  arr.push({EXPENSE_NO : item.EXPENSE_NO});
+		   } );
+	       this.$refs[this.refFile].getFiles(arr);
+	   
+	   },
+	   
+	   setReportTp : function( reporttp, reporttitle  ) { // 필수함수
+		   this.$refs[this.refMng].searchMng(reporttp);
+		   this.reportTp = reporttp;
+		   this.reportTitle = reporttitle;
+		   log('this.reportTitle');
+		   log(this.reportTitle);
+		   
+		   
+		   this.$refs[this.refHeader].setTitle(this.reportTitle);
+	   },
+       fileClick : function(item, index) {
+       	 this.$refs.imgmodal.setUrl('/ec/common/syscommon/fileupload/downloadFile/'+ item.FILE_NO, item.FILE_TYPE);
+       	 this.$refs.imgmodal.showModal();
+       },
+       tmapClick : function(url) {
+       	 this.$refs.imgmodal.setUrl(url, 'PNG');
+       	 this.$refs.imgmodal.showModal();
+       },	
+	    search : function( reportno ) { //필수함수
+	        // 컴포넌트 1개당 컨트롤러(서비스), mapper, xml 각 한개씩
+	        // url은 /컴포넌트명/함수명
+	          log('search : function( reportno )');
+	          this.reportNo = reportno;
+	          log('this.$refs[this.refHeader].search(this.reportNo)');
+	          log(this.reportNo);
+              this.$refs[this.refHeader].search(this.reportNo);	          
+	          
+	           var param = {
+	                   svcId:"getReportedList",
+	                   strUrl:"/ex/expense/approve/getReportByNo",
+	                   param : {REPORT_NO : this.reportNo}, //조회조건 부분만(전체는 에러 : 관리항목 input존재)
+	                   pCall : this.getReportByNoCallback, 
+	                   pLoad : true         
+	               };            
+	       //    ajaxReadJsonData(param);       
+	        
+	          var param = {
+                      svcId:"",
+                      strUrl:"/ex/expense/expensemst/getExpListByReportNo",    //전송 url    
+                      inDs :  "" ,  
+                      param : { REPORT_NO : this.reportNo },  
+                      pCall : this.getExpListByReportNoCallback, 
+                      pLoad : true,          
+                      };
+              //        ajaxReadJsonData(param);  
+                      
+   	          var param = {
+                         svcId:"",
+                         strUrl:"/ex/expense/expensemst/getExpFileListByReportNo",    //전송 url  
+                         inDs :  "" ,  
+                         param : { REPORT_NO : this.reportNo },  
+                         pCall : this.getExpFileListByReportNoCallback, 
+                         pLoad : true,          
+                         };
+                  //      ajaxReadJsonData(param);  
+                         
+              var param = {
+                      svcId:"getReportFileByReportNo",
+                      strUrl:"/ex/expense/report/getReportFileByReportNo", 
+                      inDs :  "" ,  
+                      param : {REPORT_NO: this.reportNo}, 
+                      pCall : this.getReportFileByReportNoCallback, 
+                      pLoad : true          
+                  };
+               //  ajaxReadJsonData(param);    
+            //             
+	    },
+
+	    getReportByNoCallback : function(svcId, data) {
+	    	   this.reportTitle = data.ds_master.data[0].REPORT_TITLE;
+	    	   this.reportRmk = data.ds_master.data[0].REPORT_RMK;
+	    	   this.paySumAmt = data.ds_master.data[0].PAY_SUM_AMT;	
+	    },
+        getExpFileListByReportNoCallback : function(svcId, data) {
+       	 this.expFiles = data["ds_master"]['data'];
+        },
+        getExpListByReportNoCallback : function(svcId, data) {
+        	log('getExpListByReportNoCallback : function(svcId, data)');
+            this.expenseList = [];
+            this.expenseList = data["ds_master"]['data'];
+            this.reportMngList = [];
+            this.reportMngList = data["ds_mng"]['data'];
+            
+            this.expListCard = this.expenseList.filter( function (item) { item.FILE_LISTS = JSON.parse( item.FILE_LIST );  return item.SOURCE_TP == '1'  });
+            
+            
+            this.expListTravel = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '3'  });
+            this.expListGas = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '4'  });
+            this.expListToll = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '6'  });
+            this.expListReceipt = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == '2'  });
+            this.expListEtax = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == 'A'  });
+            this.expListPtax = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP == 'B'  });
+            this.expListEtc = this.expenseList.filter( function (item) {item.FILE_LISTS = JSON.parse( item.FILE_LIST ); return item.SOURCE_TP != '1' 
+                                                                       &&  item.SOURCE_TP != '2'
+                                                                       &&  item.SOURCE_TP != '3'
+                                                                       &&  item.SOURCE_TP != '4'
+                                                                       &&  item.SOURCE_TP != '6'
+                                                                       &&  item.SOURCE_TP != 'A'
+                                                                       &&  item.SOURCE_TP != 'B'                                                                              
+            });
+            
+            
+        }, 
+        
+        getReportFileByReportNoCallback : function(svcId, data) {
+        	this.reportFiles = data.ds_master.data;
+        },      
+	    
+   },//method
+
+   mounted: function() {
+	   
+
+    },
+}); // test
+
+</script>
+   
+</body>
+</html>
+
+

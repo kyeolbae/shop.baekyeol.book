@@ -1,0 +1,370 @@
+<!-- 
+	-- 프로그램명 : 급여관리 / 급여 RC
+	-- 날짜 : by ghbae
+	-- 수정 : 2021.10.18 by hshwang (삭제 기능 추가, 내용 수정 및 삭제시 본인 게시물인지 확인 후 진행, 제목에 들어오는 색깔 테두리 초기화 및 저장 시 없어지도록 수정)
+-->
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8" />
+</head>
+<body>
+	<div th:fragment="js">
+		<script type="text/javascript">
+		var [[${param.pgm_id}]] = new Vue({
+			el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************		  
+		  	//분개장
+		  	data: {  pgmid : "[[${param.pgm_id}]]",
+		  		
+		  		
+		  		boardSeq: '',
+// 		  		BOARD_TP: '',
+// 		  		BOARD_TITLE: '',
+// 		  		BOARD_CONTENTS: '',
+// 		  		DISPLAY_FR_DH: '',
+// 		  		DISPLAY_TO_DH:'',
+// 		  		POPUP_YN:'',
+		  		regrDh:'',
+		  		modDh:'',
+		  		regrNm:'',
+		  		modNm:'',
+		  		regrId: '',
+		  		userYn : false,
+		  		inputcheck : {},
+		  		fileList : [],
+		  		inputchecked : false,
+		  		fileDeleteParam : {},
+		  		create_tp : "[[${param.create_tp}]]"
+		  	},//data
+		  	 beforeDestroy () {
+       	     window.removeEventListener('gotoBoardEvent', this.gotoBoardEvent, false );
+        	},   
+		  	created () { //초기화===============================================================
+// 				initGridDropDownBox("BOARD_TYPE","/common/syscommon/selectSystemCommonCode", auiDropDownCallBack,{ COMM_CL_CD:"BOARD_TYPE"}); // 원천구분
+
+		  	}, // created		  
+		  	methods : {  // ==================================================================
+		  		
+		  		newButtonOnClick : function() {
+		  		     
+		        	 $('#'+this.pgmid + 'board_title').val('');
+		        	 $('#'+this.pgmid + 'board_seq').val(''); // null x
+		        	 $('#'+this.pgmid+'BoardFile').val('');
+		        	 $('#'+this.pgmid + 'popup_yn').prop('checked', false);
+		        	 this.fileList = [];
+		        	 this.regrDh = "";
+		        	 this.modDh = "";
+		        	 this.regrNm = "";
+		        	 this.modNm = "";
+		        	 this.boardSeq = "";
+		        	 this.regrId = "";
+		        	 this.userYn = false;
+		        	 this.fileDeleteParam = {};
+		        	 
+		        	 $('#'+this.pgmid+ 'summernote').summernote('code','');
+		        	 this.inputcheck.reset();
+		        	 $('#'+this.pgmid+'board_title').removeClass('border-danger');
+		  		
+		  	    },
+		  		searchButtonOnClick : function() {
+		  			 if (this.boardSeq == ""){
+             		 	 customAlert("","","관리자에 의해 삭제된 게시물입니다.");
+                     	 return;
+			    	 } 
+		  			 
+		  			
+		             var param = {
+			             svcId:"search",
+			             strUrl:"/ec/ex/config/board/search",    //전송 url  
+			             param :  Object.assign(serializeObjectX($('#[[${param.pgm_id}]]')), {BOARD_SEQ : this.boardSeq }),
+			             pCall : this.searchButtonOnClickCallback, 
+			             pLoad : true          
+		             };
+		             //트랜젝션 실행
+		             ajaxReadJsonData(param);
+		             
+		             var param = {
+			             svcId:"search",
+			             strUrl:"/ec/ex/config/board/searchfile",    //전송 url  
+			             param :   {BOARD_SEQ : this.boardSeq },
+			             pCall : this.searchFileButtonOnClickCallback, 
+			             pLoad : true          
+		             };
+		             //트랜젝션 실행
+		             ajaxReadJsonData(param);
+		          },
+		          
+		          searchButtonOnClickCallback(s,  data){
+		        	  
+		        	  
+		        	 if (data['ds_search'].data.length == 0) {
+		        		 	 
+			        		 customAlert("","","관리자에 의해 삭제된 게시물입니다.");
+			        		 
+			        		 return false;
+		        	 } else {
+		        	  
+				        	 var board = data['ds_search'].data[0];
+				        	  
+				        	 $('#'+this.pgmid + 'board_title').val(board.BOARD_TITLE);
+				        	 $('#'+this.pgmid + 'board_seq').val(board.BOARD_SEQ); 
+				        	 this.$refs.board_tp.setValue(board.BOARD_TP);
+				        	 this.regrDh = board.REGR_DH;
+				        	 this.modDh = board.MOD_DH;
+				        	 this.regrNm = board.REGR_NM;
+				        	 this.modNm = board.MOD_NM;
+				        	 this.boardSeq = board.BOARD_SEQ;
+				        	 this.regrId= board.REGR_ID;
+				        	 
+				        	 if(board.REGR_ID =='[[${session.g_userId}]]') {
+				        		 this.userYn = true
+				        	 } else {
+				        		 this.userYn = false
+				        	 };
+				        	 
+				        	 if(board.POPUP_YN == "1") {
+			        				$('#'+this.pgmid + 'popup_yn').prop('checked', true);
+			        		 }
+				        	 else if(board.POPUP_YN == "0") {
+			        				$('#'+this.pgmid + 'popup_yn').prop('checked', false);
+			        		 }
+				        	 $('#'+this.pgmid+ 'summernote').summernote('code',data.ds_search.data[0].BOARD_CONTENTS);
+				        	  if (this.inputchecked) {
+					  				this.inputcheck.reset();
+					  				$('#'+this.pgmid+'board_title').removeClass('border-danger');
+					  		  }
+		        	 
+		        	 }
+		          },  	// searchButtonOnClickCallback
+		          
+		          resetBoardFile : function() {
+	                  $('#'+this.pgmid+'BoardFile').val('');
+	              }, //file reset
+	              
+ 	              searchFileButtonOnClickCallback( s,  data){
+
+	            	  this.fileList = data.ds_master.data ;
+	            	  
+	              },
+
+		          saveButtonOnClick : function() {
+		        	  if (this.boardSeq != ""){
+					    	  if(this.userYn == false) {
+					    		  customAlert('', '', '다른 사용자가 등록한 게시물입니다.')
+					    		  this.inputcheck.reset();
+					    		  this.searchButtonOnClick();
+					    		  return false;
+					    	  }
+					      } 
+		        	  
+			    	  if (checkRequiredInput(this.pgmid+"b_title") == false){
+	              		   customAlert("","","필수항목을 확인하세요.");
+	              		   this.inputchecked = true;
+	                       return false;
+				      } else {
+			    	  	   this.inputchecked = false;
+				      }
+			    	  
+		              if (this.inputcheck.validate() == false) {
+		                   customAlert("","","데이터를 확인하세요.");
+		                   return false;
+		              } 
+	
+		              if(Object.keys(this.fileDeleteParam).length > 0 ){
+			    			ajaxReadJsonData(this.fileDeleteParam);
+			    		}
+		              
+// 				    	logJ(param);
+					//	this.BoardFiles = setArrChangeFlag(this.BoardFiles,'I');
+						ajaxUploadFile('#'+this.pgmid+'BoardFile', null ,this.saveButtonOnClickCallback);
+		            
+						
+						
+		        },   //saveButtonOnClick
+		        
+		        saveButtonOnClickCallback(svdid, data){
+		            var url = null;
+		            var sId = null;
+		      	  	if( isEmpty(this.boardSeq ) == false   ) {
+				    		sId = "update"
+				    		url = "/ec/ex/config/board/updateboard";
+		      	  	} else {
+		      	  		sId = "save"
+				        	url = "/ec/ex/config/board/saveboard";
+		      	  	}
+		
+					 var popup = {};
+				     if ($("#" + this.pgmid + 'popup_yn').is(":checked") == true){
+				    	 popup = {POPUP_YN : '1'};
+				     }else{
+				    	 popup = {POPUP_YN : '0'};
+				     }
+		
+			         var o = { BOARD_CONTENTS :  $('#'+this.pgmid+ 'summernote').summernote('code'), BOARD_SEQ : this.boardSeq   };
+			         var fileList = {FILE_LIST : data } ;
+			        
+			    	 var param = {
+			    			svcId :sId,
+			    			strUrl: url,
+			    			param : Object.assign(serializeObjectX($('#[[${param.pgm_id}]]')), popup, o, fileList ) ,         // {  BOARD_TITLE : 'ㅌㅌㅌㅌㅌㅌ' , BOARD_TP : '01' ,   file_list : [{file_no : 'xcxfsdddfsfd'} , {} , {}   ]             }
+			    			pCall : this.saveButtonOnClickCallbackCallback, 
+		                    pLoad : true,
+			    	 };
+			    	
+			    	 ajaxReadJsonData(param);
+		        },
+		  		//   saveButtonOnClickCallback  
+      
+		      saveButtonOnClickCallbackCallback(svdid, data){
+				    saveGritter();
+				    this.inputcheck.reset();
+		        	this.boardSeq = data.SVC_MSG_TEXT;
+		        	
+		        	
+		        	this.searchButtonOnClick();
+		        	$('#'+this.pgmid+'BoardFile').val('');
+		      },
+		      
+		      deleteButtonOnClick : function() {
+		    	  
+		    	  if (this.boardSeq == ""){
+          		 	 customAlert("","","등록되지 않은 게시물입니다.");
+                  	 return false;
+			      } 
+		    	  
+		    	  if(this.userYn == false) {
+		    		  customAlert('', '', '다른 사용자가 등록한 게시물입니다.')
+		    		  return false;
+		    	  }
+		    	  
+		    	  var param = {
+		    			  svcId : 'updateBoardYn',
+		    			  strUrl : "/ec/ex/config/board/updateBoardYn",
+		    			  param : {BOARD_SEQ : this.boardSeq, FILE_LIST : this.fileList},
+		    			  pCall : this.deleteButtonOnClickCallBackCallback,
+		    			  pLoad : true
+		    	  }
+// 		    	  트랜젝션
+					ajaxReadJsonData(param);
+// 		    	  bootboxDeleteConfirm(this.deleteButtonOnClickCallBack, param)
+		      },
+		      
+		      deleteButtonOnClickCallBackCallback : function(svc, data) {
+		    	  customAlert('', '', data.SVC_MSG_TEXT);
+		    	  this.newButtonOnClick();
+		      },
+		      
+// 		      deleteButtonOnClickCallBack : function(param) {
+		    	  
+// 		    	  ajaxReadJsonData(param);
+		    	  
+		    
+// 		      },
+		      
+		      deletefile : function(fileNo){
+		    	  
+		    	  if(this.userYn == false) {
+		    		  customAlert('', '', '다른 사용자가 등록한 게시물입니다.')
+		    		  return false;
+		    	  }
+		    	  var ref = this;
+ 		    	  this.fileList.forEach(function(item, index) { 
+					 		    		  if(item.FILE_NO == fileNo) ref.fileList.splice(index,1) 
+				 		    		 });
+		    	  
+		    	  var param = {
+			             svcId:"updateBoardfileYn",
+			             strUrl:"/ec/ex/config/board/updateBoardfileYn",    //전송 url  
+			             param :   {FILE_NO : fileNo, BOARD_SEQ : this.boardSeq},
+			             pCall : this.fileRemoveCallBack, 
+			             pLoad : true          
+	             };
+		    	  
+		    	  this.fileDeleteParam = param;
+		    	  
+	             
+		    	  
+		      },
+		      
+		      fileRemoveCallBack : function (s, data) {
+		    	  var fileno = data.SVC_MSG_TEXT; 
+// 		    	  fileMoveToTrash(fileno, this.deletefileCallBack);
+				  fileMoveToTrash(fileno);
+				  this.fileDeleteParam = {};
+		      } ,
+		      
+// 		      deletefileCallBack : function(svcId, data){
+// 		          var param = {
+// 				             svcId:"search",
+// 				             strUrl:"/ec/ex/config/board/searchfile",    //전송 url  
+// 				             param :   {BOARD_SEQ : this.boardSeq },
+// 				             pCall : this.searchFileButtonOnClickCallback, 
+// 				             pLoad : true          
+// 				             };
+// 				             //트랜젝션 실행
+// 				             ajaxReadJsonData(param);
+// 			    },
+		      
+		        
+		         tranCallBack : function(svcId, data, errCd, msgTp, msgCd, msgText) { //******************************
+		                if(svcId=="search"){
+		                      if(data["ds_master"]['data'].length >= 0) {
+		                          this.$refs.gridmaster.setGridData(data["ds_master"]['data']);
+		                      }
+		                }else if(svcId =="save"){
+		                      this.searchButtonOnClick(); // 재조회  
+		                      saveGritter();
+		                } // end if
+              	},  
+              	gotoBoardEvent : function (e) { 
+                    if(this.create_tp == "NEW") {
+                    	this.baordSeq = "";
+                    }
+                    else {
+                    this.boardSeq = e.BOARD_SEQ;
+                    	this.searchButtonOnClick();
+                    }
+                    
+                    console.log(this.boardSeq);
+                    //  ref.searchFileButtonOnClickCallback();
+			  }
+			    
+			}, // end of methods
+			mounted: function() {
+				   var ref = this;
+// 				   ref.$refs.board_to_hh.setValue("24")
+// 				   $("#"+ ref.pgmid+ref.board_to_hh).Value("24")
+// 				   console.log( $("#"+ ref.pgmid+ref.board_to_hh).Value())
+// 				   console.log(ref.$refs.board_to_hh())
+		             this.$nextTick(function () {
+// 		            	 ref.$refs.board_to_dt.setData(moment().format("9999-12-31"));
+// 						 ref.$refs.board_to_hh.setValue('24');
+		            	 ref.inputcheck = $('#[[${param.pgm_id}]]').parsley(); 
+		            	 $('#'+ref.pgmid+ 'summernote').summernote(
+		            			 {
+			            		      height : 300,
+			            		      lang: 'ko-KR',
+		            			 }
+		            	 );
+		             });
+		             
+		         // 다른 화면에서 호출했을 때
+	             if ([[${param.subParam}]] != undefined) {
+	            	  this.boardSeq = [[${param.subParam}]];
+	                  this.searchButtonOnClick();
+	                //  this.searchFileButtonOnClickCallback();
+	             };
+	            // 이벤트 등록 gotoBoard 
+			  window.addEventListener('gotoBoardEvent', this.gotoBoardEvent , false);
+	//**********************************************************************************************              
+	             vueArr.push(this);
+	            },
+	      }) // end of new Vue
+
+	    </script>
+	   </div> 
+	   
+	  </body>
+	</html>

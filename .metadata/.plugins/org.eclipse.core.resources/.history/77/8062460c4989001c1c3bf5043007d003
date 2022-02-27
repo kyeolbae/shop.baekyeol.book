@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+ 
+      var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************        
+          
+          data: {  pgmid : "[[${param.pgm_id}]]",
+                   columnlayout : [],
+                   gridView : '',
+                   newgriditem : {},
+                   
+          },//data
+          created () { //초기화================================================================
+                //그리드 초기화
+                this.columnlayout =   
+                	
+                   [    
+                       {dataField : "",  headerText : "순번", editable : false,width: 100   },
+                       {dataField : "",  headerText : "선택", editable : false, width: 100  },
+                       {dataField : "",  headerText : "전표유형", editable : false,width: 100,  }, 
+                       {dataField : "",  headerText : "전표유형명", editable : false, width: 100  },
+                       {dataField : "",  headerText : "회계단위", editable : false,width: 100   },
+                       {dataField : "",  headerText : "회계단위명", editable : false, width: 100  },
+                       {dataField : "",  headerText : "코스트센터", editable : false,width: 100,  }, 
+                       {dataField : "",  headerText : "코스트센터명", editable : false,width: 100,  },
+                       {dataField : "",  headerText : "전기일", editable : false,width: 100   },
+                       {dataField : "",  headerText : "증빙일", editable : false, width: 100  },
+                       {dataField : "",  headerText : "전표번호", editable : false,width: 100,  }, 
+                       {dataField : "",  headerText : "금액", editable : false,width: 100,  },
+                       {dataField : "",  headerText : "입력사원", editable : false,width: 100   },
+                       {dataField : "",  headerText : "적요", editable : false, width: 100  },
+                       {dataField : "",  headerText : "결재상태", editable : false,width: 100,  }, 
+                       {dataField : "",  headerText : "현결재자", editable : false,width: 100,  },
+                       {dataField : "",  headerText : "증빙여부", editable : false,width: 100   },
+                       ] ;//columnlayout
+                
+                
+          }, // created       
+          methods : {  // ======================================================================================
+        	  
+        	  searchButtonOnClick : function() {
+        		  
+            	  var param = {
+                                svcId:"bgtcpwbs",
+                                strUrl:"ex/bgt/req/bgtcpwbs",   //전송 url    
+                                param : serializeObjectX($('#[[${param.pgm_id}]]')),
+                                pCall : this.searchButtonOnClickCallback, 
+                                pLoad : true ,
+                                async : true 
+                            };
+                            //트랜젝션 실행
+                            ajaxReadJsonData(param);
+                            
+                      }, // end of searchButtonOnClick
+                      
+                      searchButtonOnClickCallback : function(svc, data) {
+
+                    	  if(data["ds_master"]['data'].RESULT == "ERROR"){
+                    		  customAlert('','',data["ds_master"]['data'].MSG);
+                    	  }
+                    	  if(data["ds_master"]['data'].RESULT == "OK"){
+                    	  this.$refs.gridmaster.setGridData(data["ds_master"]['data'].resultList);
+                    	  }
+                      },       
+          }, // end of methods
+
+          mounted: function() {
+             var ref = this;
+             this.$nextTick(function () {
+                   ref.gridView = ref.$refs.gridmaster.myGridID;
+                   
+              });
+//**********************************************************************************************              
+             vueArr.push(this);
+            },
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

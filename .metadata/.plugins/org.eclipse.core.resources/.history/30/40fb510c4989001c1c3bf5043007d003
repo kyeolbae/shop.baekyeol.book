@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+ 
+      var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************        
+          
+          data: {  pgmid : "[[${param.pgm_id}]]",
+                   columnlayout : [],
+                   newgriditem : {OVERSEAS_YN:"1",EVID_YN:"1",NO_VAT_YN:"1",CAT_NO_POSTING_YN:"1",BIZ_NO_POSTING_YN:"1",PRIVATE_YN:"1"},
+                   gridView : '',
+                   searchtypename : objId(),
+          },//data
+          created () { //초기화================================================================
+                //그리드 초기화
+                this.columnlayout =   
+                   [   
+                       {dataField : "PURCHASE_DT",   headerText : "매입일",  width: 120, editable : false, dateInputFormat : "yyyymmdd", dataType : "date", formatString : "yyyy-mm-dd",style : "bg-light", filter : { showIcon : true}},
+                       {dataField : "RECEIPT_DT",   headerText : "증빙일",  width: 120, editable : false, dateInputFormat : "yyyymmdd", dataType : "date", formatString : "yyyy-mm-dd",style : "bg-light", filter : { showIcon : true}},
+                       {dataField : "RECEIPT_TS",   headerText : "시간",  width: 100, editable : false,style : "bg-light", filter : { showIcon : true}},
+                       {dataField : "RECEIPT_DT", headerText : "요일", width: 80, editable : false, dateInputFormat : "yyyymmdd", dataType : "date", formatString : "ddd",style : "bg-light", filter : { showIcon : true}},
+                       {dataField : "BIZ_NM",   headerText : "가맹점명",  width: 180, editable : false,style : "bg-light aui_col_left",  filter : { showIcon : true}},
+                       {dataField : "BIZ_NO",   headerText : "사업자번호",  width: 120, editable : false,  labelFunction : function( rowIndex, columnIndex, value, headerText, item ) { return biznoformat(nvl(value,''));} ,style : "bg-light",  filter : { showIcon : true}},
+                       {dataField : "BIZ_CATEGORY_CD",   headerText : "업종코드",  width: 80,editable : false,style : "bg-light", filter : { showIcon : true}},
+                       {dataField : "BIZ_CATEGORY",   headerText : "업종명",  width: 150, editable : false,style : "bg-light aui_col_left", filter : { showIcon : true}},
+                       {dataField : "BIZ_TAX_TYPE",     headerText : "과세유형",  editable : false,style : "bg-light", width: 120 , filter : { showIcon : true}},
+                       {dataField : "BIZ_TAX_TYPE_NM",     headerText : "과세유형명",  editable : false,style : "bg-light", width: 120 , filter : { showIcon : true}},
+                       {dataField : "BIZ_ADDR",   headerText : "주소",  width: 230,  editable : false,style : "bg-light aui_col_left",filter : { showIcon : true}},
+                       {dataField : "OVERSEAS_YN",  headerText : "해외", width: 80,renderer : { type : "CheckBoxEditRenderer",unCheckValue : "0", checkValue : "1" ,  checkableFunction : function(){return false;} ,  disabledFunction : function(){return true;} },style : "bg-light", filter : { showIcon : true}}, 
+                       {dataField : "TOT_AMT", headerText : "총금액", dataType : "numeric",formatString : "#,##0", width : 100, editable : false, style : "bg-light aui_col_right", filter : { showIcon : true}},
+                       {dataField : "SUPPLY_AMT",   headerText : "공급가액", dataType : "numeric",formatString : "#,##0", width: 100, editable : false, style : "bg-light aui_col_right", filter : { showIcon : true}},
+                       {dataField : "VAT_AMT",   headerText : "부가세", dataType : "numeric",formatString : "#,##0", width: 100, editable : false,style : "bg-light aui_col_right",  filter : { showIcon : true}},
+                       {dataField : "ETC_AMT",   headerText : "봉사료", dataType : "numeric",formatString : "#,##0", width: 100, editable : false, style : "bg-light aui_col_right",  filter : { showIcon : true}},
+                       {dataField : "CARD_BILL_NO",   headerText : "승인번호",  width: 120, editable : false,style : "bg-light",  filter : { showIcon : true}},
+                       {dataField : "CARD_NO",   headerText : "카드번호",  width: 150, editable : false,style : "bg-light", labelFunction : function( rowIndex, columnIndex, value, headerText, item ) { return cardformat(nvl(value,''));},  filter : { showIcon : true}},
+                       {dataField : "COOP_CD",   headerText : "제휴카드코드",  width: 120, editable : false,style : "bg-light",  filter : { showIcon : true}},
+                       {dataField : "COOP_NM",   headerText : "제휴카드명",  width: 120, editable : false, style : "bg-light", filter : { showIcon : true}},
+                       {dataField : "EMP_NM",   headerText : "사원명",  width: 120, editable : false, style : "bg-light",  filter : { showIcon : true}},
+                       {dataField : "EMP_NO",   headerText : "사번",  width: 120, editable : false, style : "bg-light", filter : { showIcon : true}},
+                       {dataField : "CCTR_NM",   headerText : "코스트센터명",  width: 180, editable : true,renderer : {type : "TemplateRenderer" }, pgmid: this.pgmid,  gridname : "costcenter" , labelFunction : auiPopupCode , filter : { showIcon : true}},
+                       {dataField : "CCTR_CD",   headerText : "코스트센터코드",  width: 180, editable : false, style : "bg-light", filter : { showIcon : true}},
+                       {dataField : "EVID_YN",   headerText : "증빙필수",  width: 80, editable : true, renderer : auiCheckboxRenderer() , filter : { showIcon : true}},
+                       {dataField : "NO_VAT_YN",   headerText : "부가세불공제",  width: 80, editable : true, renderer : auiCheckboxRenderer() , filter : { showIcon : true}},
+                       {dataField : "NO_POSTING_YN",   headerText : "전표통제",  width: 80, editable : true,renderer : auiCheckboxRenderer() , filter : { showIcon : true}},
+                       {dataField : "SHARED_USER_ID",   headerText : "위임(임직원)",  width: 120, editable : true,  renderer : {type : "TemplateRenderer" }, pgmid: this.pgmid,  gridname : "user" , labelFunction : auiPopupCode, filter : { showIcon : true}},
+                       {dataField : "PRIVATE_YN",   headerText : "정산제외",  width: 120, editable : false, style : "bg-light",renderer : { type : "CheckBoxEditRenderer",unCheckValue : "0", checkValue : "1" ,  checkableFunction : function(){return false;} ,  disabledFunction : function(){return true;} }, filter : { showIcon : true}},
+                       {dataField : "EXPENSE_NO",   headerText : "정산번호",  width: 120, editable : false, style : "bg-light", filter : { showIcon : true}},
+                       {dataField : "",   headerText : "계정과목",  width: 120, editable : false, style : "bg-light", filter : { showIcon : true}},
+                       {dataField : "",   headerText : "결재상태",  width: 120, editable : false, style : "bg-light",  filter : { showIcon : true}},
+                       {dataField : "",   headerText : "결재제목",  width: 120, editable : false, style : "bg-light", filter : { showIcon : true}},
+                       {dataField : "",   headerText : "전기일",  width: 120, editable : false, style : "bg-light", filter : { showIcon : true}},
+                       {dataField : "",   headerText : "전표번호",  width: 120, editable : false, style : "bg-light", filter : { showIcon : true}},
+
+                       ] ;//columnlayout
+                  
+          }, // created       
+          methods : {  // ======================================================================================
+              searchButtonOnClick : function() {
+            	  var o = {};
+  					o.SEARCH_TYPE = $("input[name='"+ this.searchtypename + "']:checked").val();
+            	  console.log(o.SEARCH_TYPE)
+                            var param = {
+                                svcId:"searchcardpurchase",
+                                strUrl:"/ec/ex/config/cardpurchase/searchCardPurchase",   //전송 url    
+                                inDs :  "" ,  
+                                param : Object.assign(o, serializeObjectX($('#[[${param.pgm_id}]]'))), 
+                                pCall : this.searchCardPurchaseCallBack, 
+                                pLoad : true          
+                            };
+                            //트랜젝션 실행
+                            ajaxReadJsonData(param);
+                      }, // end of searchButtonOnClick
+                      
+                      searchCardPurchaseCallBack:function (svcId, data){
+                    this.$refs.gridmaster.setGridData(data["ds_master"]['data']);
+                    	  
+                      },
+                      saveButtonOnClick: function() {
+						   // 그리드 필수항목 체크
+//                          if (auiValidateGridData(this.gridcard, ["CARD_POSTING_TP", "RECEIPT_FR_DT","RECEIPT_TO_DT","POSTING_DT","PAY_DT"] ) == false){
+//                               return;
+//                          }
+                         
+                         // 변경된 데이터가 있는지 없는지 체크
+                         var    ds_master = getCRUDdata(this.gridView);
+                         
+                         if (ds_master['data'].length == 0 ) {
+                             customAlert('','','변경된 데이터가 없습니다.');
+                             return;
+                         }
+	                      // Confirmation dialog, 시스템 설정에 따라 보이고 안보이고
+	                         bootboxSaveConfirm(this);             
+	           			},  //saveButtonOnClick
+	           			
+	           			
+           			saveButtonOnClickCallback(){
+                         
+	           			 saveColumnLayout(this.gridView);
+	           				
+	           				// 저장할 데이터 만들기
+	           			  var    ds_master = {};
+				          ds_master['ds_master'] = getCRUDdata(this.gridView);
+				          
+	           				
+	           				
+                         var param = {
+                                 svcId:"saveCardPurchase", 
+                                 strUrl: "/ec/ex/config/cardpurchase/saveCardPurchase",   //전송 url 
+                                 inDs : {
+                                     ds_master:ds_master
+                                 },
+                                 param : ds_master,        // 전송할 파라미터
+                                 pCall : this.saveCardPurchaseCallBack, 
+                                 pLoad : true          // 로딩이미지 노출 여부  
+                             };
+
+                             //트랜젝션 실행
+                             ajaxReadJsonData(param); 
+                      },
+                      saveCardPurchaseCallBack: function(){
+				  				saveGritter();
+				  				this.searchButtonOnClick();
+				          },       
+              
+                    
+          }, // end of methods
+
+          mounted: function() {
+             var ref = this;
+             this.$nextTick(function () {
+                   ref.gridView = ref.$refs.gridmaster.myGridID;
+                   // pk컬럼(신규는 가능, update불가)
+//                    auiSetAddedRowEnabledCell(ref.gridView,['BIZTRIP_RATE_CD']);
+              });
+             
+//**********************************************************************************************              
+             vueArr.push(this);
+            },
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

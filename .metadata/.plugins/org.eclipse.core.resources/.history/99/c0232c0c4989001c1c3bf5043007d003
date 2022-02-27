@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+  <meta charset="utf-8" />
+<!--   영수증 OCR 페이지 -->
+</head>
+<body> 
+	<section layout:fragment="content">
+		<form class="d-flex  flex-column h-100" th:id=${param.pgm_id}>
+			<div class="ec-grid-box-search">
+			  <div class="ec-grid-lastrow">
+				<div class="col-12 col-md-5 ec-col-input" :id="pgmid+'receiptFile'">
+					<input type="file" name="docOcrReceiptFile" th:id="${param.pgm_id}+'docOcrReceiptFile'" class="p-2 form-control form-control-sm required" accept="image/*" onchange=""/>
+				</div>
+                <label class="col-4  col-md-3 ec-col-label-0 justify-content-md-end"><span class="text-danger">*</span>FILE_NO</label>
+				<div class="col-8 col-md-4 ec-col-input" :id="pgmid+'searchNo'">
+					<input type="text" name="FILE_NO"  :id="pgmid+'FILE_NO'" class="p-2 form-control form-control-sm required" />
+				</div>
+			  </div>
+			</div>		
+        	<div class="d-flex flex-column flex-md-row overflow-y h-100 mt-1">
+	        	<div class="col-md-5  pr-md-0" >
+					<div class="receipt-box-modal d-flex flex-column" >
+			    		<ec-img ref="ocrImg" source="PC"  imgonly="true"> </ec-img>	
+		            </div>
+				</div>
+				
+				<div class="col-12 col-md-7"  :id="pgmid+'ocrmstinputs'">
+					<div class="ec-grid-row m-0">
+					     <label class="col-3  ec-col-label-0 justify-content-md-end"><span class="text-danger">*</span>매장명</label>
+					     <div class="col-9  ec-col-input flex-column">
+					          <div class="w-100 d-flex">
+					                 <input type="text" name="EXPENSE_AMT_TOLL" :id="pgmid+'STORE_NAME'" class="form-control form-control-sm text-right required" disabled  />
+					          </div>
+					     </div>
+					</div> 
+					<div class="ec-grid-row m-0">
+					     <label class="col-3  ec-col-label-0 justify-content-md-end"><span class="text-danger">*</span>지점명</label>
+					     <div class="col-9  ec-col-input flex-column">
+					          <div class="w-100 d-flex">
+					                 <input type="text" name="STORE_SUBNAME" :id="pgmid+'STORE_SUBNAME'" class="form-control form-control-sm text-right required" disabled  />
+					          </div>
+					     </div>
+					</div> 
+					<div class="ec-grid-row m-0">
+					     <label class="col-3  ec-col-label-0 justify-content-md-end"><span class="text-danger">*</span>사업자번호</label>
+					     <div class="col-9  ec-col-input flex-column">
+					          <div class="w-100 d-flex">
+					                 <input type="text" name="STORE_BIZNUM" :id="pgmid+'STORE_BIZNUM'" class="form-control form-control-sm text-right required" disabled  />
+					          </div>
+					     </div>
+					</div> 
+					<div class="ec-grid-row m-0">
+					     <label class="col-3  ec-col-label-0 justify-content-md-end"><span class="text-danger">*</span>주소</label>
+					     <div class="col-9  ec-col-input flex-column">
+					          <div class="w-100 d-flex">
+					                 <input type="text" name="STORE_ADDRESS" :id="pgmid+'STORE_ADDRESS'" class="form-control form-control-sm text-right required" disabled  />
+					          </div>
+					     </div>
+					</div> 
+					<div class="ec-grid-row m-0">
+					     <label class="col-3  ec-col-label-0 justify-content-md-end"><span class="text-danger">*</span>전화번호</label>
+					     <div class="col-9  ec-col-input flex-column">
+					          <div class="w-100 d-flex">
+					                 <input type="text" name="STORE_TEL" :id="pgmid+'STORE_TEL'" class="form-control form-control-sm text-right required" disabled  />
+					          </div>
+					     </div>
+					</div> 
+					<div class="ec-grid-row m-0">
+					     <label class="col-3  ec-col-label-0 justify-content-md-end"><span class="text-danger">*</span>결제 일시</label>
+					     <div class="col-9  ec-col-input flex-column">
+					          <div class="w-100 d-flex">
+					                <input type="text" name="PAYMENT_DATE" :id="pgmid+'PAYMENT_DATE'" class="form-control form-control-sm text-right required mr-1" disabled />
+									<input type="text" name="PAYMENT_TIME" :id="pgmid+'PAYMENT_TIME'" class="form-control form-control-sm text-right required ml-1" disabled />	
+					          </div>
+					     </div>
+					</div> 
+					<div class="ec-grid-row m-0">
+					     <label class="col-3  ec-col-label-0 justify-content-md-end"><span class="text-danger">*</span>카드정보</label>
+					     <div class="col-9  ec-col-input flex-column">
+					          <div class="w-100 d-flex">
+					                <input type="text" name="PAYMENT_COMPANY" :id="pgmid+'PAYMENT_COMPANY'" class="form-control form-control-sm text-right required mr-1" disabled />
+					          		<input type="text" name="PAYMENT_CARD_NO" :id="pgmid+'PAYMENT_CARD_NO'" class="form-control form-control-sm text-right required ml-1" disabled />
+					          </div>
+					     </div>
+					</div> 
+					<div class="ec-grid-row m-0">
+					     <label class="col-3  ec-col-label-0 justify-content-md-end"><span class="text-danger">*</span>승인번호</label>
+					     <div class="col-9  ec-col-input flex-column">
+					          <div class="w-100 d-flex">
+					                 <input type="text" name="PAYMENT_CONFIRM_NO" :id="pgmid+'PAYMENT_CONFIRM_NO'" class="form-control form-control-sm text-right required" disabled  />
+					          </div>
+					     </div>
+					</div> 
+					<div class="ec-grid-row m-0">
+					     <label class="col-3  ec-col-label-0 justify-content-md-end"><span class="text-danger">*</span>총금액</label>
+					     <div class="col-9  ec-col-input flex-column">
+					          <div class="w-100 d-flex">
+					                 <input type="text" name="TOTAL_PRICE" :id="pgmid+'TOTAL_PRICE'" class="form-control form-control-sm text-right required" disabled  />
+					          </div>
+					     </div>
+					</div>
+				
+					<div class="ec-grid-row m-0 h-25">
+					     <grid-r1 ref="gridreceiptocr" :columnlayout="columnlayout" :pgmid="pgmid+'gridreceiptocr'" subname="gridreceiptocr"  ></grid-r1> 
+					</div> 
+					
+					<div  class="mt-2">
+                        <div class="rounded-0 w-100" >
+                        	<input type="text" name="RECEIPT_ACCURACY" :id="pgmid+'RECEIPT_ACCURACY'" class="form-control form-control-sm text-center font-weight-bold text-danger required" disabled  />
+                        </div>
+                    </div>
+					<div class="mt-1">
+		                <div class="btn-group rounded-0 w-100 m-1" >
+<!-- 		                     <a class="btn btn-white  btn-sm ec-btn" @click="searchReceiptOcr">조회</a> -->
+		                     <a class="btn btn-white  btn-sm ec-btn" @click="receiptAccuracyYes">정확</a>
+		                     <a class="btn btn-white  btn-sm ec-btn" @click="receiptAccuracyNo">부정확</a>
+<!-- 		                     <a class="btn btn-white btn-sm ec-btn" onclick="btnClose('NCP_DOC_OCR');">닫기</a> -->
+		                </div>
+		            </div>
+				</div>
+			</div>
+		</form>
+
+	  	<!-- ================== BEGIN THIS PAGE JS ================== -->
+	 	<div th:replace="contents/ex/report/receipt_documentOcr-js :: js"></div>  
+	</section>
+</body>
+</html>

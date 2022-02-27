@@ -1,0 +1,1126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper
+    namespace="com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper">
+    
+    
+       <select id="searchCommonMng" resultType="HashMap">
+
+            SELECT /* [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper
+            searchCommonMng][공통코드 관리항목 리스트 조회] */
+            ROW_NUMBER() OVER() AS ID,
+            COMPANY_CODE,
+            COMM_CL_CD,
+            COMM_CL_CD_NM,
+            RMK,
+            USE_YN,
+            REGR_ID,
+            REGR_DH
+            FROM SLIP_CL_CODE
+            WHERE COMPANY_CODE = #{g_comCd}
+            ORDER BY COMM_CL_CD
+
+    </select>
+    
+        <select id="searchCommonMngDetail" resultType="HashMap">
+
+        SELECT /* [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper searchCommonMngDetail][공통코드 관리항목 detail 리스트 조회] */
+            ROW_NUMBER() OVER() AS ID,
+            COMPANY_CODE,
+            COMM_CL_CD,
+            COMM_CD,
+            COMM_CD_NM,
+            ORD,
+            DEFAULT_YN,
+            CHR_REF1,
+            CHR_REF2,
+            CHR_REF3,
+            CHR_REF4,
+            CHR_REF5,
+            NUM_REF1,
+            NUM_REF2,
+            NUM_REF3,
+            NUM_REF4,
+            NUM_REF5,
+            RMK,
+            USE_YN,
+            REGR_ID,
+            REGR_DH
+        FROM SLIP_CODE
+        WHERE COMPANY_CODE = #{g_comCd}
+        AND COMM_CL_CD = #{COMM_CL_CD}
+        ORDER BY COMM_CL_CD, ORD,COMM_CD
+
+    </select>
+    
+    
+    
+
+    <!-- 회계 기준정보 / 계정과목 -->
+    <select id="searchExpenseCd" resultType="HashMap">
+
+        SELECT /* [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper][비용항목 리스트 조회] */
+        ROW_NUMBER() OVER() AS ID,
+        A.COMPANY_CODE,
+        A.EXPENSE_CD,
+        A.EXPENSE_NM,
+        A.CATEGORY_TP,
+        A.ORD,
+        A.RMK,
+        A.IF_YN,
+        A.ACC_CD,
+        B.ACC_NM,
+        A.SECOND_COST_CD,
+        A.SECOND_COST_NM,
+        A.ERP_RMK,
+        A.PREPAID_ACC_CD,
+        C.ACC_NM PREPAID_ACC_NM,
+        A.ASSET_CLASS_CD,
+        FC_EXPS_GET_CODE_NM('EX_COM_ASSET_CLASS', A.ASSET_CLASS_CD, #{g_comCd} ) AS ASSET_CLASS_NM,     
+        A.USE_YN
+        FROM EXPENSE_CATEGORY A
+        LEFT OUTER JOIN SLIP_ACCT B
+        ON B.COMPANY_CODE = #{g_comCd}
+        AND A.ACC_CD = B.ACC_CD
+        LEFT OUTER JOIN SLIP_ACCT C
+        ON C.COMPANY_CODE = #{g_comCd}
+        AND A.PREPAID_ACC_CD = C.ACC_CD     
+        WHERE A.COMPANY_CODE = #{g_comCd}
+        ORDER BY ORD, EXPENSE_CD
+
+    </select>
+
+    <select id="searchExpenseSource" resultType="HashMap">
+
+        SELECT  /* [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.searchExpenseSource][원천별 비용항목 조회] */
+        ROW_NUMBER() OVER() AS ID,
+        NVL2(B.EXPENSE_CD,'1','0') USE_YN, A.EXPENSE_CD,
+        A.EXPENSE_NM, #{SOURCE_TP} SOURCE_TP,
+        B.VAT_DEDUCTION_TP,B.EVID_YN,B.BELONGING_TP,B.DEFAULT_AMT_YN,B.DEFAULT_AMT,B.DEFAULT_CCTR_YN,B.DEFAULT_COSTCENTER,B.RMK,
+        B.CLOSING_TP ,B.REPORT_TP,B.LIMIT_AMT_YN ,B.LIMIT_AMT ,B.PREPAY_YN , B.PREPAY_YN, B.ORD,
+        A.ACC_CD, A.SECOND_COST_CD, A.SECOND_COST_NM
+        FROM
+        EXPENSE_CATEGORY A LEFT 
+        OUTER JOIN EXPENSE_SOURCE_CATEGORY B
+        ON B.COMPANY_CODE = #{g_comCd}
+        AND A.COMPANY_CODE = B.COMPANY_CODE
+        AND A.EXPENSE_CD = B.EXPENSE_CD
+        AND B.SOURCE_TP = #{SOURCE_TP}
+        WHERE
+        A.COMPANY_CODE = #{g_comCd}
+        ORDER BY USE_YN  DESC , B.ORD ASC, A.EXPENSE_CD ASC
+
+    </select>
+
+    <select id="searchExpenseMng" resultType="HashMap">
+
+        SELECT  /* [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.searchExpenseMng][비용관리항목 조회] */
+         ROW_NUMBER()
+        OVER() AS ID,
+        NVL2(B.EXPENSE_CD,'1','0') USE_YN, #{EXPENSE_CD}
+        EXPENSE_CD, M.MNG_CD, M.MNG_NM,
+        MUST_YN,
+        M.INPUT_FORMAT_CD,
+        B.ORD, #{SOURCE_TP} SOURCE_TP
+        FROM SLIP_MNG M LEFT
+        OUTER JOIN EXPENSE_CATEGORY_MNG B
+        ON M.COMPANY_CODE = #{g_comCd}
+        AND
+        B.SOURCE_TP = #{SOURCE_TP}
+        AND M.COMPANY_CODE = B.COMPANY_CODE
+        AND
+        M.MNG_CD = B.MNG_CD
+        AND B.EXPENSE_CD = #{EXPENSE_CD}
+        WHERE
+        M.COMPANY_CODE = #{g_comCd}
+        ORDER BY M.ORD , M.MNG_CD
+
+    </select>
+
+    <select id="searchGasPrice" resultType="HashMap">
+
+        SELECT /* [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.searchGasPrice][유류비 기준 조회] */
+        ROW_NUMBER() OVER() AS ID,
+        COMPANY_CODE,
+        MILEAGE_RATE_CD,
+        MILEAGE_RATE_NM,
+        MILEAGE_RATE,
+        FR_DT,
+        USE_YN
+        FROM EXPENSE_MILEAGE_RATE
+        WHERE COMPANY_CODE = #{g_comCd}
+        ORDER BY MILEAGE_RATE_CD, FR_DT
+
+    </select>
+    
+    <select id="searchReportType" resultType="HashMap">
+
+        SELECT /* [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.searchReportType][보고서유형조회] */
+        ROW_NUMBER() OVER() AS ID
+        ,COMPANY_CODE
+        ,REPORT_TP
+        ,REPORT_TP_NM
+        ,REPORT_TITLE
+        ,APPROVE_LINE_TP
+        ,PROCESS_APPRV_GRP
+        ,SELF_APPRV_YN
+        ,CHG_APPRV_YN
+        ,REMARK
+        ,USE_YN
+        ,DATE_FORMAT(REGR_DH, '%Y-%m-%d %T')REGR_DH
+        ,DATE_FORMAT(MOD_DH, '%Y-%m-%d %T')MOD_DH
+        ,DEL_DH
+        ,REGR_ID
+        ,MOD_ID
+        ,DEL_ID
+        FROM EXPENSE_REPORT_TYPE
+        WHERE COMPANY_CODE = #{g_comCd}
+        ORDER BY REPORT_TP
+
+    </select>
+    
+    <select id="getReportDetail" resultType="HashMap">
+        SELECT 
+        ROW_NUMBER() OVER() AS ID
+       ,A.COMPANY_CODE
+       ,A.MNG_CD
+       ,A.MNG_NM
+       ,B.ORD
+       ,A.INPUT_FORMAT_CD
+       ,A.TABLE_CD
+       ,A.COMM_CL_CD
+       ,A.COLUMN_LAYOUT
+       ,A.ERP_COL_CD
+       ,A.ERP_COL_NM
+       ,A.REMARK
+       ,NVL2(B.MNG_CD,'1','0') AS USE_YN
+       ,A.REGR_DH
+       ,A.DEL_DH
+       ,A.REGR_ID
+       ,A.MOD_ID
+       ,A.DEL_ID
+       , NVL(B.MUST_YN,'0') AS MUST_YN
+       , #{REPORT_TP} AS REPORT_TP
+        FROM SLIP_MNG A 
+        left outer join expense_report_type_mng B
+        ON A.COMPANY_CODE = B.COMPANY_CODE
+        AND A.MNG_CD = B.MNG_CD
+        AND B.REPORT_TP = #{REPORT_TP}
+        WHERE A.COMPANY_CODE = #{g_comCd};
+    </select>
+    
+    
+    <insert id="saveReportDetail">
+		DELETE
+		FROM expense_report_type_mng
+		WHERE COMPANY_CODE = #{g_comCd}
+		AND  MNG_CD= #{MNG_CD};
+	
+		
+	<if test='USE_YN == "1"'>
+		INSERT 
+		INTO expense_report_type_mng
+		(COMPANY_CODE  
+		,REPORT_TP
+		,MNG_CD
+		,ORD
+		,MUST_YN
+		,USE_YN
+		) VALUES (
+		  #{g_comCd}
+		, #{REPORT_TP}
+		, #{MNG_CD}
+		, #{ORD}
+		, #{MUST_YN}
+		, '1'
+		);
+	</if>
+	</insert>
+    
+   <!--  <insert id="saveReportDetailList">
+	
+		INSERT 
+		INTO expense_report_type_mng
+		(COMPANY_CODE  
+		,REPORT_TP
+		,MNG_CD
+		,ORD
+		,MUST_YN
+		,USE_YN
+		) VALUES (
+		  #{g_comCd}
+		, #{REPORT_TP}
+		, #{MNG_CD}
+		, #{ORD}
+		, #{MUST_YN}
+		, #{USE_YN}
+		);
+	
+	</insert> -->
+    
+    
+    
+    <update id="updateReportType">
+        UPDATE EXPENSE_REPORT_TYPE /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.updateReportType][]
+        */
+        SET        
+         
+         REPORT_TP= #{REPORT_TP},
+         REPORT_TP_NM= #{REPORT_TP_NM},
+         REPORT_TITLE= #{REPORT_TITLE},
+         APPROVE_LINE_TP= #{APPROVE_LINE_TP},
+         PROCESS_APPRV_GRP= #{PROCESS_APPRV_GRP},
+         SELF_APPRV_YN= #{SELF_APPRV_YN},
+         CHG_APPRV_YN= #{CHG_APPRV_YN},
+         REMARK= #{REMARK},
+         USE_YN= #{USE_YN},
+         MOD_DH= REGR_DH(),
+         MOD_ID= regr_nm(#{g_userId})
+                  
+         where COMPANY_CODE = #{g_comCd} 
+         AND REPORT_TP = #{REPORT_TP};
+        
+    </update>
+    
+    <insert id="insertReportType">
+        INSERT /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.insertReportType][]
+        */
+        INTO EXPENSE_REPORT_TYPE
+        ( COMPANY_CODE,
+        REPORT_TP,
+        REPORT_TP_NM,
+        REPORT_TITLE,
+        APPROVE_LINE_TP,
+        PROCESS_APPRV_GRP,
+        SELF_APPRV_YN,
+        CHG_APPRV_YN,
+        REMARK,
+        USE_YN,
+        REGR_DH,
+        REGR_ID
+        ) VALUES
+        (
+        #{g_comCd},
+        #{REPORT_TP},
+        #{REPORT_TP_NM},
+        #{REPORT_TITLE},
+        #{APPROVE_LINE_TP},
+        #{PROCESS_APPRV_GRP},
+        IFNULL(#{SELF_APPRV_YN},'0'),
+        IFNULL(#{CHG_APPRV_YN},'0'),
+        #{REMARK},
+        #{USE_YN},
+        REGR_DH(),
+        regr_nm(#{g_userId})
+        );
+
+    </insert>
+
+    <select id="searchTravelPrice" resultType="HashMap">
+
+        SELECT /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.searchTravelPrice][출장
+        일당 기준 조회] */
+        ROW_NUMBER() OVER() AS ID,
+        COMPANY_CODE,
+        BIZTRIP_RATE_CD,
+        BIZTRIP_RATE_NM,
+        TRIP_GRADE_TP,
+        CURRENCY_CD,
+        BIZTRIP_RATE,
+        FR_DT,
+        USE_YN
+        FROM EXPENSE_BIZTRIP_RATE
+        WHERE COMPANY_CODE = #{g_comCd}
+        <if test = 'SEARCH_TYPE == "A"'>
+		and USE_YN = '0' || '1'
+		ORDER BY BIZTRIP_RATE_CD, FR_DT
+		</if>
+		<if test = 'SEARCH_TYPE == "Y"'>
+		and USE_YN = "1"
+	 	ORDER BY BIZTRIP_RATE_CD, FR_DT
+		</if>
+		<if test = 'SEARCH_TYPE == "N"'>
+		and USE_YN = "0"
+		ORDER BY BIZTRIP_RATE_CD, FR_DT
+		</if>
+    </select>
+    
+    <select id="searchExpClosingType" resultType="HashMap">
+
+        SELECT /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.searchExpClosingType][비용관리 조회] */
+        ROW_NUMBER() OVER() AS ID,
+        COMPANY_CODE,
+        CLOSING_TP,
+        CLOSING_TP_NM,
+        USE_YN
+        FROM expense_closing_type
+        WHERE COMPANY_CODE = #{g_comCd}
+       
+
+    </select>
+    
+    <select id="searchExpApprvLine" resultType="HashMap">
+
+        SELECT /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.searchExpApprvLine][결재선업무유형 조회] */
+        ROW_NUMBER() OVER() AS ID,
+        a.LINE_SEQ,
+        a.COMPANY_CODE,
+        a.PROCESS_APPRV_GRP,
+        a.ORD,
+        a.APPROVE_TP,
+        b.USER_NM,        
+        a.APPROVE_ID,
+        a.USE_YN,
+        DATE_FORMAT(a.REGR_DH, '%Y-%m-%d %T')REGR_DH,
+        DATE_FORMAT(a.MOD_DH, '%Y-%m-%d %T')MOD_DH,
+        a.DEL_DH,
+        a.REGR_ID,
+        a.MOD_ID,
+        a.DEL_ID
+         FROM Expense_Apprv_Line a
+        join admin_user b
+		  on a.APPROVE_ID = b.USER_ID
+		WHERE a.COMPANY_CODE = #{g_comCd}
+        order by a.PROCESS_APPRV_GRP
+       
+
+    </select>
+    
+    <update id="updateExpApprvLine">
+        UPDATE Expense_Apprv_Line /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.updateExpApprvLine][]
+        */
+        SET
+         PROCESS_APPRV_GRP= #{PROCESS_APPRV_GRP},
+         ORD= #{ORD},
+         APPROVE_TP= #{APPROVE_TP},
+         APPROVE_ID= #{APPROVE_ID},
+         MOD_DH= REGR_DH(),
+         MOD_ID= #{g_userId},
+         USE_YN= #{USE_YN}
+        where  LINE_SEQ = #{LINE_SEQ};
+    </update>
+    
+    <insert id="insertExpApprvLine">
+         INSERT /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.insertExpApprvLine][]
+        */
+        INTO Expense_Apprv_Line
+        ( LINE_SEQ,
+        COMPANY_CODE,
+        PROCESS_APPRV_GRP,
+        ORD,
+        APPROVE_TP,
+        APPROVE_ID,
+        REGR_DH,
+        REGR_ID,
+        USE_YN) VALUES
+        (
+        NEXTVAL(apprv_line_seq),
+        #{g_comCd},
+        #{PROCESS_APPRV_GRP},
+        #{ORD},
+        #{APPROVE_TP},
+        #{APPROVE_ID},
+        REGR_DH(),
+        regr_nm(#{g_userId}),
+        #{USE_YN}        
+        );
+
+    </insert>
+    
+    <delete id="deleteExpApprvLine">
+        DELETE  /* [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.deleteExpApprvLine][]       */
+        FROM Expense_Apprv_Line 
+        where LINE_SEQ = #{LINE_SEQ}
+    </delete>
+    
+    <update id="updateExpClosingType">
+        UPDATE expense_closing_type /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.updateExpClosingType][]
+        */
+        SET
+        CLOSING_TP = #{CLOSING_TP},
+        CLOSING_TP_NM = #{CLOSING_TP_NM},
+        USE_YN = #{USE_YN}
+        where COMPANY_CODE = #{g_comCd}
+        and CLOSING_TP = #{CLOSING_TP};
+    </update>
+    
+      <insert id="insertExpClosingType">
+        INSERT /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.insertExpClosingType][]
+        */
+        INTO expense_closing_type
+        ( COMPANY_CODE,
+        CLOSING_TP,
+        CLOSING_TP_NM,
+        USE_YN) VALUES
+        (
+        #{g_comCd},
+        #{CLOSING_TP},
+        #{CLOSING_TP_NM},
+        #{USE_YN}
+        );
+
+    </insert> 
+    
+    <!-- <delete id="deleteExpClosingType">
+        DELETE  /* [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.deleteExpClosingType][]       */
+        FROM expense_closing_type 
+        where COMPANY_CODE = #{g_comCd}
+        and CLOSING_TP = #{CLOSING_TP}
+        and CLOSING_TP_NM = #{CLOSING_TP_NM}
+        and USE_YN = #{USE_YN};
+    </delete> -->
+
+    <select id="searchExpClosing" resultType="HashMap">
+
+        SELECT /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.searchExpClosing][비용
+        마감일 조회] */
+        ROW_NUMBER() OVER() AS ID,
+        COMPANY_CODE,
+        SEQ,
+        CLOSING_TP,
+        RECEIPT_FR_DT,
+        RECEIPT_TO_DT,
+        CLOSING_YN,
+        SUBSTRING(CLOSING_DH,1,8) AS CLOSING_DH,
+        SUBSTRING(CLOSING_DH,9,10) AS CLOSING_HH,
+        AFTER_CLOSING_YN,
+        SUBSTRING(AFTER_CLOSING_DH,1,8) AS AFTER_CLOSING_DH,
+        SUBSTRING(AFTER_CLOSING_DH,9,10) AS AFTER_CLOSING_HH,
+        AFTER_POSTING_DT
+        FROM EXPENSE_CLOSING_DATE
+        WHERE COMPANY_CODE = #{g_comCd}
+        ORDER BY CLOSING_TP, RECEIPT_TO_DT;
+
+    </select>
+    
+        
+    
+    <select id="searchExpCard" resultType="HashMap">
+
+       
+		select /*[com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.searchExpCard][카드마스터 조회 및 업데이트] */
+      
+        ROW_NUMBER() OVER() AS ID,
+        ec.CARD_CD
+        ,FC_CARD_NO_MASK(FC_DEC(ec.CARD_NO,#{ENC_KEY})) AS CARD_NO
+		,FC_EXPS_GET_SYSTEM_CODE_NM('EX_CARD_OWNER',ec.OWNER_TP,#{g_lang}) as OWNER_TP_NM
+		,ec.OWNER_TP
+		,au.USER_NM 
+		,ec.OWNER_ID 
+		,ae.EMP_NM 
+		,ec.EMP_NO
+		,ec.OWNER_KNM
+		,ec.OWNER_ENM
+		,ec.DEPT_NM
+		,ec.BP_CD
+		,ecc.CCTR_NM
+		,ec.CARD_POSTING_TP
+		,ec.COOP_NM
+		,ec.BPACCT_SEQ
+		,ec.PAY_TERM
+		,ec.CARD_TP
+		,ec.CARD_BRAND
+		,ec.STATUS_CD
+		,ec.STATUS_NM
+		,ec.TP1
+		,ec.TP1_NM
+		,ec.TP2
+		,ec.TP2_NM
+		,ec.TP3
+		,ec.TP3_NM
+		,ec.VALID_YM
+		,ec.SIGN_DD
+		,ec.SIGN_BANK_CD
+		,ec.SIGN_BANK_NM
+		,ec.SIGN_BANKACCT_NO
+		,ec.BIZ_NO
+		,ec.USE_YN
+		 from expense_card ec 
+		 left outer join admin_emp ae 
+		  on ec.COMPANY_CODE = ae.COMPANY_CODE 
+		  and ec.EMP_NO  = ae.EMP_NO
+		 left outer join admin_user au 
+		  on ec.OWNER_ID = au.USER_ID 
+		 left outer join expense_cost_center ecc
+		  on ec.COMPANY_CODE  = ecc.COMPANY_CODE 
+		  and ec.CCTR_CD = ecc.CCTR_CD
+		 where ec.COMPANY_CODE =  #{g_comCd}
+		 
+
+
+    </select>
+    
+    
+       <insert id="insertCommonMng">
+    INSERT /*
+    [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.insertCommonMng][]
+    */
+    INTO SLIP_CL_CODE
+    ( COMPANY_CODE,
+    COMM_CL_CD,
+    COMM_CL_CD_NM,
+    RMK,
+    USE_YN,
+    REGR_ID,
+    REGR_DH) VALUES
+    (
+    #{g_comCd},
+    #{COMM_CL_CD},
+    #{COMM_CL_CD_NM},
+    #{RMK},
+    #{USE_YN},
+    #{g_userId},
+    REGR_DH()
+    );
+
+    </insert>
+    
+        <insert id="insertCommonMngDetail">
+    INSERT /*
+    [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.insertCommonMngDetail][]
+    */
+    INTO SLIP_CODE
+    ( COMPANY_CODE,
+    COMM_CL_CD,
+    COMM_CD,
+    COMM_CD_NM,
+    ORD,
+    DEFAULT_YN,
+    CHR_REF1,
+    CHR_REF2,
+    CHR_REF3,
+    CHR_REF4,
+    CHR_REF5,
+    NUM_REF1,
+    NUM_REF2,
+    NUM_REF3,
+    NUM_REF4,
+    NUM_REF5,
+    RMK,
+    USE_YN,
+    REGR_ID,
+    REGR_DH) VALUES
+    (
+    #{g_comCd},
+    #{COMM_CL_CD},
+    #{COMM_CD},
+    #{COMM_CD_NM},
+    #{ORD},
+    #{DEFAULT_YN},
+    #{CHARTR_REF1},
+    #{CHARTR_REF2},
+    #{CHARTR_REF3},
+    #{CHARTR_REF4},
+    #{CHARTR_REF5},
+    #{NUM_REF1},
+    #{NUM_REF2},
+    #{NUM_REF3},
+    #{NUM_REF4},
+    #{NUM_REF5},
+    #{RMK},
+    #{USE_YN},
+    #{g_userId},
+    REGR_DH()
+    );
+
+    </insert>
+    
+    
+
+    <insert id="insertGasPrice">
+        INSERT /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.insertGasPrice][]
+        */
+        INTO EXPENSE_MILEAGE_RATE
+        ( COMPANY_CODE,
+        MILEAGE_RATE_CD,
+        MILEAGE_RATE_NM,
+        MILEAGE_RATE,
+        FR_DT,
+        USE_YN) VALUES
+        (
+        #{g_comCd},
+        #{MILEAGE_RATE_CD},
+        #{MILEAGE_RATE_NM},
+        #{MILEAGE_RATE},
+        #{FR_DT},
+        #{USE_YN}
+        );
+
+    </insert>
+    
+    
+    <update id="updateCommonMng">
+        UPDATE SLIP_CL_CODE /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.updateCommonMng][]
+        */
+        SET
+        COMM_CL_CD_NM = #{COMM_CL_CD_NM},
+        RMK = #{RMK},
+        USE_YN = #{USE_YN},
+        REGR_ID = #{REGR_ID}
+        where COMPANY_CODE = #{g_comCd}
+        and COMM_CL_CD = #{COMM_CL_CD};
+    </update>
+    
+    <update id="updateExpCard">
+    update expense_card/*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.updateCard][]
+        */
+       set OWNER_ID = #{OWNER_ID}
+   	 , EMP_NO = #{EMP_NO}
+     , BP_CD = #{BP_CD}
+     , BPACCT_SEQ = #{BPACCT_SEQ}
+     , PAY_TERM =#{PAY_TERM}
+ 	 where COMPANY_CODE = #{g_comCd}
+    and CARD_CD = #{CARD_CD}
+    </update>
+    
+   <update id="updateCommonMngDetail">
+        UPDATE SLIP_CODE /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.updateCommonMngDetail][]
+        */
+        SET
+        COMM_CD_NM = #{COMM_CD_NM},
+        ORD = #{ORD},
+        DEFAULT_YN = #{DEFAULT_YN},
+        CHR_REF1 = #{CHR_REF1},
+        CHR_REF2 = #{CHR_REF2},
+        CHR_REF3 = #{CHR_REF3},
+        CHR_REF4 = #{CHR_REF4},
+        CHR_REF5 = #{CHR_REF5},
+        NUM_REF1 = #{NUM_REF1},
+        NUM_REF2 = #{NUM_REF2},
+        NUM_REF3 = #{NUM_REF3},
+        NUM_REF4 = #{NUM_REF4},
+        NUM_REF5 = #{NUM_REF5},
+        RMK = #{RMK},
+        USE_YN = #{USE_YN}
+        where COMPANY_CODE = #{g_comCd}
+        and  COMM_CL_CD = #{COMM_CL_CD}
+        and COMM_CD = #{COMM_CD};
+    </update>   
+    
+    
+    <update id="updateGasPrice">
+        UPDATE EXPENSE_MILEAGE_RATE /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.updateGasPrice][]
+        */
+        SET
+        MILEAGE_RATE_NM = #{MILEAGE_RATE_NM},
+        MILEAGE_RATE = #{MILEAGE_RATE},
+        FR_DT = #{FR_DT},
+        USE_YN = #{USE_YN}
+        where COMPANY_CODE = #{g_comCd}
+        and MILEAGE_RATE_CD = #{MILEAGE_RATE_CD};
+    </update>
+    
+    <insert id="insertTravelPrice">
+              <selectKey  resultType="long" keyProperty="BIZTRIP_RATE_CD" order="BEFORE">
+                SELECT IFNULL(MAX(BIZTRIP_RATE_CD),0) + 1 FROM EXPENSE_BIZTRIP_RATE;
+          </selectKey>
+    
+        INSERT /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.insertTravelPrice][]
+        */
+        INTO EXPENSE_BIZTRIP_RATE
+        ( COMPANY_CODE,
+        BIZTRIP_RATE_CD,
+        BIZTRIP_RATE_NM,
+        TRIP_GRADE_TP,
+        CURRENCY_CD,
+        BIZTRIP_RATE,
+        FR_DT,
+        USE_YN) VALUES
+        (
+        #{g_comCd},
+        #{BIZTRIP_RATE_CD},
+        #{BIZTRIP_RATE_NM},
+        #{TRIP_GRADE_TP},
+        #{CURRENCY_CD},
+        #{BIZTRIP_RATE},
+        #{FR_DT},
+        #{USE_YN}
+        );
+
+    </insert>
+    
+    <update id="updateTravelPrice">
+        UPDATE EXPENSE_BIZTRIP_RATE /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.updateTravelPrice][]
+        */
+        SET
+        BIZTRIP_RATE_NM = #{BIZTRIP_RATE_NM},
+        TRIP_GRADE_TP = #{TRIP_GRADE_TP},
+        CURRENCY_CD = #{CURRENCY_CD},
+        BIZTRIP_RATE = #{BIZTRIP_RATE},
+        FR_DT = #{FR_DT},
+        USE_YN = #{USE_YN}
+        where COMPANY_CODE = #{g_comCd}
+        and BIZTRIP_RATE_CD = #{BIZTRIP_RATE_CD};
+    </update>
+
+    <insert id="insertExpClosing">
+          <selectKey  resultType="long" keyProperty="SEQ" order="BEFORE">
+                SELECT IFNULL(MAX(SEQ),0) + 1 FROM EXPENSE_CLOSING_DATE;
+          </selectKey>
+    
+        INSERT /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.insertExpClosing][]
+        */
+        INTO EXPENSE_CLOSING_DATE
+        ( COMPANY_CODE,
+        CLOSING_TP,
+        SEQ,
+        RECEIPT_FR_DT,
+        RECEIPT_TO_DT,
+        CLOSING_YN,
+        AFTER_CLOSING_YN,
+        CLOSING_DH,
+        AFTER_CLOSING_DH,
+        AFTER_POSTING_DT
+        ) VALUES
+        (
+        #{g_comCd},
+        #{CLOSING_TP},
+        #{SEQ},
+        #{RECEIPT_FR_DT},
+        #{RECEIPT_TO_DT},
+        IFNULL(#{CLOSING_YN},'0'),
+        IFNULL(#{AFTER_CLOSING_YN},'0'),
+        CONCAT(#{CLOSING_DH},#{CLOSING_HH}),
+        CONCAT(#{AFTER_CLOSING_DH},#{AFTER_CLOSING_HH}),
+        #{AFTER_POSTING_DT}
+        );
+    </insert>
+    
+    <update id="updateExpClosing">
+        UPDATE EXPENSE_CLOSING_DATE /* [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.updateExpClosing][]       */
+        SET 
+            CLOSING_TP = #{CLOSING_TP},
+            RECEIPT_FR_DT= #{RECEIPT_FR_DT},
+            RECEIPT_TO_DT= #{RECEIPT_TO_DT},
+            CLOSING_YN= #{CLOSING_YN},
+            AFTER_CLOSING_YN = #{AFTER_CLOSING_YN},
+            CLOSING_DH = CONCAT(#{CLOSING_DH},#{CLOSING_HH}),
+            AFTER_CLOSING_DH = CONCAT(#{AFTER_CLOSING_DH},#{AFTER_CLOSING_HH}),
+            AFTER_POSTING_DT = #{AFTER_POSTING_DT}
+        where SEQ = #{SEQ};
+    </update>
+    
+    
+    
+    <delete id="deleteExpClosing">
+        DELETE  /* [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.deleteExpClosing][]       */
+        FROM EXPENSE_CLOSING_DATE 
+        where SEQ = #{SEQ};
+    </delete>   
+
+    <insert id="insertExpenseCd">
+        INSERT /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.insertExpenseCd][]
+        */
+        INTO EXPENSE_CATEGORY
+        ( COMPANY_CODE,
+        EXPENSE_CD,
+        EXPENSE_NM,
+        CATEGORY_TP,
+        ORD,
+        RMK,
+        IF_YN,
+        ACC_CD,
+        SECOND_COST_CD,
+        SECOND_COST_NM,
+        ERP_RMK,
+        PREPAID_ACC_CD,
+        ASSET_CLASS_CD,
+        USE_YN) VALUES
+        (
+        #{g_comCd},
+        #{EXPENSE_CD},
+        #{EXPENSE_NM},
+        #{CATEGORY_TP},
+        #{ORD},
+        #{RMK},
+        IFNULL(#{IF_YN},0),
+        #{ACC_CD},
+        #{SECOND_COST_CD},
+        #{SECOND_COST_NM},
+        #{ERP_RMK},
+        #{PREPAID_ACC_CD},
+        #{ASSET_CLASS_CD},
+        #{USE_YN}
+        );
+
+    </insert>
+
+    <update id="updateExpenseCd">
+        UPDATE EXPENSE_CATEGORY /*      [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.updateExpenseCd][]       */
+        SET EXPENSE_CD = #{EXPENSE_CD},
+        EXPENSE_NM = #{EXPENSE_NM},
+        CATEGORY_TP = #{CATEGORY_TP},
+        ORD = #{ORD},
+        RMK = #{RMK},
+        IF_YN = #{IF_YN},
+        ACC_CD = #{ACC_CD},
+        SECOND_COST_CD = #{SECOND_COST_CD},
+        SECOND_COST_NM = #{SECOND_COST_NM},
+        USE_YN = #{USE_YN},
+        ERP_RMK  = #{ERP_RMK},
+        PREPAID_ACC_CD = #{PREPAID_ACC_CD},
+        ASSET_CLASS_CD = #{ASSET_CLASS_CD}
+        where COMPANY_CODE = #{g_comCd}
+        and EXPENSE_CD = #{EXPENSE_CD};
+    </update>
+
+    <insert id="insertExpenseSource">
+        INSERT /*       [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.insertExpenseSource][]  */
+        INTO EXPENSE_SOURCE_CATEGORY
+        ( COMPANY_CODE,
+        SOURCE_TP,
+        EXPENSE_CD,
+        ORD,
+        VAT_DEDUCTION_TP,
+        EVID_YN,
+        BELONGING_TP,
+        DEFAULT_AMT_YN,
+        DEFAULT_AMT,
+        DEFAULT_CCTR_YN,
+        DEFAULT_COSTCENTER,
+        RMK,
+        USE_YN,
+        CLOSING_TP,
+        REPORT_TP,
+        LIMIT_AMT_YN,
+        LIMIT_AMT,
+        PREPAY_YN,
+        SLIP_TP
+        ) VALUES
+        (
+        #{g_comCd},
+        #{SOURCE_TP},
+        #{EXPENSE_CD},
+        #{ORD},
+        #{VAT_DEDUCTION_TP},
+        #{EVID_YN},
+        #{BELONGING_TP},
+        #{DEFAULT_AMT_YN},
+        IFNULL(#{DEFAULT_AMT},0),
+        #{DEFAULT_CCTR_YN},
+        #{DEFAULT_COSTCENTER},
+        #{RMK},
+        #{USE_YN},
+        #{CLOSING_TP},
+        #{REPORT_TP},
+        #{LIMIT_AMT_YN},
+        #{LIMIT_AMT},
+        #{PREPAY_YN},
+        #{SLIP_TP}
+        );
+    </insert>
+
+    <update id="updateExpenseSource">
+
+        delete from EXPENSE_SOURCE_CATEGORY
+        where COMPANY_CODE = #{g_comCd}
+        and EXPENSE_CD = #{EXPENSE_CD}
+        and SOURCE_TP = #{SOURCE_TP};
+
+        INSERT /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.updateExpenseSource][]
+        */
+        INTO EXPENSE_SOURCE_CATEGORY
+        ( COMPANY_CODE,
+        SOURCE_TP,
+        EXPENSE_CD,
+        ORD,
+        VAT_DEDUCTION_TP,
+        EVID_YN,
+        BELONGING_TP,
+        DEFAULT_AMT_YN,
+        DEFAULT_AMT,
+        DEFAULT_CCTR_YN,
+        DEFAULT_COSTCENTER,
+        RMK,
+        USE_YN,
+        CLOSING_TP,
+        REPORT_TP,
+        LIMIT_AMT_YN,
+        LIMIT_AMT,
+        PREPAY_YN,
+        SLIP_TP)
+        select
+        #{g_comCd},
+        #{SOURCE_TP},
+        #{EXPENSE_CD},
+        IFNULL(#{ORD},'0'),
+        IFNULL(#{VAT_DEDUCTION_TP},''),
+        IFNULL(#{EVID_YN},'0'),
+        IFNULL(#{BELONGING_TP},''),
+        IFNULL(#{DEFAULT_AMT_YN},'0'),
+        IFNULL(#{DEFAULT_AMT},0),
+        IFNULL(#{DEFAULT_CCTR_YN},'0'),
+        IFNULL(#{DEFAULT_COSTCENTER},""),
+        IFNULL(#{RMK},""),
+        IFNULL(#{USE_YN},'0'),
+        IFNULL(#{CLOSING_TP},''),
+        IFNULL(#{REPORT_TP},''),
+        IFNULL(#{LIMIT_AMT_YN},'0'),
+        IFNULL(#{LIMIT_AMT},'0'),
+        IFNULL(#{PREPAY_YN},'0'),
+        IFNULL(#{SLIP_TP},'')       
+        where #{USE_YN} = '1'
+
+    </update>
+
+    <insert id="insertExpenseMng">
+        INSERT /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.insertExpenseMng][]
+        */
+        INTO EXPENSE_CATEGORY_MNG
+        ( COMPANY_CODE,
+        SOURCE_TP,
+        EXPENSE_CD,
+        MNG_CD,
+        ORD,
+        MUST_YN,
+        USE_YN) VALUES
+        (
+        #{g_comCd},
+        #{SOURCE_TP},
+        #{EXPENSE_CD},
+        #{MNG_CD},
+        IFNULL(#{ORD},0),
+        IFNULL(#{MUST_YN},'0'),
+        #{USE_YN}
+        );
+    </insert>
+
+    <update id="updateExpenseMng">
+        delete from EXPENSE_CATEGORY_MNG
+        where COMPANY_CODE = #{g_comCd}
+        and EXPENSE_CD = #{EXPENSE_CD}
+        and SOURCE_TP = #{SOURCE_TP}
+        and MNG_CD = #{MNG_CD};
+
+        INSERT /*
+        [com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper.insertExpenseMng][]
+        */
+        INTO EXPENSE_CATEGORY_MNG
+        ( COMPANY_CODE,
+        SOURCE_TP,
+        EXPENSE_CD,
+        MNG_CD,
+        ORD,
+        MUST_YN,
+        USE_YN)
+        SELECT
+        #{g_comCd},
+        #{SOURCE_TP},
+        #{EXPENSE_CD},
+        #{MNG_CD},
+        IFNULL(#{ORD},0),
+        IFNULL(#{MUST_YN},'0'),
+        #{USE_YN}
+        where #{USE_YN} = '1' ;
+
+    </update>
+
+
+    <select id="getMngList" resultType="HashMap">
+
+        SELECT /*
+        [com.ec.eframework.mapper.fi_basis.AcctServiceMapper.getMngList][관리항목
+        리스트 조회] */
+        ROW_NUMBER() OVER() AS ID,
+        COMPANY_CODE,
+        MNG_CD,
+        MNG_NM,
+        INPUT_FORMAT_CD,
+        USE_YN,
+        TABLE_CD,
+        ORD,
+        COLUMN_LAYOUT,
+        COMM_CL_CD
+        FROM SLIP_MNG
+        WHERE COMPANY_CODE = #{g_comCd}
+        <if test='MNG_CD !=null and MNG_CD !=""'>
+            AND MNG_CD = #{MNG_CD}
+        </if>
+        ORDER BY ORD, MNG_CD
+
+    </select>
+
+    <!-- 계정의 필수항목 개수 -->
+    <select id="getRequiredMngCnt" resultType="HashMap">
+
+        SELECT /*
+        [com.ec.eframework.mapper.fi_basis.AcctServiceMapper.getRequiredMngCnt][필수
+        관리항목 수 조회] */
+        COUNT(*)
+        FROM SLIP_ACCT_MNG
+        WHERE COMPANY_CODE = #{g_comCd}
+        AND ACC_CD = #{ACC_CD}
+        AND ((DR_MUST_YN = '1' AND -1 = #{DRCR}) OR (CR_MUST_YN = '1' AND DRCR =
+        1))
+
+    </select>
+
+    <insert id="insertMng">
+
+        INSERT /*
+        [com.ec.eframework.mapper.fi_basis.AcctServiceMapper.insertMng][관리항목
+        insert] */
+        INTO SLIP_MNG
+        ( COMPANY_CODE
+        ,MNG_CD
+        ,MNG_NM
+        ,INPUT_FORMAT_CD
+        ,USE_YN
+        ,TABLE_CD
+        ,ORD
+        ,COLUMN_LAYOUT
+        ,COMM_CL_CD)
+        select
+        #{g_comCd},
+        #{MNG_CD},
+        #{MNG_NM},
+        #{INPUT_FORMAT_CD},
+        #{USE_YN},
+        #{TABLE_CD},
+        #{ORD},
+        #{COLUMN_LAYOUT},
+        #{COMM_CL_CD};
+
+    </insert>
+
+    <update id="updateMng">
+
+        UPDATE SLIP_MNG /*
+        [com.ec.eframework.mapper.fi_basis.AcctServiceMapper.updateMng][관리항목
+        update] */
+        SET MNG_NM = #{MNG_NM}
+        ,INPUT_FORMAT_CD = #{INPUT_FORMAT_CD}
+        ,USE_YN = #{USE_YN}
+        ,TABLE_CD = #{TABLE_CD}
+        ,ORD = #{ORD}
+        ,COLUMN_LAYOUT = #{COLUMN_LAYOUT}
+        ,COMM_CL_CD = #{COMM_CL_CD}
+        where COMPANY_CODE = #{g_comCd}
+        and MNG_CD = #{MNG_CD};
+
+    </update>
+
+</mapper>

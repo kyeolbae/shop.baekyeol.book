@@ -1,0 +1,87 @@
+/* 
+	-- 프로그램명 : 프레임웍 / SAP CO 팝업
+	-- 날짜 : 2021.10.21 by hshwang
+	-- 수정 : 2021.11.15 by hshwang (거래처, 거래처계좌 검색 (Business-Partner & Payment Account))
+*/
+
+package com.ec.eframework.ex.sap.common;
+
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.ec.eframework.lib.JsonDataMap;
+import com.ec.eframework.lib.JsonResultMsgMap;
+import com.ec.eframework.lib.MapSession;
+
+//SAP CO code popup
+
+@Controller
+@RequestMapping("ec/sap/popup/code")  
+public class SapPopupCodeController {
+
+	@RequestMapping(value = "/page")
+	public String page() {
+		return "contents/popup/popup";
+	}
+	
+	@Autowired
+	SapPopupCodeService sapPopupCodeService;
+	
+	//조회 SAP CO 팝업
+	@RequestMapping(value = "/searchSap" , produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	public Map<String, Object>  searchSap(@RequestBody Map<String, Object> paramMap, @RequestParam Map<String, Object> param, HttpSession session) {	
+		paramMap.putAll(new MapSession(session));
+		switch (paramMap.get("TABLE_NAME").toString()) {
+			case "SAPBGTDEPT" :		//예산부서
+				paramMap.put("WTYPE", "F1");
+				paramMap = sapPopupCodeService.getSapCoF1Code(paramMap);
+				break;
+			case "SAPBGTACC" :		//예산과목
+				paramMap.put("WTYPE", "C1");
+				paramMap = sapPopupCodeService.getSapCoC1Code(paramMap);
+				break;
+			case "SAPBGTWBS" :		//WBS조회
+				paramMap.put("WTYPE", "W1");
+				paramMap = sapPopupCodeService.getSapCoW1Code(paramMap);
+				break;
+		}
+		if(paramMap.get("RESULT").equals("ERROR")) {
+			return new JsonResultMsgMap(false, paramMap.get("MSG").toString());
+		}
+		List<Map<String, Object>> list = (List<Map<String, Object>>) paramMap.get("ITEMLIST");
+		JsonDataMap jsonDataMap = new JsonDataMap("ds_search", list);
+	    jsonDataMap.put("totalCount", list.size());
+		
+		return jsonDataMap;
+	}	
+	
+	@Autowired
+	SapPoBPnPAService sapPoBPnPAService;
+	
+	//조회 SAP 거래처 팝업
+		@RequestMapping(value = "/searchBPnAP" , produces = MediaType.APPLICATION_JSON_VALUE) // /ec/sap/popup/code/searchBPnAP
+		@ResponseBody
+		public Map<String, Object>  searchBPnAP(@RequestBody Map<String, Object> paramMap, @RequestParam Map<String, Object> param, HttpSession session) {	
+			paramMap.putAll(new MapSession(session));
+			paramMap = sapPoBPnPAService.getSapPoBPnPA(paramMap);
+			if(paramMap.get("RESULT").equals("ERROR")) {
+				return new JsonResultMsgMap(false, paramMap.get("MSG").toString());
+			}
+			List<Map<String, Object>> list = (List<Map<String, Object>>) paramMap.get("ITEMLIST");
+			JsonDataMap jsonDataMap = new JsonDataMap("ds_search", list);
+		    jsonDataMap.put("totalCount", list.size());
+			
+			return jsonDataMap;
+		}	
+	
+}

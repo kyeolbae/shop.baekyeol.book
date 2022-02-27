@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+	<meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+	  var [[${param.pgm_id}]] = new Vue({
+		  el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************		  
+		  
+		  data: {  pgmid : "[[${param.pgm_id}]]",
+	            //V2
+	            myCardDataList : [],
+	            myNotCardDataList : [],
+	            myReportDataList : [],
+	            myApprovalDataList : {},
+	            
+	            myApprovingReportData : {},
+	            myRejectedReportData : {},
+	            myApprovedReportData : {},
+	            
+	            myNoticeList : [], 
+		  },//data
+		  created () { //초기화================================================================
+			    //그리드 초기화
+			    
+// 			  myNoticeList.push("공지테스트1");
+// 			  myNoticeList.push("공지테스트2");
+// 			  myNoticeList.push("공지테스트3");
+// 			  myNoticeList.push("공지테스트4");
+// 			  myNoticeList.push("공지테스트5");
+			  
+			    
+		  }, // created		  
+		  methods : {  // ===================================================================
+			  shuffle: function() {
+				  this.myNoticeList.push("공지테스트1");
+			  },
+			  getDashboardDataV2 : function() {
+				  
+				//  alert('getDashboardDataV2');
+                   				  
+	               var o ={};
+	               o.SEARCH_FR_DT = this.$refs.searchdt.getFrDate();
+	               o.SEARCH_TO_DT = this.$refs.searchdt.getToDate();             
+	               var param = {
+	                       svcId:"getDashboardData",
+	                       strUrl:"/ec/ex/main/getDashboardData", 
+	                       inDs :  "" ,  
+	                       param : o ,  
+	                       pCall : this.getDashboardDataV2Callback, 
+	                       pLoad : true,
+	                       async : true,
+	                   };
+	                   //트랜젝션 실행
+	                   ajaxReadJsonData(param);
+	           },  
+	          getDashboardDataV2Callback : function( svcId, data) {
+	        	   
+	               this.myCardDataList = data.ds_getMyCardList.data; 
+	        	   this.myNotCardDataList = data.ds_getMyNotCardList.data;
+	        	   this.myReportDataList = data.ds_getMyReports.data;
+	        	   this.myApprovalDataList = data.ds_getMyApprovalReportList.data[0];
+	        	   
+	               this.myApprovingReportData = this.myReportDataList.filter(report => { if (report.APPROVE_STATUS == '2' || report.APPROVE_STATUS == '3') return true; } )[0]; 
+	               this.myRejectedReportData = this.myReportDataList.filter(report => report.APPROVE_STATUS == '5')[0]; 
+// 	               logJ(this.myRejectedReportData);
+	               this.myApprovedReportData = this.myReportDataList.filter(report => report.APPROVE_STATUS == '4')[0]; 
+	           },
+	           
+	           
+	           
+		  }, // end of methods
+	      computed: {
+	          getNotCardApprovalCnt : function(){
+	              var t = 0 ;
+	              this.myNotCardDataList.forEach(item => { t = t + to_number(item.APPROVAL_CNT );});
+	              return t;     
+	           }, // getNotCardApprovalCnt
+	           getNotCardApprovingCnt : function(){
+	               var t = 0 ;
+	               this.myNotCardDataList.forEach(item => { t = t + to_number(item.APPROVING_CNT );});
+	               return t;     
+	            }, // getNotCardApprovingCnt
+	          getNotCardRejectedCnt : function(){
+	                var t = 0 ;
+	                this.myNotCardDataList.forEach(item => { t = t + to_number(item.REJECTED_CNT );});
+	                return t;     
+	             }, // getNotCardRejectedCnt
+	          getNotCardApprovedCnt : function(){
+	                 var t = 0 ;
+	                 this.myNotCardDataList.forEach(item => { t = t + to_number(item.APPROVED_CNT );});
+	                 return t;     
+	              }, // getNotCardApprovedCnt
+		      getMaxMt : function(){
+		                 var t = '' ;
+		                 this.myCardDataList.forEach(item => { 
+		                	 
+		                	 if (item.RECEIPT_MT > t) {
+		                		 t = item.RECEIPT_MT ;
+		                	 }
+		                 });
+		              return t;     
+		       }, // getMaxMt
+	      },
+		  mounted: function() {
+			  var ref = this;
+			  window.addEventListener('homeButtonClick', function (e) { 
+				  ref.getDashboardDataV2();
+			  }, false);			  
+			  
+			   if (navigator.appVersion.includes('Android')){
+//			     if (1 == 1){
+			        //react native와 통신
+			        document.addEventListener("message", function(event) {
+			             var msg = event.data ;
+			 
+			            if (msg == "reload") {
+			                location.reload(true);
+			            }else if (msg == "go_menu_expense_write") { // 비용등록 메뉴로 이동
+			            	
+			            	goMenu('/ec/fi/exp/receipt/page','영수증 비용처리','FI_EXP_RECEIPT','330104');
+			            	
+			            }else if (msg == "imageUpload") {   // 
+			            	//main_tabs.inboxes = [];
+			            	//main_tabs.inboxeslength = 0;
+			            	[[${param.pgm_id}]].getDashboardDataV2;
+// 			            	alert("imageUpload2xxxxxx77777");
+			            	if( typeof(FI_EXP_RECEIPT) != "undefined" ) {
+			            	//	alert("FI_EXP_RECEIPT.searchButtonOnClick");
+			            		FI_EXP_RECEIPT.searchButtonOnClick();
+			            		return;
+			            	}
+			            	
+				        }else if (msg == "foreground") {   // foreground
+				        	// 앱이 sleep 모드에서 전환될 때,
+//			 	        	alert('foreground foreground foreground');
+				           //main_tabs.sesstionTimerCheck();
+				        	
+				        } 
+			        }, true);
+			      }
+			     else if (navigator.appVersion.includes('iPhone')) {  //ios 추후 체크
+			      
+			      
+			      
+			   //     	document.addEventListener("message", ()=>{alert("document iPhoneiPhoneiPhone")});
+			   //     	windows.addEventListener("message", ()=>{alert("windows iPhoneiPhoneiPhone")});
+			        	  document.addEventListener('message', function (e) {
+			   //     		  alert('IPHONEIPHONEIPHONEIPHONEIPHONE');	  
+			        		  })
+			        //react native와 통신
+			   //     windows.addEventListener("message", function(event) {
+			   //          var msg = event.data ;
+			   //          alert('IPHONE');
+			   //          alert(msg);
+			            
+			   //         if (msg == "reload") {
+			   //             location.reload(true);
+			   //         }else if (msg == "imageUpload") {
+			               
+			   //         	main_tabs.search();
+			               
+			               
+			   //         }
+			   //        }, false);
+			        } // mobile		  
+			  
+			  
+			  
+			  
+	
+	           this.$nextTick(function () {
+	        	   ref.getDashboardDataV2();
+	        	   $('#vue-btn'+ ref.pgmid).remove();
+	        	   
+	           }); // nextTick
+             
+//**********************************************************************************************			  
+           //  vueArr.push(this);
+			},
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

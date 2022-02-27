@@ -1,0 +1,18 @@
+package com.ec.eframework.mapper.ex.sap.common;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.ec.eframework.config.db.FirstMapper;
+import com.ec.eframework.mapper.basic.GridServiceMapper;
+@FirstMapper
+public interface SapServiceMapper extends GridServiceMapper  {
+	
+	List<HashMap<String , String >> getSapSlip(Map map); //Sap전표
+	List<HashMap<String , String >> getSapSlipDetail(Map map); // Sap전표Detail
+	
+	String SapPoUrl(Map<String, Object> map);
+	String getSapPoConfig(Map map);
+	int SapSendCnt(Map<String, Object> map);
+}

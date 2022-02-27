@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<meta charset="utf-8" />
+</head>
+<body>
+
+	<div th:fragment="js">
+		<script type="text/javascript">
+ 
+	  var [[${param.pgm_id}]] = new Vue({
+		  el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************		  
+		  
+		  data: {  pgmid : "[[${param.pgm_id}]]",
+			  		signSeq : '',
+			  	   canvas : $("#signature-pad canvas")[0],
+			  	 sign : null
+		  },//data    
+		  created () { //초기화================================================================
+			    //그리드 초기화    
+		  }, // created		  
+		  methods : {  // ======================================================================================
+			  clearSignature : function() {
+				  this.sign.clear();
+			  },
+			  
+			  saveSignature : function() {
+				  if (this.sign.isEmpty()) {
+					 customAlert("","","서명해 주세요");
+	                 return ;
+		          }
+				  
+				  var o = {};
+				  o.sign = this.sign.toDataURL();
+					var param = {
+		    			svcId :"saveSignature",
+		    			strUrl:"/ex/report/digitalSign/saveSignature",
+		    			param : Object.assign(o, serializeObjectX($('#[[${param.pgm_id}]]'))),
+		    			pCall : this.saveSignatureCallback, 
+						pLoad : true,
+			    	};
+			    	ajaxReadJsonData(param);
+			  },
+			  
+			  saveSignatureCallback : function(svcId, data) {
+				  customAlert("","",data["sign_Data"].data.MSG);
+				  this.sign.clear();
+				  this.sign.off();
+				  this.signSeq = '';
+			  },
+			  
+			  newSignature : function() {
+				  if(this.signSeq != '') {
+					  customAlert("","",'서명을 저장해 주세요');
+					  return;
+				  }
+				  
+				  var param = {
+			    			svcId :"newSignature",
+			    			strUrl:"/ex/report/digitalSign/newSignature",
+			    			param : serializeObjectX($('#[[${param.pgm_id}]]')),
+			    			pCall : this.newSignatureCallback, 
+							pLoad : true,
+			    	};
+			    	ajaxReadJsonData(param);
+			  },
+			  
+			  newSignatureCallback : function(svcId, data) {
+				 // $('#' + this.pgmid + '').val(data[sign_Data].data);
+				  this.signSeq = data['sign_Data'].data.SIGN_SEQ;
+				  this.sign.on();
+			  },
+			  
+		  }, // end of methods
+
+		  mounted: function() {
+		  	  var ref = this;
+		      this.$nextTick(function () {
+		    	  this.sign = new SignaturePad($("#signature-pad canvas")[0], {
+				         minWidth: 0.5,
+				         maxWidth: 2.5,
+				         backgroundColor: "rgb(255,255,255)"
+				         //penColor: "rgb(66, 133, 244)"
+				  });
+		    	  
+		    	  this.sign.off();
+	          });
+//**********************************************************************************************			  
+	           vueArr.push(this); 		 
+		  },
+	 }) // end of new Vue
+      
+     function resizeCanvas(){
+         var canvas = $("#signature-pad canvas")[0];
+         var div = $("#signature-pad");
+  
+         var ratio =  Math.max(window.devicePixelRatio || 1, 1);
+         canvas.width = div.width();	// canvas.offsetWidth * ratio
+         canvas.height = div.height();	// canvas.offsetHeight * ratio
+         //canvas.getContext("2d").scale(ratio, ratio);
+     }
+      
+     $(window).on("resize", function(){
+         resizeCanvas();
+     });
+
+     resizeCanvas();
+
+    </script>
+	</div>
+
+</body>
+</html>

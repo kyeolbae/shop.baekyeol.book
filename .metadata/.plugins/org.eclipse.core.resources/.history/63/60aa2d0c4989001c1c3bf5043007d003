@@ -1,0 +1,17 @@
+package com.ec.eframework.mapper.ex.report;
+
+import java.util.Map;
+
+//@Component
+
+import com.ec.eframework.config.db.FirstMapper;
+import com.ec.eframework.mapper.basic.GridServiceMapper;
+@FirstMapper
+public interface DigitalSignatureServiceMapper extends GridServiceMapper  {
+	
+	int insertAdminSignature(Map<String, Object> map);
+	int updateAdminSignature(Map<String, Object> map);
+	String getSignSeq();
+	
+	
+	}

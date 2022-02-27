@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper namespace="com.ec.eframework.mapper.ex.expense.ReportServiceMapper">
+
+<!--리포트 -->
+    
+        <insert id="saveReport">
+        
+               <selectKey  resultType="long" keyProperty="REPORT_NO" order="BEFORE">
+                    SELECT NEXTVAL(EXPENSE_SEQ);
+               </selectKey>
+               
+	        INSERT INTO EXPENSE_REPORT(COMPANY_CODE,
+										REPORT_NO,
+										REPORT_TITLE,
+										REPORT_TP,
+										FROM_DT,
+										TO_DT,
+										REPORT_RMK,
+										REPORT_CONTENT,
+										APPROVE_STATUS,
+										SUBMIT_DH,
+										SUBMIT_ID,
+										APPROVE_DH,
+										APPROVE_ID,
+										USE_YN,
+										REGR_DH,
+										REGR_NM,
+										REGR_DEPT_NM,
+										MOD_DH,
+										DEL_DH,
+										REGR_ID,
+										URGENCY_YN)
+	        VALUES (
+						#{g_comCd},
+						#{REPORT_NO},
+						#{REPORT_TITLE},
+						#{REPORT_TP},
+					REPLACE(#{FROM_DT_REPORT},'-',''),
+                    REPLACE(#{TO_DT_REPORT},'-',''),
+					#{REPORT_RMK},
+						"", 
+						"2", -- 1: 임시저장, 2:상신
+						REGR_DH(),
+						#{g_userId},
+						"",
+						"",
+						'1',
+						REGR_DH(),
+						#{g_userNm},
+						#{g_deptNm},
+						REGR_DH(),
+						"",
+						#{g_userId},
+						#{URGENCY_YN}
+	              );
+	              
+           <!-- 관리항목 -->
+	              
+                <!-- LOG -->
+                call insertExpLog(#{g_userId},#{g_comCd},#{REPORT_NO},  'EXPENSE_REPORT', concat('리포트[', #{REPORT_NO} , ' ] 최초 생성'));  				
+    </insert>
+    
+     <update id="updateReport">
+               
+	        UPDATE EXPENSE_REPORT
+		        SET APPROVE_STATUS = '2',  -- 상신
+		        REPORT_TITLE = #{REPORT_TITLE},
+		        REPORT_RMK = #{REPORT_RMK},
+		        SUBMIT_DH = REGR_DH(),
+		        SUBMIT_ID =  #{g_userId},   
+		        MOD_DH = REGR_DH(),
+		        MOD_ID = #{g_userId},
+		        MOD_NM = #{g_userNm}, 
+		        TXT_REF1 = #{TXT_REF1},
+		        TXT_REF2 = #{TXT_REF2}
+	        WHERE COMPANY_CODE =  #{g_comCd}
+	        AND REPORT_NO = #{REPORT_NO};
+	                  
+                <!-- LOG -->
+                call insertExpLog(#{g_userId},#{g_comCd},#{REPORT_NO},  'EXPENSE_REPORT', concat('리포트[', #{REPORT_NO} , ' ] 상신'));  				
+    </update>
+    
+    
+    
+            <insert id="saveReportMngs" parameterType="java.util.List">
+        
+         
+               
+	        INSERT INTO /*  saveReportMngs 리포트관리항목 by hcho 2021.8.7  */ 
+	                 EXPENSE_REPORT_MNG(COMPANY_CODE	,
+										REPORT_NO	,
+										MNG_CD	,
+										MNG_SEQ	,
+										MNGVAL_CD	,
+										MNGVAL_NM	,
+										REGR_ID	,
+										DEL_ID	,
+										REGR_DH	,
+										DEL_DH	,
+										USE_YN	
+										)
+			      VALUES
+				<foreach collection="mngs" item="item" index="index" separator=" , " >
+				   ( #{g_comCd}, #{REPORT_NO}, #{item.MNG_CD}, #{index}, #{item.MNGVAL_CD}, #{item.MNGVAL_NM}, #{g_userId}, null, REGR_DH(),null,"1")
+				</foreach>                
+
+					
+	              
+    </insert>
+    
+        <insert id="saveReportFiles">
+        
+            INSERT INTO EXPENSE_REPORT_FILE(
+									FILE_NO,
+									COMPANY_CODE,
+									REPORT_NO,
+									REGR_ID,
+									REGR_DH )
+									 VALUES (
+                        #{fileNo},
+                        #{g_comCd},
+                        #{REPORT_NO},
+                        #{g_userId},
+                        REGR_DH());
+    </insert>    
+    
+    <select id="getReportList" resultType="HashMap">
+       SELECT REPORT_NO, REPORT_TITLE, REPORT_RMK, 
+               B.USER_NM, A.FROM_DT, A.TO_DT, B.USER_NM ,SUBMIT.USER_NM SUBMIT_NM, APPROVE.USER_NM APPROVE_NM, 
+               SUBMIT_DH, APPROVE_DH, FILE_NO, URGENCY_YN
+		        FROM ADMIN_USER B , EXPENSE_REPORT A 
+		        LEFT OUTER JOIN ADMIN_USER SUBMIT
+		        ON SUBMIT.USER_ID = A.SUBMIT_ID
+		        LEFT OUTER JOIN ADMIN_USER APPROVE
+		        ON APPROVE.USER_ID = A.APPROVE_ID
+		        LEFT OUTER JOIN EXPENSE_REPORT_FILE FILE
+		        ON FILE.REORT_NO = A.REPORT_NO
+		        WHERE A.COMPANY_CODE =#{g_comCd}
+		        AND A.REGR_ID = #{g_userId}
+		        AND A.REGR_ID = B.USER_ID;
+    
+      -- 파일 테이블 sql수정
+    </select>
+    
+    
+<!--     getApproveStatus -->
+     <select id="getApproveStatus" resultType="HashMap">
+				SELECT /* getApproveStatus */
+				A.COMM_CD AS CODE, FC_EXPS_GET_SYSTEM_CODE_NM('EX_APPROVE_STATUS', A.COMM_CD, #{g_lang} )  AS NAME
+				FROM ADMIN_SYSTEM_CODE A
+				WHERE COMM_CL_CD = 'EX_APPROVE_STATUS'
+				AND A.USE_YN = '1'
+
+    </select>   
+       
+    <select id="getReportFileByReportNo" resultType="HashMap">
+       SELECT /* getReportFileByReportNo */ 
+		        B.FILE_NO,
+				A.REGR_ID,
+				A.REGR_DH,
+				A.ORG_FILE_NAME,
+				A.FILE_SIZE
+				FROM ADMIN_FILE A, EXPENSE_REPORT_FILE B
+		        WHERE A.FILE_NO = B.FILE_NO
+		        AND B.REPORT_NO = #{REPORT_NO}
+    </select> 
+    
+    <select id="getApproveLine" resultType="HashMap">
+    
+        SELECT BBB.APPROVE_STEP ,IFNULL(CONCAT("[",AAA.APPROVE_LIST,"]"),"[]") AS APPROVE_LIST   , AAA.APPROVE_STEP_A, FC_EXPS_GET_CODE_NM('EX_APPROVE_LINE_STEP', BBB.APPROVE_STEP, #{g_comCd}) AS APPROVE_STEP_NM 
+        FROM  ( SELECT /* getApproveLine by hcho 2021.8.05 수정 */
+                GROUP_CONCAT(JSON_OBJECT(
+											"APPROVE_LINE_TP", AA.APPROVE_LINE_TP
+											,"APPROVE_ID", AA.APPROVE_ID
+											,"DEPT_CD", D.DEPT_CD
+											,"DEPT_NM", D.DEPT_NM 
+											,"APPROVE_NAME", B.USER_NM
+											,"APPROVE_TP", AA.APPROVE_TP
+											,"APPROVE_TP_NM", FC_EXPS_GET_SYSTEM_CODE_NM('EX_APPROVE_TP',APPROVE_TP,'ko')
+											,"APPROVE_ORDER", ORD
+											,"EMAIL", B.EMAIL 
+											,"APPROVE_STEP", AA.APPROVE_STEP
+											,"PROCESS_APPRV_GRP", A.PROCESS_APPRV_GRP
+											 )  ORDER BY ORD  ) as APPROVE_LIST
+											 , APPROVE_STEP AS APPROVE_STEP_A, FC_EXPS_GET_CODE_NM('EX_APPROVE_LINE_STEP', APPROVE_STEP, #{g_comCd}) AS APPROVE_STEP_NM
+           FROM (
+                     SELECT 
+                        CONCAT((SELECT APPROVE_LINE_TP FROM EXPENSE_REPORT_TYPE WHERE REPORT_TP = #{REPORT_TP} AND COMPANY_CODE = #{g_comCd}) , #{CCTRORPS}) as APPROVE_LINE_TP,
+                        #{g_userId} as APPROVE_ID,
+                        '1' as APPROVE_TP,
+                        '1' as APPROVE_STEP,
+                        0 as LINE_SEQ,
+                        0 as ORD,
+                        (SELECT	A.PROCESS_APPRV_GRP 
+                            FROM EXPENSE_REPORT_TYPE A 
+                            WHERE A.REPORT_TP = #{REPORT_TP}
+                            AND A.COMPANY_CODE = #{g_comCd}  AND USE_YN = '1') as PROCESS_APPRV_GRP,
+                        #{REF} AS REF             
+                      UNION ALL
+                     SELECT 
+                        'LINE10' as APPROVE_LINE_TP,
+                        APPROVE_ID,
+                        APPROVE_TP,
+                        APPROVE_STEP,
+                        LINE_SEQ,
+                        ORD,
+                        PROCESS_APPRV_GRP,
+                        SUBMIT_ID AS REF
+                        FROM EXPENSE_APPRV_LINE_USER A
+                        WHERE COMPANY_CODE = #{g_comCd}
+                        AND USE_YN = '1'
+                        UNION ALL
+                     SELECT 
+                        'LINE20CCTR' as APPROVE_LINE_TP,
+                        APPROVE_ID,
+                        APPROVE_TP,
+                        APPROVE_STEP,
+                        LINE_SEQ,
+                        ORD,
+                        PROCESS_APPRV_GRP,
+                        CCTR_CD AS REF
+                        FROM EXPENSE_APPRV_LINE_CCTR A
+                        WHERE COMPANY_CODE = #{g_comCd}
+                        AND USE_YN = '1'
+                        UNION ALL
+                     SELECT 
+                        'LINE20PS' as APPROVE_LINE_TP,
+                        APPROVE_ID,
+                        APPROVE_TP,
+                        APPROVE_STEP,
+                        LINE_SEQ,
+                        ORD,
+                        PROCESS_APPRV_GRP,
+                        PS_CD AS REF
+                        FROM EXPENSE_APPRV_LINE_PROJECT A
+                        WHERE COMPANY_CODE = #{g_comCd}
+                        AND USE_YN = '1'
+                        UNION ALL                                            
+		             SELECT 
+		                'LINE30' as APPROVE_LINE_TP,
+				        APPROVE_ID,
+				        APPROVE_TP,
+				        APPROVE_STEP,
+				        LINE_SEQ,
+				        ORD,
+				        PROCESS_APPRV_GRP,
+				        #{REF} AS REF
+		                FROM EXPENSE_APPRV_LINE A
+		                WHERE COMPANY_CODE = #{g_comCd}
+		                AND USE_YN = '1'
+		                UNION ALL
+		              SELECT 
+		                'LINE40' as APPROVE_LINE_TP,
+		                APPROVE_ID,
+		                APPROVE_TP,
+		                APPROVE_STEP,
+		                LINE_SEQ,
+		                ORD,
+		                PROCESS_APPRV_GRP,
+		                DEPT_CD AS REF
+		                FROM EXPENSE_APPRV_LINE_DEPT A
+		                WHERE COMPANY_CODE = #{g_comCd}   
+		                AND USE_YN = '1'     
+              ) AA , EXPENSE_REPORT_TYPE A, ADMIN_USER B, ADMIN_EMP C, ADMIN_DEPT D      
+              WHERE A.COMPANY_CODE = #{g_comCd}
+              AND A.REPORT_TP = #{REPORT_TP}
+              AND CONCAT(A.APPROVE_LINE_TP, #{CCTRORPS})  = AA.APPROVE_LINE_TP
+              AND A.PROCESS_APPRV_GRP = AA.PROCESS_APPRV_GRP
+              AND AA.REF = #{REF}
+              AND B.USER_ID = AA.APPROVE_ID
+              AND B.USER_ID = C.USER_ID
+              AND C.DEPT_CD = D.DEPT_CD
+              AND C.COMPANY_CODE = #{g_comCd}
+              AND C.COMPANY_CODE = D.COMPANY_CODE
+              GROUP BY APPROVE_STEP
+              ORDER BY APPROVE_STEP ) AAA RIGHT OUTER JOIN (SELECT '1' AS APPROVE_STEP 
+                                                            FROM expense_report_type WHERE  COMPANY_CODE = #{g_comCd} AND REPORT_TP = #{REPORT_TP} AND step1_yn = '1'   
+                                                            UNION all
+                                                            SELECT '2' AS APPROVE_STEP 
+                                                            FROM expense_report_type WHERE  COMPANY_CODE = #{g_comCd} AND REPORT_TP = #{REPORT_TP} AND step2_yn = '1'   
+                                                            UNION all
+                                                            SELECT '3' AS APPROVE_STEP 
+                                                            FROM expense_report_type WHERE  COMPANY_CODE = #{g_comCd} AND REPORT_TP = #{REPORT_TP} AND step3_yn = '1'  ) BBB
+              ON AAA.APPROVE_STEP_A = BBB.APPROVE_STEP
+              ORDER BY APPROVE_STEP
+              
+
+                 
+    </select>   
+    
+    <select id="reportApprvTransportationList" resultType="HashMap">
+	    select ROW_NUMBER() OVER(order by mst.RECEIPT_DT asc, mst.EXPENSE_NO asc) AS ID 
+	      ,ecc.CCTR_NM      -- 코스트센터명
+	      ,cat.EXPENSE_NM   -- 비용항목명
+	      ,mst.RECEIPT_DT   -- 사용일
+	      ,emp.EMP_NM       -- 사원명
+	      ,mst.MOD_DH
+	      ,ifnull( case mst.SOURCE_TP when '2' then (select mng.MNGVAL_NM from EXPENSE_MST_MNG MNG where MNG.EXPENSE_NO = mst.EXPENSE_NO and MNG.MNG_CD = 'E201' ) -- 영수증/출발지
+	                          when '4' then mst.START_ADDR  -- 유류비/출발지
+	                          when '6' then (select MNGVAL_NM from EXPENSE_MST_MNG MNG where MNG.EXPENSE_NO = mst.EXPENSE_NO and MNG.MNG_CD = 'E201' ) -- 통행료/출발지
+	                          else '' end
+	                , '') as start_place -- 기타/출발지[시내교통비_상신_및_결재문서.sql](/uploads/0851360e21ae68fcb18470f398971112/시내교통비_상신_및_결재문서.sql)
+	      ,ifnull( case mst.SOURCE_TP when '2' then (select MNGVAL_NM from EXPENSE_MST_MNG MNG where MNG.EXPENSE_NO = mst.EXPENSE_NO and MNG.MNG_CD = 'E202' ) -- 영수증/도착지                            '' then ()
+	                          when '4' then mst.END_ADDR -- 유류비/도착지
+	                          when '6' then (select MNGVAL_NM from EXPENSE_MST_MNG MNG where MNG.EXPENSE_NO = mst.EXPENSE_NO and MNG.MNG_CD = 'E202' ) -- 통행료/도착지
+	                          else '' end  
+	                 , '') as end_place -- 기타/도착지
+	      ,ifnull( mst.DISTANCE   , '') as distance  -- 거리
+	      ,ifnull( case mst.SOURCE_TP when '2' then (select MNGVAL_NM from EXPENSE_MST_MNG MNG where MNG.EXPENSE_NO = mst.EXPENSE_NO and MNG.MNG_CD = 'E203' ) -- 영수증/용무                             '' then ()
+	                          when '4' then (select MNGVAL_NM from EXPENSE_MST_MNG MNG where MNG.EXPENSE_NO = mst.EXPENSE_NO and MNG.MNG_CD = 'E203' ) -- 유류비/용무
+	                          when '6' then (select MNGVAL_NM from EXPENSE_MST_MNG MNG where MNG.EXPENSE_NO = mst.EXPENSE_NO and MNG.MNG_CD = 'E203' ) -- 통행료/용무
+	                           else '' end 
+	                  , '') as biz_reason  -- 기타/용무
+	      ,ifnull( case mst.SOURCE_TP when '2' then (select MNGVAL_NM from EXPENSE_MST_MNG MNG where MNG.EXPENSE_NO = mst.EXPENSE_NO and MNG.MNG_CD = 'E301' ) -- 영수증/교통수단                             '' then ()
+	                          when '4' then '유류비' -- 유류비/교통수단
+	                          when '6' then '톨비' -- 통행료/교통수단
+	                          else '' end  
+	                   , '') as transport -- 기타/교통수단
+	      ,mst.PAY_AMT      -- 지급액
+	      ,mst.EXPENSE_NO   -- 비용번호
+			 from expense_mst mst
+		left outer join expense_cost_center ecc 
+			      on mst.CCTR_CD = ecc.CCTR_CD 
+			     and mst.COMPANY_CODE = ecc.COMPANY_CODE 
+		left outer join expense_category cat 
+			      on mst.EXPENSE_CD = cat.EXPENSE_CD 
+			     and mst.COMPANY_CODE = cat.COMPANY_CODE 
+		left outer join admin_emp emp
+			      on mst.EXPENSE_EMP_NO = emp.EMP_NO 
+			     and mst.COMPANY_CODE = emp.COMPANY_CODE
+		where   1 = 1
+		      <if test='REPORT_NO !=null and REPORT_NO !="" '>
+				and 	mst.REPORT_NO = #{REPORT_NO}     -- 결재번호 (결재함, 상신함)
+			  </if>
+			  <if test='ds_master !=null and ds_master.size  > 0 '>
+					and mst.EXPENSE_NO in
+					<foreach collection="ds_master" item="item" open="(" close=")" separator=",">
+						 #{item.EXPENSE_NO}
+					</foreach>
+			  </if>
+		               
+    -- { REPORT_NO : 889 , ds_master : [{EXPENSE_NO : 998},{EXPENSE_NO : 11},{EXPENSE_NO : 999}]  }
+    </select> 
+
+</mapper>

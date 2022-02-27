@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+ 
+      var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************        
+          
+          data: {  pgmid : "[[${param.pgm_id}]]",
+                   columnlayout : [],
+                   newgriditem : {USE_YN:"1"},
+                   gridView : {},
+                   searchtypename : objId(),
+          },//data
+          created () { //초기화================================================================
+                //그리드 초기화
+                initGridDropDownBox("TRIP_GRADE_TP","/common/syscommon/selectToCommonDropBox", auiDropDownCallBack,{ COMM_CL_CD:"EX_COM_TRIP_GRADE" });
+                initGridDropDownBox("CURRENCY_CD","/common/syscommon/commonSelect/search",auiDropDownCallBack,{ SELECT_ID:"getCurrency" });  
+                this.columnlayout =   
+                   [   
+                       {dataField : "BIZTRIP_RATE_CD",   headerText : "출장일당코드",  width: 120, editable : false, style : "bg-light", maxlength : 10, filter : { showIcon : true}},
+                       {dataField : "BIZTRIP_RATE_NM",   headerText : "<label class='label-required m-0'>출장일당명</label>",  width: 230, style : "aui_col_left", maxlength : 20, filter : { showIcon : true}},
+                       {dataField : "TRIP_GRADE_TP",   headerText : "<label class='label-required m-0'>적용등급</label>",  width: 150, style : "aui_col_left",editRenderer : gridDropdownRenderer['TRIP_GRADE_TP'], labelFunction : auiDrodownLabelFunction , maxlength : 10, filter : { showIcon : true}},
+                       {dataField : "CURRENCY_CD",     headerText : "<label class='label-required m-0'>화폐</label>",   width: 120 , editRenderer : gridDropdownRenderer['CURRENCY_CD'], labelFunction : auiDrodownLabelFunction , filter : { showIcon : true}},
+                       {dataField : "BIZTRIP_RATE",   headerText : "<label class='label-required m-0'>적용율</label>",  width: 150, style : "aui_col_right",dataType : "numeric",formatString : "#,##0", maxlength : 20, filter : { showIcon : true}},
+                       {dataField : "FR_DT",  headerText : "<label class='label-required m-0'>적용시작일</label>", width: 160, dateInputFormat : "yyyymmdd", dataType : "date", formatString : "yyyy-mm-dd", editRenderer : auiCalendarRenderer() , filter : { showIcon : true}}, 
+                       {dataField : "USE_YN", headerText : "사용여부",  width : 80, editable : true, renderer : auiCheckboxRenderer() , filter : { showIcon : true}},
+              ] ;//columnlayout
+                  
+          }, // created       
+          methods : {  // ======================================================================================
+              searchButtonOnClick : function() {
+            	  var o = {};
+					o.SEARCH_TYPE = $("input[name='"+ this.searchtypename + "']:checked").val();
+          	 		 console.log(o.SEARCH_TYPE)              
+                            var param = {
+                                svcId:"search",
+                                strUrl:"/ec/ex/config/travelprice/searchTravelPrice",   //전송 url    
+                                inDs :  "" ,  
+                                param :  Object.assign(o, serializeObjectX($('#[[${param.pgm_id}]]'))), 
+                                pCall : this.tranCallBack, 
+                                pLoad : true          
+                            };
+                            //트랜젝션 실행
+                            ajaxReadJsonData(param);
+                      }, // end of searchButtonOnClick
+              
+              saveButtonOnClick : function() {
+              
+                            // 그리드 필수항목 체크
+                            if (auiValidateGridData(this.gridView, [ "BIZTRIP_RATE_NM","TRIP_GRADE_TP","CURRENCY_CD","BIZTRIP_RATE","FR_DT"] ) == false){
+                                 return;
+                            }
+                            
+                            // 변경된 데이터가 있는지 없는지 체크
+                            var    ds_master = getCRUDdata(this.gridView);
+                            
+                            if (ds_master['data'].length == 0 ) {
+                                customAlert('','','변경된 데이터가 없습니다.');
+                                return;
+                            }
+                            // Confirmation dialog, 시스템 설정에 따라 보이고 안보이고
+                            bootboxSaveConfirm(this);             
+              },  //saveButtonOnClick
+              
+              saveButtonOnClickCallback(){
+                
+                   saveColumnLayout(this.gridView);
+                
+                // 저장할 데이터 만들기
+                var    ds_master = {};
+                ds_master['ds_master'] = getCRUDdata(this.gridView);
+                
+                if(!ds_master){ return; }
+                
+                var param = {
+                    svcId:"saveTravelPrice", 
+                    strUrl: "/ec/ex/config/travelprice/saveTravelPrice",   //전송 url 
+                    inDs : {
+                        ds_master:ds_master
+                    },
+                    param : ds_master,        // 전송할 파라미터
+                    pCall : this.tranCallBack, 
+                    pLoad : true          // 로딩이미지 노출 여부  
+                };
+
+                //트랜젝션 실행
+                ajaxReadJsonData(param); 
+            }, //   saveButtonOnClickCallback         
+              
+                tranCallBack : function(svcId, data, errCd, msgTp, msgCd, msgText) { //******************************
+                      if(svcId=="search"){
+                            if(data["ds_master"]['data'].length >= 0) {
+                                this.$refs.gridmaster.setGridData(data["ds_master"]['data']);
+                            }
+                      }else if(svcId =="saveTravelPrice"){
+                            this.searchButtonOnClick(); // 재조회  
+                            saveGritter();
+                      } // end if
+                    },  // tranCallBack
+                    
+          }, // end of methods
+
+          mounted: function() {
+             var ref = this;
+             this.$nextTick(function () {
+                   ref.gridView = ref.$refs.gridmaster.myGridID;
+                   // pk컬럼(신규는 가능, update불가)
+                   auiSetAddedRowEnabledCell(ref.gridView,['']);
+              });
+             
+//**********************************************************************************************              
+             vueArr.push(this);
+            },
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+<meta charset="utf-8" />
+</head>
+
+<body>
+  <section layout:fragment="content"  >
+<!-- tabindex="-1" v-on:keyup.up="clickPrev"  v-on:keyup.down="clickNext" -->
+	        <form class="d-flex  flex-column h-100" th:id=${param.pgm_id} >
+	        <img-modal ref="imgmodal" :pgmid="pgmid" subname="imgmodal"   ></img-modal>
+			<div class="btn-group " :id="pgmid+'toolbtn'">
+				<a class="btn btn-white btn-sm mr-1" data-toggle="collapse"
+					:data-target="'#'+ pgmid + 'collapseFilter'" aria-expanded="false"
+					:aria-controls="pgmid+'collapseExample'"> <i
+					class="icon-filter4"></i> 
+				</a>
+				
+                <a href="javascript:;" class="ec-btn btn btn-sm btn-white mr-2 text-nowrap" @click="searchButtonOnClick()"><i class="icon-refresh "></i></a>                                       
+
+				
+			</div>
+			<div class="collapse mb-3" :id="pgmid+'collapseFilter'">
+				<div :id="pgmid+'searchCond1'"
+					class="d-flex align-items-between justify-content-between m-t-10">
+					<daterange-m-component-v1 ref="daterange"
+						th:pgmid="${param.pgm_id}" th:id=${param.pgm_id}
+						subname1="SEARCH_FR_DT" subname2="SEARCH_TO_DT" required="true"
+						initval1="firstday-1m" initval2="lastday" ></daterange-m-component-v1>
+					<a class="btn btn-white btn-sm d-flex align-items-center rounded-0"
+						@click="searchButtonOnClick()"> 
+						<span>적용</span>
+					</a>
+
+				</div>
+			</div>
+			<!-- begin vertical-box -->
+            <div class="vertical-box with-grid bg-light inbox border">
+                <!-- begin vertical-box-column -->
+                <div class="vertical-box-column width-350">
+                    <!-- begin vertical-box -->
+                    <div class="vertical-box">
+                        <!-- begin wrapper -->
+                        <div   :id="pgmid+'searchCond'">
+                            <div class="d-flex flex-column align-items-between justify-content-between ">
+                                <div class="d-flex justify-content-between ">
+	                                <radiobuttonbox-component-v1 class="w-100" :list="docTypes"   @clickbtn="clickDocTypeBtn"></radiobuttonbox-component-v1>            
+                                </div>
+                            </div>
+                        </div>
+                        <!-- end wrapper -->
+                        <!-- begin vertical-box-row -->
+                        <div class="vertical-box-row collapse d-lg-table-row" :id="pgmid+'emailNav'">
+                            <!-- begin vertical-box-cell -->
+                            <div class="vertical-box-cell">
+                                <!-- begin vertical-box-inner-cell -->
+                                <div class="vertical-box-inner-cell">
+                                    <!-- begin scrollbar -->
+<!--                                     <div data-scrollbar="true" data-height="100%"> -->
+                                     <div class="h-100">
+                                        <!-- begin wrapper -->
+                                        <div class="wrapper p-0 h-100"  >
+                                            <ul class="nav nav-inbox h-100 "  >
+									             <virtual-scroll-v1 ref="virtualscroll"  v-bind:items="reportList" benchline="8" width="300000" height="84"  forclass="w-100"  >
+									               <template slot-scope={item,index}>    
+                                                   <div :class="{ 'bg-blue-transparent-2' : index==selectedIndex}" class='border-bottom p-10' @click="getExpListByReportNo(item, index); getApproveHist(item, index); getReportFileByReportNo(item, index);" >
+                                                     <div class="d-flex justify-content-between">
+                                                           <div>{{item.SUBMIT_DH | dateformat('card-week')}}&nbsp{{item.SUBMIT_DH | dateformat('card-time') }}</div>
+                                                           <label class="label label-default border m-0 ">{{item.APPROVE_STATUS_NM}}</label>
+
+                                                     </div>
+                                                     <div class="d-flex justify-content-between"> 
+                                                       <a  class="f-plane-bold" ><i v-show= "item.URGENCY_YN =='1'" class="icon-flag text-red"></i>{{item.REPORT_TITLE}}</a>
+<!--                                                        <a  class="f-plane-bold" ><i v-show= "item.URGENCY_YN =='1'" class="icon-flag text-red"></i>{{item.REPORT_TP_NM}}</a> -->
+                                                       
+                                                     </div>
+
+                                                       <div class="d-flex justify-content-between">
+	                                                       <div class=""><strong>{{item.PAY_SUM_AMT  | numberformat('0,000') }}원</strong>({{item.CNT}}건)</div>
+		                                                       <div>
+<!-- 		                                                         다음 결재자 &nbsp :  &nbsp{{item.APPROVE_NM}} -->
+		                                                         {{item.APPROVE_NM}}
+		                                                       </div>
+                                                       </div>
+<!--                                                        <div>{{item.REPORT_NO}}</div> -->
+<!--                                                        <div>{{item.REPORT_TP}}</div> -->
+<!--                                                        <div>{{item.REPORT_TP_NM}}</div> -->
+<!--                                                        <div>{{item.REPORT_RMK}}</div> -->
+                                                   </div>
+<!--                                                 </li> -->
+												</template>
+												</virtual-scroll-v1>
+                                            </ul>
+                                        </div>
+                                        <!-- end wrapper -->
+                                    </div>
+                                    <!-- end scrollbar -->
+                                </div>
+                                <!-- end vertical-box-inner-cell -->
+                            </div>
+                            <!-- end vertical-box-cell -->
+                        </div>
+                        <!-- end vertical-box-row -->
+                    </div>
+                    <!-- end vertical-box -->
+                </div>
+                <!-- end vertical-box-column -->
+                <!-- begin vertical-box-column -->
+                <div class="vertical-box-column">
+                    <!-- begin vertical-box -->
+                    <div class="vertical-box">
+                        <!-- begin wrapper -->
+                        <div class="wrapper d-flex justify-content-between">
+                            <div class="d-flex align-items-center ml-2">
+                                     <span class="f-subtitle-plane">{{selectedReport.REPORT_TITLE}}</span>
+                            </div>                        
+							
+                            <div class="">
+                                <div class="btn-group mr-2"  >
+                                    <a  :class="{disabled : (selectedIndex == undefined || approveStatus != '2' ) }" 
+                                           class="btn btn-white btn-sm" @click="clickCancel()"  >
+                                           <i class="fa fa-fw fa-reply"></i> <span class="d-none d-lg-inline">회수</span></a>
+                                </div>         
+<!--                                 <div class="btn-group mr-2"> -->
+<!--                                     <a  :class="{disabled : selectedIndex == 0 || selectedIndex == undefined }" class="btn btn-white btn-sm " @click="clickPrev"><i class="fa fa-fw fa-arrow-up"></i></a> -->
+<!--                                     <a  :class="{disabled : selectedIndex == reportList.length-1 || selectedIndex == undefined }" class="btn btn-white btn-sm " @click="clickNext"><i class="fa fa-fw fa-arrow-down"></i></a> -->
+<!--                                     <a  class="btn btn-white btn-sm ml-1" @click="printButtonOnClick"><i class="icon-printer"></i></a> -->
+<!--                                 </div> -->
+                            </div>
+                        </div>
+                        <!-- end wrapper -->
+                        <!-- begin vertical-box-row -->
+                        <div class="vertical-box-row bg-white">
+                            <!-- begin vertical-box-cell -->
+                            <div class="vertical-box-cell">
+                                <!-- begin vertical-box-inner-cell -->
+                                <div class="vertical-box-inner-cell">
+                                
+                                    <!-- begin scrollbar -->
+<!--                                     <div data-scrollbar="true" data-height="100%" :id="pgmid+'printform'"> -->
+                                    <div class="h-100" :id="pgmid+'printform'">
+                                        <!-- begin wrapper -->
+                                        <div class="wrapper invoice h-100 overflow-y ec-scrollbar">
+                                          <div class=" invoice-content d-flex">
+                                           
+	                                               <div v-show="selectedIndex != undefined " v-for="(items) in approveHists" v-if="approveHist.length > 0" class="d-flex bg-light border mr-1">
+	                                                       <div class="d-flex flex-column m-0 vertical-text text-center bg-submaintheme text-maintheme align-items-stretch">{{items.APPROVE_STEP_NM }}</div>
+	                                                       <div  v-for="( item , index) in items.APPROVE_LIST" class="approve-box form-group d-flex flex-column border-left m-0">
+	                                                            <div  class="col-form-label px-0 py-0 text-center border-bottom bg-submaintheme"><span  class="">{{item.APPROVE_TP_NM}}</span></div>
+	                                                            <div  class="col-form-label px-0 py-0 text-center f-w-600"><label class="m-0">{{item.REAL_APPROVE_NM}}</label></div>
+	                                                            <div  class="f-s-10 px-0 py-0 text-center"><label class="m-0 text-max-70">{{item.REAL_DEPT_NM}}</label></div>
+	                                                            <div class="f-s-10 px-1 py-0 text-center h-100">{{item.APPROVE_DH | dateformat('simple-datetime') }} </div>
+	                                                            <div v-if="item.APPROVE_YN == '1'" class="f-s-10 px-0 py-0 text-center pb-1"><span class="badge bg-maintheme">승인</span></div>
+	                                                            <div v-if="item.APPROVE_YN == '2'"  class="f-s-10 px-0 py-0 text-center pb-1"><span class="badge badge-danger">반려</span></div>
+	<!--                                                             <span class="col-form-label px-0 py-1 text-nowrap" > -->
+	<!--                                                                                                                       의견, 메모란입니다.(test) -->
+	<!--                                                                 <button v-if="$options.filters.isNotEmpty(selectedReport.REPORT_NO) && !$options.filters.isNotEmpty(item.APPROVE_YN) && item.APPROVE_ID == user_id && item.APPROVAL == '1' "  -->
+	<!--                                                                                     type="button" class="w-100 text-nowrap  btn btn-primary btn-xs mr-1 rounded-pill"  @click="clickApprove(item, index)">승인</button>    -->
+	<!--                                                                 <button v-if=" $options.filters.isNotEmpty(selectedReport.REPORT_NO) && !$options.filters.isNotEmpty(item.APPROVE_YN) && item.APPROVE_ID == user_id && item.APPROVAL == '1' "  -->
+	<!--                                                                                     type="button" class="w-100 text-nowrap btn btn-pink btn-xs mr-1 rounded-pill"  @click="clickReject(item, index)">반려</button>                                                -->
+	<!--                                                             </span> -->
+	                                                       </div>
+	                                               </div>   
+	                                            </div>
+
+											<div th:replace="contents/ex/report/modal/report-expesnelist :: html"></div>
+
+                                        </div>
+                                        <!-- end wrapper -->
+                                    </div>
+                                    <!-- end scrollbar -->
+                                </div>
+                                <!-- end vertical-box-inner-cell -->
+                            </div>
+                            <!-- end vertical-box-cell -->
+                        </div>
+                        <!-- end vertical-box-row -->
+                        <!-- begin wrapper -->
+                        <!-- end wrapper -->
+                    </div>
+                    <!-- end vertical-box -->
+                </div>
+                <!-- end vertical-box-column -->
+            </div>
+            <!-- end vertical-box --> 
+                    
+			</form>
+		    
+	  	<!-- ================== BEGIN THIS PAGE JS ================== -->
+ 	<div th:replace="contents/ex/report/reported-js :: js"></div>
+ 	
+   </section>
+
+</body>
+</html>

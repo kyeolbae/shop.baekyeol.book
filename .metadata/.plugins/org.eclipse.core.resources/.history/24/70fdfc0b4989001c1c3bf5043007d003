@@ -1,0 +1,56 @@
+package com.ec.eframework.mapper.ex.config;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+//@Component
+import com.ec.eframework.mapper.basic.GridServiceMapper;
+import com.ec.eframework.config.db.FirstMapper;
+@FirstMapper
+public interface ExpConfigServiceMapper extends GridServiceMapper  {
+	
+	int insertExpenseCd(Map<String, Object> map);
+	int updateExpenseCd(Map<String, Object> map);
+	int updateExpenseSource(Map<String, Object> map);
+	int updateExpenseMng(Map<String, Object> map);
+	
+	int updateExpCard(Map<String, Object> map);
+	int insertExpCard(Map<String, Object> map);
+	int updateExpApprvLine(Map<String, Object> map);
+	int insertExpApprvLine(Map<String, Object> map);
+	
+	int insertGasPrice(Map<String, Object> map);
+	int updateGasPrice(Map<String, Object> map);
+	int insertTravelPrice(Map<String, Object> map);
+	int updateTravelPrice(Map<String, Object> map);	
+	int insertExpClosing(Map<String, Object> map);
+	int updateExpClosing(Map<String, Object> map);
+	int deleteExpClosing(Map<String, Object> map);
+	int insertExpClosingType(Map<String, Object> map);
+	int updateExpClosingType(Map<String, Object> map);
+	int deleteExpApprvLine(Map<String, Object> map);
+	int saveReportDetail(Map<String, Object> map);
+	int updateCard(Map<String, Object> map);
+	int insertReportType(Map<String, Object> map);
+	int updateReportType(Map<String, Object> map);
+
+	List<HashMap<String , String >> searchExpenseCd(Map map);
+	List<HashMap<String , String >> searchExpenseSource(Map map);
+	List<HashMap<String , String >> searchExpenseMng(Map map);
+	List<HashMap<String , String >> getReportDetail(Map map);
+	List<HashMap<String , String >> searchExpClosingType(Map map);
+	List<HashMap<String , String >> searchReportType(Map map);
+	List<HashMap<String , String >> searchGasPrice(Map map);
+	List<HashMap<String , String >> searchTravelPrice(Map map);
+	List<HashMap<String , String >> searchExpClosing(Map map);
+	List<HashMap<String , String >> searchExpCard(Map map);
+	List<HashMap<String , String >> searchExpApprvLine(Map map);
+	List<HashMap<String , String >> searchCommonMng(Map map);
+	List<HashMap<String , String >> searchCommonMngDetail(Map map);
+	int insertCommonMng(Map<String, Object> map);
+	int updateCommonMng(Map<String, Object> map);	
+	int insertCommonMngDetail(Map<String, Object> map);
+	int updateCommonMngDetail(Map<String, Object> map);
+		
+}

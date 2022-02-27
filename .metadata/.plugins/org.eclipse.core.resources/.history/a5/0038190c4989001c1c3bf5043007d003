@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+  <meta charset="utf-8" />
+</head>
+
+<body>
+  <section layout:fragment="content">
+
+   <form class="d-flex  flex-column h-100" th:id=${param.pgm_id}  >
+   
+            <div class="ec-grid-box-search ">
+             <div class="ec-grid-lastrow">     
+                      <div class="m-0 radio radio-css radio-inline mx-auto col-lg-1 col-md-10 ec-col-input">
+							<input type="radio" :name="searchtypename" th:id="${param.pgm_id}+'searchcodeM'" value="M" checked="">
+							<label th:for="${param.pgm_id}+'searchcodeM'">매입일자</label>
+					  </div>
+					  <div class="m-0 radio radio-css radio-inline mx-auto col-lg-1 col-md-10 ec-col-input">
+							<input type="radio" :name="searchtypename" th:id="${param.pgm_id}+'searchcodeI'" value="I">
+							<label th:for="${param.pgm_id}+'searchcodeI'">승인일자</label>
+					  </div>
+                     <div class="col-lg-5 col-md-10 ec-col-input">
+                          <daterange-new-component th:pgmid="${param.pgm_id}" subname1="SEARCH_FR_DT" subname2="SEARCH_TO_DT"  required="true"  initval1="firstday" initval2="lastday"></daterange-new-component>
+                      </div>
+             </div>
+		 </div>
+   
+   
+                        <!-- 에이유아이 그리드가 이곳에 생성됩니다. -->
+                    <div class="flex-shrink-1 flex-grow-1 h-100">
+                        <grid-crud ref="gridmaster" :columnlayout="columnlayout" :pgmid="pgmid" subname="gridmaster"  :newitem="newgriditem" buttons=""></grid-crud> 
+                    </div>
+                    
+            <popup-gridcode ref="costcenter" :pgmid="pgmid"  pgmnm="코스트센터" subname="CCTR"  name="CCTR" searchname="작성자"  columnlayout="popupcostcenter"   tablename="CCTR"  :parentgrid="gridView" codecol="CCTR_CD" namecol="CCTR_NM"></popup-gridcode>
+			<popup-gridcode ref="user" :pgmid="pgmid"  pgmnm="담당자" subname="USER"  name="USER" searchname="임직원"  columnlayout="popupuser"   tablename="USER"  :parentgrid="gridView" codecol="" namecol="SHARED_USER_ID"></popup-gridcode>
+				
+                    
+                    
+   </form>
+           
+	  	<!-- ================== BEGIN THIS PAGE JS ================== -->
+ 	<div th:insert="contents/ex/config/cardpurchase-js :: js"></div>  
+   </section>
+
+</body>
+</html>

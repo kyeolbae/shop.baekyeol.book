@@ -1,0 +1,2536 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper namespace="com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper">
+ 
+    		 <select id="getReportMngListByReportNo" resultType="HashMap">
+		     SELECT /* com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper.getReportMngListByReportNo  리포트관리항목값 조회 2021.8.09 hcho   */
+				 A.REPORT_TP, B.MNG_CD, B.MNG_NM, A.ORD, B.INPUT_FORMAT_CD , B.TABLE_CD ,B.COMM_CL_CD , B.COLUMN_LAYOUT , A.MUST_YN 
+				 , C.MNGVAL_CD, C.MNGVAL_NM
+				 FROM EXPENSE_REPORT_TYPE_MNG A, SLIP_MNG B, EXPENSE_REPORT_MNG C
+				WHERE A.COMPANY_CODE = B.COMPANY_CODE 
+				AND A.COMPANY_CODE = C.COMPANY_CODE
+				AND A.COMPANY_CODE = #{g_comCd}
+				AND A.MNG_CD = B.MNG_CD 
+				AND A.MNG_CD  = C.MNG_CD
+				AND C.REPORT_NO = #{REPORT_NO}
+				ORDER BY C.MNG_SEQ, A.ORD, A.MNG_CD
+		     </select>
+		     
+  		 <select id="getReportConfig" resultType="HashMap">
+		     SELECT /* com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper.getReportConfig  리포트 config 2021.8.09 hcho   */
+				 A.COMPANY_CODE,
+					A.REPORT_TP,
+					A.REPORT_TP_NM,
+					A.REPORT_TITLE,
+					A.APPROVE_LINE_TP,
+					A.PROCESS_APPRV_GRP,
+					A.SELF_APPRV_YN,
+					A.CHG_APPRV_YN,
+					A.REMARK
+				 FROM EXPENSE_REPORT_TYPE A
+				WHERE A.REPORT_TP = #{REPORT_TP}
+				AND A.COMPANY_CODE = #{g_comCd}
+				AND USE_YN = '1'
+		 </select>		     
+		     
+ 
+  		 <select id="getReportMng" resultType="HashMap">
+		     SELECT /* com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper.getReportMng  리포트관리항목조회 2021.7.28 hcho   */
+				 A.REPORT_TP, B.MNG_CD, B.MNG_NM, A.ORD, B.INPUT_FORMAT_CD , B.TABLE_CD ,B.COMM_CL_CD , B.COLUMN_LAYOUT , A.MUST_YN 
+				 FROM EXPENSE_REPORT_TYPE_MNG A, SLIP_MNG B
+				WHERE A.COMPANY_CODE = B.COMPANY_CODE 
+				AND REPORT_TP = #{REPORT_TP}
+				AND A.COMPANY_CODE = #{g_comCd}
+				AND A.MNG_CD = B.MNG_CD 
+				AND B.USE_YN = '1'
+				ORDER BY A.ORD 
+		 </select>
+		 
+ 		 <select id="getOcrImgByEvidNo" resultType="HashMap">
+		     SELECT /* com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper.getOcrImgByEvidNo  OCR 파일조회  */
+                A.FILE_NO, B.MAINFILE_YN, UPPER(SUBSTR(B.ORG_FILE_NAME FROM -3)) AS FILE_TYPE, B.ORG_FILE_NAME
+                , GET_FILE_KIND(B.ORG_FILE_NAME) AS FILE_KIND
+                FROM OCR_RECEIPT A, ADMIN_FILE B
+                WHERE A.CARD_EVID_NO =  #{CARD_EVID_NO}
+                  AND A.FILE_NO = B.FILE_NO
+                  AND B.COMPANY_CODE = #{g_comCd}
+                ORDER BY  B.MAINFILE_YN DESC, B.DISPLAY_ORD ASC;
+		 </select>
+		 
+ 		 <select id="getExpFileListByReportNo" resultType="HashMap">
+		    select * from (
+		     SELECT /* com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper.getExpFileListByReportNo  파일조회(by report)  */
+                A.FILE_NO,  UPPER(SUBSTR(B.ORG_FILE_NAME FROM -3)) AS FILE_TYPE, B.ORG_FILE_NAME
+                , GET_FILE_KIND(B.ORG_FILE_NAME) AS FILE_KIND, A.EXPENSE_NO, B.MAINFILE_YN, B.DISPLAY_ORD
+                FROM EXPENSE_FILE A, ADMIN_FILE B, EXPENSE_REPORT C, EXPENSE_MST D
+                WHERE C.REPORT_NO = #{REPORT_NO}
+                  AND C.REPORT_NO = D.REPORT_NO
+                  AND D.EXPENSE_NO = A.EXPENSE_NO
+                  AND A.FILE_NO = B.FILE_NO
+              union all
+              SELECT  D.URL as FILE_NO,  'URL' AS FILE_TYPE, '' as ORG_FILE_NAME
+                , 'URL' COLLATE utf8mb4_unicode_ci AS FILE_KIND, D.EXPENSE_NO , '1' as MAINFILE_YN,  0 as DISPLAY_ORD
+                FROM  EXPENSE_REPORT C, EXPENSE_MST D
+                WHERE C.REPORT_NO = #{REPORT_NO}
+                  AND C.REPORT_NO = D.REPORT_NO
+                  AND (D.URL is not null and D.URL != '')
+                  AND D.SOURCE_TP = '4'  -- 유류비
+                 ) AA 
+                ORDER BY  AA.EXPENSE_NO ASC,  AA.MAINFILE_YN DESC, AA.DISPLAY_ORD ASC;
+		 </select> 
+		 
+		 <select id="getExpenseFilesByNo" resultType="HashMap">
+		     SELECT /* com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper.getExpenseFilesByNo  파일조회  */
+                A.FILE_NO, B.MAINFILE_YN, UPPER(SUBSTR(B.ORG_FILE_NAME FROM -3)) AS FILE_TYPE, B.ORG_FILE_NAME
+                , GET_FILE_KIND(B.ORG_FILE_NAME) AS FILE_KIND, B.MOD_DH
+                FROM EXPENSE_FILE A, ADMIN_FILE B
+                WHERE A.EXPENSE_NO =  #{EXPENSE_NO}
+                  AND A.FILE_NO = B.FILE_NO
+                ORDER BY  B.MAINFILE_YN DESC, B.DISPLAY_ORD ASC;
+		 </select>
+		 
+		 
+		 <select id="getExpenseFilesByNos" resultType="HashMap" parameterType="java.util.Map">
+		   select * from (
+		     SELECT /* com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper.getExpenseFilesByNos  파일조회  */
+                A.FILE_NO, B.MAINFILE_YN, UPPER(SUBSTR(B.ORG_FILE_NAME FROM -3)) AS FILE_TYPE, B.ORG_FILE_NAME
+                , GET_FILE_KIND(B.ORG_FILE_NAME) AS FILE_KIND,A.EXPENSE_NO  ,B.MOD_DH
+                FROM EXPENSE_FILE A, ADMIN_FILE B
+                WHERE A.EXPENSE_NO IN 
+		        <foreach collection="ds_master" item="item"  open="(" close=")" separator=",">
+		            #{item.EXPENSE_NO}
+		        </foreach> 
+                  AND A.FILE_NO = B.FILE_NO
+              union all
+                SELECT  D.URL as FILE_NO, '1' as MAINFILE_YN, 'URL' AS FILE_TYPE, '' as ORG_FILE_NAME
+                , 'URL' COLLATE utf8mb4_unicode_ci AS FILE_KIND, D.EXPENSE_NO , D.MOD_DH 
+                FROM  EXPENSE_MST D
+                WHERE 
+                   (D.URL is not null and D.URL != '')
+                  AND D.SOURCE_TP = '4'  -- 유류비
+                  and D.EXPENSE_NO IN 
+		        <foreach collection="ds_master" item="item"  open="(" close=")" separator=",">
+		            #{item.EXPENSE_NO}
+		        </foreach> 
+                  ) aa                  
+                ORDER BY  aa.EXPENSE_NO;
+		 </select>
+		 
+		 
+		 <select id="getFilesByGroupNo" resultType="HashMap">
+		     SELECT /* com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper.getFilesByGroupNo  파일조회  */
+                B.FILE_NO, B.MAINFILE_YN, UPPER(SUBSTR(B.ORG_FILE_NAME FROM -3)) AS FILE_TYPE, B.ORG_FILE_NAME
+                , GET_FILE_KIND(B.ORG_FILE_NAME) AS FILE_KIND, B.MOD_DH
+                FROM ADMIN_FILE B
+                WHERE  B.GROUP_NO =  #{GROUP_NO} 
+                AND USE_YN = '1'
+                ORDER BY  B.DISPLAY_ORD ASC;
+		 </select>
+		 
+        <select id="getExpTravelDupPeriod" resultType="int">
+            
+                SELECT /* com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper.getExpTravelDupPeriod  출장일 중복확인*/
+                COUNT(*)
+                FROM EXPENSE_MST 
+                WHERE COMPANY_CODE = #{g_comCd}
+                AND SOURCE_TP =  #{SOURCE_TP}
+                AND EXPENSE_EMP_NO = #{EXPENSE_EMP_NO}
+                AND USE_YN = '1'
+                AND (EXPENSE_NO = '' OR EXPENSE_NO  IS NULL OR EXPENSE_NO !=  #{EXPENSE_NO} ) 
+                AND ((BIZTRIP_START &lt;= #{BIZTRIP_START}    AND BIZTRIP_END &gt; #{BIZTRIP_START} ) OR
+                    (BIZTRIP_START &lt; #{BIZTRIP_END}    AND BIZTRIP_END &gt;= #{BIZTRIP_END} ) OR 
+                     (BIZTRIP_START = #{BIZTRIP_START}    AND BIZTRIP_END = #{BIZTRIP_END} )
+                    )
+        </select>
+
+        <select id="getMngList" resultType="HashMap">
+            
+				SELECT /* com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper.getMngList  비용관리항목조회 신규건*/
+				A.COMPANY_CODE, A.SOURCE_TP, B.EXPENSE_CD , C.MNG_CD, D.MNG_NM,
+				D.INPUT_FORMAT_CD, D.TABLE_CD, D.COLUMN_LAYOUT, D.COMM_CL_CD, C.MUST_YN
+				FROM EXPENSE_SOURCE_CATEGORY A,
+				EXPENSE_CATEGORY B,
+				EXPENSE_CATEGORY_MNG C,
+				SLIP_MNG D
+				WHERE A.COMPANY_CODE = B.COMPANY_CODE 
+				AND B.COMPANY_CODE = C.COMPANY_CODE 
+				AND C.COMPANY_CODE = D.COMPANY_CODE 
+				AND A.COMPANY_CODE = #{g_comCd}
+				AND  A.EXPENSE_CD = B.EXPENSE_CD
+				AND B.EXPENSE_CD = C.EXPENSE_CD
+				AND C.MNG_CD = D.MNG_CD
+				AND A.SOURCE_TP = #{SOURCE_TP}  
+				AND A.SOURCE_TP = C.SOURCE_TP
+				AND B.EXPENSE_CD = #{EXPENSE_CD}
+				ORDER BY D.ORD;           
+ 
+        </select>
+
+
+        <select id="getExpMngList" resultType="HashMap">
+            
+                SELECT /* com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper.getExpMngList  비용관리항목조회 관리항목 값*/
+                A.COMPANY_CODE, A.SOURCE_TP, B.EXPENSE_CD , C.MNG_CD, D.MNG_NM,
+                D.INPUT_FORMAT_CD, D.TABLE_CD, D.COLUMN_LAYOUT, D.COMM_CL_CD, C.MUST_YN, E.MNGVAL_CD , E.MNGVAL_NM, E.EXPENSE_NO
+                , IFNULL(#{EXPENSE_SPLIT_NO}, 0) as EXPENSE_SPLIT_NO
+                , F.REF2 AS URL
+                FROM EXPENSE_SOURCE_CATEGORY A,
+                EXPENSE_CATEGORY B,
+                EXPENSE_CATEGORY_MNG C,
+                SLIP_MNG D LEFT OUTER JOIN EXPENSE_MST_MNG E
+                ON D.COMPANY_CODE = E.COMPANY_CODE
+                AND D.MNG_CD = E.MNG_CD
+                AND E.EXPENSE_NO = #{EXPENSE_NO}
+                 <if test='EXPENSE_SPLIT_NO != null  and EXPENSE_SPLIT_NO !=""'>
+                AND E.EXPENSE_SPLIT_NO = #{EXPENSE_SPLIT_NO}
+                 </if>
+                AND E.USE_YN = '1'
+                LEFT OUTER JOIN ADMIN_SYSTEM_CODE F
+                ON F.COMM_CL_CD = 'TBL_NM'
+                AND F.COMM_CD = D.TABLE_CD       
+                WHERE A.COMPANY_CODE = B.COMPANY_CODE 
+                AND B.COMPANY_CODE = C.COMPANY_CODE 
+                AND C.COMPANY_CODE = D.COMPANY_CODE 
+                AND A.COMPANY_CODE = #{g_comCd}
+                AND  A.EXPENSE_CD = B.EXPENSE_CD
+                AND B.EXPENSE_CD = C.EXPENSE_CD
+                AND C.MNG_CD = D.MNG_CD
+                AND A.SOURCE_TP = #{SOURCE_TP}  
+                AND A.SOURCE_TP = C.SOURCE_TP
+                AND B.EXPENSE_CD = #{EXPENSE_CD}
+                ORDER BY D.ORD;           
+ 
+        </select>
+        
+        <select id="getExpMngLists" resultType="HashMap">
+            
+         SELECT /* com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper.getExpMngLists  비용관리항목 전체조회 관리항목 값*/
+              AA.*, B.MNGVAL_CD, B.MNGVAL_NM FROM		
+		        (SELECT 
+	                A.EXPENSE_NO, A.EXPENSE_SPLIT_NO , A.BELONGING_TP, A.SPLIT_TP,
+					Z.COMPANY_CODE ,
+	                A.TAX_CD,
+					A.ACC_CD,
+					A.CCTR_CD,
+					A.PS_CD,
+					A.EXPENSE_AMT,
+					A.RMK ,
+					C.ORD,
+					C.INPUT_FORMAT_CD,
+					C.MNG_CD
+					FROM EXPENSE_MST Z , EXPENSE_MST_SPLIT A, EXPENSE_CATEGORY_MNG M, SLIP_MNG C
+									WHERE Z.EXPENSE_NO = #{EXPENSE_NO}
+				AND Z.EXPENSE_NO = A.EXPENSE_NO
+				AND Z.USE_YN = '1'
+				AND Z.COMPANY_CODE  = M.COMPANY_CODE
+				AND A.EXPENSE_CD = M.EXPENSE_CD 
+				AND Z.SOURCE_TP  = M.SOURCE_TP 
+				AND M.MNG_CD  = C.MNG_CD 
+				AND Z.COMPANY_CODE  = C.COMPANY_CODE ) AA 
+				LEFT OUTER JOIN EXPENSE_MST_MNG B
+				ON AA.MNG_CD = B.MNG_CD
+					AND AA.EXPENSE_NO  = #{EXPENSE_NO}
+					AND AA.EXPENSE_NO = B.EXPENSE_NO 
+					AND AA.EXPENSE_SPLIT_NO = B.EXPENSE_SPLIT_NO
+					AND AA.COMPANY_CODE = B.COMPANY_CODE 
+			  ORDER BY AA.EXPENSE_SPLIT_NO, AA.ORD
+
+        </select>
+
+
+        <select id="getTollList" resultType="HashMap">
+            
+                SELECT /* com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper.getTollList 톨비조회 */
+                ROW_NUMBER() OVER() AS ID,
+                TOLL_NO,
+				EXPENSE_NO,
+				COMPANY_CODE,
+				RECEIPT_DT,
+				RECEIPT_TS,
+                DATE_FORMAT(TO_DATE(CONCAT(RECEIPT_DT, RECEIPT_TS,'00')),'%Y년%m월%d일%H시%i분') DH,
+				BIZ_NO,
+				BIZ_NM,
+				TEL_NO,
+				SUPPLY_AMT,
+				VAT_AMT,
+				TOT_AMT,
+				CARD_NO,
+				HIPASS_DOC_NO,
+				RMK,
+				USE_YN,
+				REGR_DH,
+				MOD_DH,
+				DEL_DH,
+				REGR_ID,
+				MOD_ID,
+				DEL_ID,
+				REGR_NM,
+				MOD_NM,
+				DEL_NM
+                FROM EXPENSE_MST_TOLL A
+                WHERE A.EXPENSE_NO = #{EXPENSE_NO}
+                AND USE_YN = '1'
+                ORDER BY A.TOLL_NO;           
+ 
+        </select>
+        
+        
+        <select id="getGpsList" resultType="HashMap">
+            
+                SELECT /* com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper.getGpsList gps경로조회 */
+                ROW_NUMBER() OVER() AS ID,
+				EXPENSE_NO,
+				COMPANY_CODE,
+				START_DH,
+				START_LAT LAT,
+				START_LONG "LONG",
+				START_ADDR PASS_ADDR,
+				GPS_ORDER
+                FROM EXPENSE_GPS A
+                WHERE A.EXPENSE_NO = #{EXPENSE_NO}
+                AND A.COMPANY_CODE = #{g_comCd}
+                AND USE_YN = '1'
+                ORDER BY A.GPS_ORDER;
+ 
+        </select>
+        
+        
+        <select id="getSplitedExpenseList" resultType="HashMap">
+            
+                SELECT /* com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper.getSplitedExpenseList  */
+                ROW_NUMBER() OVER() AS ID,
+                A.EXPENSE_NO	,
+				A.EXPENSE_SPLIT_NO	,
+				A.SPLIT_TP	,
+				A.TAX_CD	,
+				A.ACC_CD	,
+				A.EXPENSE_CD,
+				D.EXPENSE_NM,
+				A.BELONGING_TP	,
+				A.CCTR_CD,
+				B.CCTR_NM,
+				A.PS_CD	,
+				C.PS_NM,
+				A.EXPENSE_AMT	,
+				A.RMK	,
+				A.REGR_DH	,
+				A.MOD_DH	,
+				A.DEL_DH	,
+				A.REGR_ID	,
+				A.MOD_ID	,
+				A.DEL_ID	
+                FROM EXPENSE_MST_SPLIT A 
+                     LEFT OUTER JOIN EXPENSE_COST_CENTER B
+                     ON B.COMPANY_CODE = #{g_comCd}
+                     AND A.CCTR_CD = B.CCTR_CD
+                     LEFT OUTER JOIN EXPENSE_PROJECT C
+                     ON C.COMPANY_CODE = #{g_comCd}
+                     AND A.PS_CD = C.PS_CD           
+                     LEFT OUTER JOIN EXPENSE_CATEGORY D
+                     ON D.COMPANY_CODE = #{g_comCd}
+                     AND A.EXPENSE_CD = D.EXPENSE_CD                         
+                WHERE A.EXPENSE_NO = #{EXPENSE_NO}
+                ORDER BY A.EXPENSE_SPLIT_NO;           
+ 
+        </select>
+
+        <select id="getExpListByReportNo" resultType="HashMap">
+
+					SELECT /* com.ec.eframework.mapper.ex.expense.ExpenseMstServiceMapper.getExpListByReportNo  리포트번호로 비용리스트 조회*/
+					                 A.EXPENSE_NO, A.SOURCE_TP, FC_EXPS_GET_SYSTEM_CODE_NM2('EX_SOURCE_TP','EX_TAX_SOURCE_TP',A.SOURCE_TP, #{g_lang}) AS SOURCE_TP_NM, 
+					                 EXPENSE_AMT, EXPENSE_VAT_AMT, A.RMK,  C.EXPENSE_CD, C.EXPENSE_NM, CONCAT(RECEIPT_DT,RECEIPT_TS) AS RECEIPT_DH,
+<!-- 					                IFNULL(B.FILE_NO,'') AS FILE_NO, -->
+<!-- 					            IFNULL(BB.ORG_FILE_NAME,'') AS FILE_NM, -->
+					                IFNULL(D.CCTR_CD,'') CCTR_CD, IFNULL(D.CCTR_NM,'') CCTR_NM,
+					            IFNULL(P.PS_CD,'') PS_CD, IFNULL(P.PS_NM,'') PS_NM,
+<!-- 					            UCASE(SUBSTR(BB.ORG_FILE_NAME,-3,3)) FILE_TYPE, -->
+                                    A.DISTANCE_TP,
+                                    A.DISTANCE,
+                                    A.MILEAGE_RATE_CD,
+                                    A.ODOMETER_START,
+                                    A.ODOMETER_END,
+                                    A.START_ADDR,
+                                    A.END_ADDR,
+                                    A.END_DH,
+                                    IFNULL(A.URL,'') URL,
+                                    A.SUPPLY_AMT,
+                                    A.BIZTRIP_START,
+                                    A.BIZTRIP_END,
+                                    A.BIZTRIP_DAYS,
+                                    A.BIZTRIP_TP,
+                                    A.BIZ_NM,
+                                    A.BIZ_ADDR,
+			                        A.BIZ_CATEGORY,
+			                        A.BIZ_TYPE,
+			                        A.PAY_AMT,
+			                        IFNULL(EMP.EMP_NM,'')  AS EMP_NM,
+			                        JSON_ARRAYAGG(JSON_OBJECT("FILE_NO", B.FILE_NO , "FILE_TYPE", UCASE(SUBSTR(BB.ORG_FILE_NAME,-3,3))) ) as FILE_LIST
+					                FROM  EXPENSE_CATEGORY C, EXPENSE_MST A
+					                LEFT OUTER JOIN EXPENSE_FILE B INNER JOIN ADMIN_FILE BB
+					                   ON B.FILE_NO = BB.FILE_NO 
+					                ON A.EXPENSE_NO = B.EXPENSE_NO
+					                AND (B.USE_YN = '1' )
+<!-- 					                LEFT OUTER JOIN ADMIN_FILE BB  -->
+<!-- 					                ON B.FILE_NO = BB.FILE_NO -->
+<!-- 					                AND (B.USE_YN = '1' ) -->
+					                LEFT OUTER JOIN ADMIN_EMP EMP
+					                ON A.COMPANY_CODE = EMP.COMPANY_CODE
+					                AND A.EXPENSE_EMP_NO = EMP.EMP_NO    
+					            LEFT OUTER JOIN EXPENSE_COST_CENTER  D
+					            ON A.BELONGING_TP = '1'
+					            AND D.CCTR_CD = A.CCTR_CD
+					            AND A.COMPANY_CODE = D.COMPANY_CODE
+					            LEFT OUTER JOIN EXPENSE_PROJECT  P
+					            ON A.BELONGING_TP = '2'
+					            AND A.PS_CD = P.PS_CD
+					            AND A.COMPANY_CODE = P.COMPANY_CODE
+					                WHERE REPORT_NO = #{REPORT_NO}
+					                AND (A.USE_YN = '1' )
+					                AND C.EXPENSE_CD = A.EXPENSE_CD 
+					                AND C.COMPANY_CODE = A.COMPANY_CODE
+					                AND A.COMPANY_CODE = #{g_comCd}
+					                GROUP BY A.EXPENSE_NO
+					                ORDER BY RECEIPT_DT,RECEIPT_TS ;
+ 
+        </select>
+ 
+ 
+         <select id="getExpAllList" resultType="HashMap">
+                /* 보고서 묶인 건 */
+                SELECT /* getExpAllList */ 
+                '1' CHECKED, A.REPORT_NO, A.EXPENSE_NO, A.EXPENSE_AMT, A.EXPENSE_VAT_AMT, SOURCE_TP, 
+                FC_EXPS_GET_DESCRIPTION('ADMIN_SYSTEM_CODE',C.DESCRIPTION_CODE,#{g_lang} ) TYPE_NM 
+                FROM EXPENSE_MST A , EXPENSE_REPORT B, ADMIN_SYSTEM_CODE C 
+                WHERE A.REPORT_NO = B.REPORT_NO
+                AND  B.USE_YN = '1'
+                AND  A.USE_YN = '1'
+                AND A.REGR_ID = #{g_userId}
+                AND (B.SUBMIT_DH IS NULL or B.SUBMIT_DH ='')
+                AND (B.APPROVE_DH IS NULL or B.APPROVE_DH = '')
+                AND COMM_CL_CD = 'EX_SOURCE_TP'
+                AND SOURCE_TP = COMM_CD
+                AND A.REPORT_NO = #{REPORT_NO}
+                
+                UNION ALL 
+                
+                /* 보고서 안 묶인 건 */
+                SELECT 
+                '0' CHECKED, A.REPORT_NO, A.EXPENSE_NO, A.EXPENSE_AMT, A.EXPENSE_VAT_AMT,SOURCE_TP,
+                FC_EXPS_GET_DESCRIPTION('ADMIN_SYSTEM_CODE',C.DESCRIPTION_CODE, 'ko') TYPE_NM
+                FROM EXPENSE_MST A ,  ADMIN_SYSTEM_CODE C 
+                WHERE A.USE_YN = '1'
+                AND A.REGR_ID = #{g_userId}
+                AND (A.REPORT_NO Is null or A.REPORT_NO = '' or A.REPORT_NO !=  #{REPORT_NO})
+                AND COMM_CL_CD = 'EX_SOURCE_TP'
+                AND SOURCE_TP = COMM_CD
+                AND A.COMPANY_CODE = #{g_comCd}
+                ORDER BY CHECKED DESC,REPORT_NO, EXPENSE_NO
+
+ 
+        </select>
+    
+        <insert id="insertExpenseItemCard">
+               <selectKey  resultType="long" keyProperty="EXPENSE_NO" order="BEFORE">
+                    SELECT NEXTVAL(EXPENSE_SEQ);
+               </selectKey>
+	        INSERT INTO EXPENSE_MST(COMPANY_CODE
+									,EXPENSE_NO
+									,SOURCE_TP
+									,EVID_NO
+									,RECEIPT_DT
+									,RECEIPT_TS
+									,POSTING_DT
+									,SUPPLY_AMT
+									,VAT_AMT
+									,ETC_AMT
+									,TOT_AMT
+									,EXPENSE_EMP_NO
+									,SPLIT_YN
+									,EXPENSE_AMT
+									,EXPENSE_VAT_AMT
+									,EXPENSE_CD
+									,BELONGING_TP
+									,CCTR_CD
+									,PS_CD
+									,RMK
+									,CARD_CD
+									,CARD_BILL_NO
+									,OVERSEAS_YN
+									,OVERSEAS_CUR_CD
+									,OVERSEAS_AMT
+									,OVERSEAS_DH
+									,TAX_TP
+									,BIZ_NO
+									,BIZ_NM
+									,BP_CD
+									,BIZ_TYPE
+									,BIZ_CATEGORY
+									,BIZ_ADDR
+									,PAY_BP_CD
+									,PAY_TERM
+									,PAY_BPACCT_SEQ
+									,USE_YN
+									,REPORT_NO
+									,REGR_DH
+									,MOD_DH
+									,DEL_DH
+									,REGR_ID
+									,EXCLUDE_AMT,PAY_AMT
+									,BASE_CURRENCY_CD
+									
+	        )
+	        SELECT                  A.COMPANY_CODE
+                                    , #{EXPENSE_NO}
+                                    ,#{SOURCE_TP}
+                                    , A.EVID_NO
+                                    , A.RECEIPT_DT
+                                    , A.RECEIPT_TS
+                                    , A.RECEIPT_DT
+                                    ,A.SUPPLY_AMT
+                                    ,A.VAT_AMT
+                                    ,A.ETC_AMT
+                                    ,A.TOT_AMT
+                                    ,B.EMP_NO
+                                    ,nvl(#{SPLIT_YN},'0')
+                                    , TO_NUMBER(#{EXPENSE_AMT})
+                                    , TO_NUMBER(#{EXPENSE_VAT_AMT})
+                                    , #{EXPENSE_CD}
+                                    , #{BELONGING_TP}  
+                                    ,#{CCTR_CD}
+                                    ,#{PS_CD}
+                                    ,#{RMK}
+                                    ,A.CARD_CD
+                                    ,A.CARD_BILL_NO
+                                    ,A.OVERSEAS_YN
+                                    , A.OVERSEAS_CUR_CD
+                                    ,A.OVERSEAS_AMT
+                                    , A.OVERSEAS_DH
+                                    , A.TAX_TP
+                                    ,A.BIZ_NO
+                                    ,A.BIZ_NM
+                                    ,'' -- BP_CD
+                                    , A.BIZ_TYPE
+                                    , A.BIZ_CATEGORY
+                                    , A.BIZ_ADDR
+                                    ,'' -- PAY_BP_CD
+                                    , '' -- PAY_TERM
+                                    , 0 -- PAY_BPACCT_SEQ
+                                    ,'1' -- USE_YN
+                                    ,#{REPORT_NO}
+                                    ,REGR_DH()
+                                    ,#{MOD_DH}
+                                    ,'' -- DEL_DH
+                                    ,#{g_userId}
+                                    ,0
+                                    ,TO_NUMBER(#{EXPENSE_AMT}) + TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0
+                                    ,EX_GET_BASE_CURRENCY(#{g_comCd})
+                  FROM EXPENSE_INBOX_CARD A, EXPENSE_CARD B
+                  WHERE A.EVID_NO = #{EVID_NO}
+                  AND A.COMPANY_CODE = #{g_comCd}
+                  AND A.COMPANY_CODE = B.COMPANY_CODE
+                  AND A.CARD_NO = B.CARD_NO
+                  ;
+                  
+               <include refid="insertExpenseFiles"></include>  
+                  
+                 <if test = "mngs != null" >
+                  INSERT INTO EXPENSE_MST_MNG (
+                    EXPENSE_NO, MNG_CD, COMPANY_CODE, ORD, MNGVAL_CD, MNGVAL_NM, USE_YN, REGR_DH, MOD_DH, DEL_DH, REGR_ID)
+                  VALUES
+                <foreach collection="mngs" item="item" separator=" , " >
+                    ( #{EXPENSE_NO},  "${item.MNG_CD}",  #{g_comCd}, 0, "${item.MNGVAL_CD}", "${item.MNGVAL_NM}",  "1" , REGR_DH(), #{MOD_DH}, null, #{g_userId})
+                </foreach>                
+                  ;
+                </if>
+	              
+	              UPDATE EXPENSE_INBOX_CARD SET EXPENSE_NO = #{EXPENSE_NO}, MOD_DH = #{MOD_DH} WHERE EVID_NO = #{EVID_NO}  AND COMPANY_CODE = #{g_comCd} ;
+	              
+                <!-- LOG -->
+                call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 최초 생성'));  
+
+    </insert>
+    
+            <insert id="insertExpenseItemEtax">
+               <selectKey  resultType="long" keyProperty="EXPENSE_NO" order="BEFORE">
+                    SELECT NEXTVAL(EXPENSE_SEQ);
+               </selectKey>
+            INSERT INTO EXPENSE_MST(COMPANY_CODE
+                                    ,EXPENSE_NO
+                                    ,SOURCE_TP
+                                    ,EVID_NO
+                                    ,RECEIPT_DT
+                                    ,RECEIPT_TS
+                                    ,POSTING_DT
+                                    ,SUPPLY_AMT
+                                    ,VAT_AMT
+                                    ,ETC_AMT
+                                    ,TOT_AMT
+                                    ,EXPENSE_EMP_NO
+                                    ,SPLIT_YN
+                                    ,EXPENSE_AMT
+                                    ,EXPENSE_VAT_AMT
+                                    ,EXPENSE_CD
+                                    ,BELONGING_TP
+                                    ,CCTR_CD
+                                    ,PS_CD
+                                    ,RMK
+                                    ,CARD_CD
+                                    ,CARD_BILL_NO
+                                    ,OVERSEAS_YN
+                                    ,OVERSEAS_CUR_CD
+                                    ,OVERSEAS_AMT
+                                    ,OVERSEAS_DH
+                                    ,TAX_TP
+                                    ,BIZ_NO
+                                    ,BIZ_NM
+                                    ,BP_CD
+                                    ,BIZ_TYPE
+                                    ,BIZ_CATEGORY
+                                    ,BIZ_ADDR
+                                    ,PAY_BP_CD
+                                    ,PAY_TERM
+                                    ,PAY_BPACCT_SEQ
+                                    ,USE_YN
+                                    ,REPORT_NO
+                                    ,REGR_DH
+                                    ,MOD_DH
+                                    ,DEL_DH
+                                    ,REGR_ID
+                                    ,EXCLUDE_AMT,PAY_AMT
+                                    ,BASE_CURRENCY_CD
+            )
+            SELECT                  COMPANY_CODE
+                                    , #{EXPENSE_NO}
+                                    ,#{SOURCE_TP}
+                                    , EVID_NO
+                                    ,RECEIPT_DT
+                                    , ''  RECEIPT_TS
+                                    ,RECEIPT_DT
+                                    ,SUPPLY_AMT
+                                    ,VAT_AMT
+                                    ,0 ETC_AMT
+                                    ,TOT_AMT
+                                    , ''   /*  EXPENSE_EMP_NO */
+                                    ,#{SPLIT_YN}
+                                    , SUPPLY_AMT AS EXPENSE_AMT
+                                    , VAT_AMT AS EXPENSE_VAT_AMT
+                                    , #{EXPENSE_CD}
+                                    , #{BELONGING_TP}  
+                                    ,#{CCTR_CD}
+                                    ,#{PS_CD}
+                                    ,#{RMK}
+                                    ,'' as CARD_CD
+                                    ,'' as CARD_BILL_NO
+                                    ,'' as OVERSEAS_YN
+                                    , '' as OVERSEAS_CUR_CD
+                                    , 0 as OVERSEAS_AMT
+                                    ,'' as OVERSEAS_DH
+                                    , TAX_TP
+                                    ,BIZ_NO
+                                    ,BIZ_NM
+                                    ,#{BP_CD} AS BP_CD
+                                    , BIZ_TYPE
+                                    , BIZ_CATEGORY
+                                    , BIZ_ADDR
+                                    ,#{BP_CD} AS PAY_BP_CD
+                                    , '' -- PAY_TERM
+                                    , 0 -- PAY_BPACCT_SEQ
+                                    ,'1' -- USE_YN
+                                    ,#{REPORT_NO}
+                                    ,REGR_DH()
+                                    ,#{MOD_DH}
+                                    ,'' -- DEL_DH
+                                    ,#{g_userId}
+                                    ,0
+                                    ,SUPPLY_AMT+VAT_AMT
+                                    ,EX_GET_BASE_CURRENCY(#{g_comCd})
+                  FROM EXPENSE_INBOX_TAX
+                  WHERE EVID_NO = #{EVID_NO}
+                  AND COMPANY_CODE = #{g_comCd};
+                  
+                  UPDATE EXPENSE_INBOX_TAX SET EXPENSE_NO = #{EXPENSE_NO}, MOD_DH = #{MOD_DH} WHERE EVID_NO = #{EVID_NO};
+                  
+                  <if test = "mngs != null  and SPLIT_YN == '0'  "  >
+				      INSERT INTO EXPENSE_MST_MNG (
+				        EXPENSE_NO,EXPENSE_SPLIT_NO, MNG_CD, COMPANY_CODE, ORD, MNGVAL_CD, MNGVAL_NM, USE_YN, REGR_DH, MOD_DH, DEL_DH, REGR_ID)
+				      VALUES
+					    <foreach collection="mngs" item="item" separator=" , " >
+					        ( #{EXPENSE_NO}, 0 , "${item.MNG_CD}",  #{g_comCd}, 0, "${item.MNGVAL_CD}", "${item.MNGVAL_NM}",  "1" , REGR_DH(), #{MOD_DH}, null, #{g_userId})
+					    </foreach>                
+		                  ;
+                  </if>
+                  
+                  <if test = "splitedMngList != null and SPLIT_YN == '1' "  >
+				      INSERT INTO EXPENSE_MST_MNG (
+				        EXPENSE_NO, EXPENSE_SPLIT_NO, MNG_CD, COMPANY_CODE, ORD, MNGVAL_CD, MNGVAL_NM, USE_YN, REGR_DH, MOD_DH, DEL_DH, REGR_ID)
+				      VALUES
+					    <foreach collection="splitedMngList" item="item" separator=" , " >
+					        ( #{EXPENSE_NO}, ${item.EXPENSE_SPLIT_NO}, "${item.MNG_CD}",  #{g_comCd}, 0, "${item.MNGVAL_CD}", "${item.MNGVAL_NM}",  "1" , REGR_DH(), #{MOD_DH}, null, #{g_userId})
+					    </foreach>                
+		                  ;
+                  </if>
+                  <if test = "splitedList != null" >
+				      INSERT INTO EXPENSE_MST_SPLIT (
+				        EXPENSE_NO	,
+						EXPENSE_SPLIT_NO	,
+						SPLIT_TP	,
+						TAX_CD	,
+						ACC_CD	,
+						EXPENSE_CD	,
+						BELONGING_TP	,
+						CCTR_CD	,
+						PS_CD	,
+						EXPENSE_AMT	,
+						RMK	,
+						REGR_DH	,
+						MOD_DH	,
+						DEL_DH	,
+						REGR_ID	,
+						MOD_ID	,
+						DEL_ID	
+)
+				      VALUES
+					    <foreach collection="splitedList" item="item" separator=" , " >
+					        ( #{EXPENSE_NO},  ${item.EXPENSE_SPLIT_NO},  #{item.SPLIT_TP}, #{item.TAX_CD}, #{item.ACC_CD}, "${item.EXPENSE_CD}", "${item.BELONGING_TP}",
+					         "${item.CCTR_CD}","${item.PS_CD}",TO_NUMBER(#{item.EXPENSE_AMT}),#{item.RMK}, REGR_DH(), #{MOD_DH}, null, #{g_userId}, #{g_userId}, null)
+					    </foreach>                
+		                  ;
+                  </if>
+                <!-- LOG -->
+                call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 최초 생성'));  
+
+    </insert>
+
+           <insert id="insertExpenseItemPtax">
+               <selectKey  resultType="long" keyProperty="EXPENSE_NO" order="BEFORE">
+                    SELECT NEXTVAL(EXPENSE_SEQ);
+               </selectKey>
+            INSERT INTO EXPENSE_MST(COMPANY_CODE
+                                    ,EXPENSE_NO
+                                    ,SOURCE_TP
+                                    ,EVID_NO
+                                    ,RECEIPT_DT
+                                    ,RECEIPT_TS
+                                    ,POSTING_DT
+                                    ,SUPPLY_AMT
+                                    ,VAT_AMT
+                                    ,ETC_AMT
+                                    ,TOT_AMT
+                                    ,EXPENSE_EMP_NO
+                                    ,SPLIT_YN
+                                    ,EXPENSE_AMT
+                                    ,EXPENSE_VAT_AMT
+                                    ,EXPENSE_CD
+                                    ,BELONGING_TP
+                                    ,CCTR_CD
+                                    ,PS_CD
+                                    ,RMK
+                                    ,CARD_CD
+                                    ,CARD_BILL_NO
+                                    ,OVERSEAS_YN
+                                    ,OVERSEAS_CUR_CD
+                                    ,OVERSEAS_AMT
+                                    ,OVERSEAS_DH
+                                    ,TAX_TP
+                                    ,BIZ_NO
+                                    ,BIZ_NM
+                                    ,BP_CD
+                                    ,BIZ_TYPE
+                                    ,BIZ_CATEGORY
+                                    ,BIZ_ADDR
+                                    ,PAY_BP_CD
+                                    ,PAY_TERM
+                                    ,PAY_BPACCT_SEQ
+                                    ,USE_YN
+                                    ,REPORT_NO
+                                    ,REGR_DH
+                                    ,MOD_DH
+                                    ,DEL_DH
+                                    ,REGR_ID
+                                    ,EXCLUDE_AMT,PAY_AMT
+                                    ,BASE_CURRENCY_CD
+            )
+            SELECT                  #{g_comCd}
+                                    , #{EXPENSE_NO}
+                                    ,#{SOURCE_TP}
+                                    , null as EVID_NO
+                                    , #{RECEIPT_DT} 
+                                    , ''  RECEIPT_TS
+                                    , #{RECEIPT_DT} 
+                                    , #{SUPPLY_AMT} as SUPPLY_AMT
+                                    , #{VAT_AMT} as VAT_AMT
+                                    ,0 ETC_AMT
+                                    , #{SUPPLY_AMT} + #{VAT_AMT}  as TOT_AMT
+                                    ,#{g_userId} EXPENSE_EMP_NO
+                                    ,'0'  -- SPLIT_YN
+                                    , TO_NUMBER(#{EXPENSE_AMT}) AS EXPENSE_AMT
+                                    , TO_NUMBER(#{EXPENSE_VAT_AMT}) AS EXPENSE_VAT_AMT
+                                    , #{EXPENSE_CD}
+                                    , #{BELONGING_TP}  
+                                    ,#{CCTR_CD}
+                                    ,#{PS_CD}
+                                    ,#{RMK}
+                                    ,'' as CARD_CD
+                                    ,'' as CARD_BILL_NO
+                                    ,'' as OVERSEAS_YN
+                                    , '' as OVERSEAS_CUR_CD
+                                    , 0 as OVERSEAS_AMT
+                                    ,'' as OVERSEAS_DH
+                                    , #{TAX_TP}  as TAX_TP
+                                    ,'' as BIZ_NO
+                                    ,'' as BIZ_NM
+                                    ,#{BP_CD} AS BP_CD
+                                    , '' as BIZ_TYPE
+                                    ,'' as  BIZ_CATEGORY
+                                    ,'' as   BIZ_ADDR
+                                    ,#{BP_CD} AS PAY_BP_CD
+                                    , '' -- PAY_TERM
+                                    , 0  -- PAY_BPACCT_SEQ
+                                    ,'1' -- USE_YN
+                                    ,#{REPORT_NO}
+                                    ,REGR_DH()
+                                    ,#{MOD_DH}
+                                    ,'' -- DEL_DH
+                                    ,#{g_userId}
+                                    ,0
+                                    ,  TO_NUMBER(#{EXPENSE_AMT}) + TO_NUMBER(#{EXPENSE_VAT_AMT})
+                                    , EX_GET_BASE_CURRENCY(#{g_comCd});
+                                    
+                  <include refid="insertExpenseFiles"></include>   
+                  
+                <!-- LOG -->
+                call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 최초 생성'));  
+                                    
+    </insert>
+
+    
+     <insert id="insertExpenseItemReceipt">
+               <selectKey  resultType="long" keyProperty="EXPENSE_NO" order="BEFORE">
+                    SELECT NEXTVAL(EXPENSE_SEQ) AS EXPENSE_NO;
+               </selectKey>
+            INSERT INTO EXPENSE_MST /* insertExpenseItemReceipt */
+                                   (COMPANY_CODE
+                                    ,EXPENSE_NO
+                                    ,SOURCE_TP
+                                    ,EVID_NO
+                                    ,RECEIPT_DT
+                                    ,RECEIPT_TS
+                                    ,POSTING_DT
+                                    ,SUPPLY_AMT
+                                    ,VAT_AMT
+                                    ,ETC_AMT
+                                    ,TOT_AMT
+                                    ,EXPENSE_EMP_NO
+                                    ,SPLIT_YN
+                                    ,EXPENSE_AMT
+                                    ,EXPENSE_VAT_AMT
+                                    ,EXPENSE_CD
+                                    ,BELONGING_TP
+                                    ,CCTR_CD
+                                    ,PS_CD
+                                    ,RMK
+                                    ,CARD_CD
+                                    ,CARD_BILL_NO
+                                    ,OVERSEAS_YN
+                                    ,OVERSEAS_CUR_CD
+                                    ,OVERSEAS_AMT
+                                    ,OVERSEAS_DH
+                                    ,TAX_TP
+                                    ,BIZ_NO
+                                    ,BIZ_NM
+                                    ,BP_CD
+                                    ,BIZ_TYPE
+                                    ,BIZ_CATEGORY
+                                    ,BIZ_ADDR
+                                    ,PAY_BP_CD
+                                    ,PAY_TERM
+                                    ,PAY_BPACCT_SEQ
+                                    ,USE_YN
+                                    ,REPORT_NO
+                                    ,REGR_DH
+                                    ,MOD_DH
+                                    ,DEL_DH
+                                    ,REGR_ID
+                                    ,EXCLUDE_AMT
+                                    ,PAY_AMT
+                                    ,CURRENCY_AMT
+                                    ,CURRENCY_RATE
+                                    ,CURRENCY_CD
+                                    ,CURRENCY_DT
+                                    ,BASE_CURRENCY_CD
+            )
+            SELECT                   #{g_comCd}
+                                    ,#{EXPENSE_NO}
+                                    ,#{SOURCE_TP}
+                                    , #{FILE_NO}
+                                    , REPLACE_DATE(#{RECEIPT_DT},"")
+                                    , "" 
+                                    , REPLACE_DATE(#{RECEIPT_DT},"")
+                                    ,null
+                                    ,null
+                                    ,null
+                                    ,null 
+                                    ,#{EXPENSE_EMP_NO}
+                                    ,'0' 
+                                    , TO_NUMBER(#{EXPENSE_AMT})
+                                    , 0
+                                    , #{EXPENSE_CD}
+                                    , #{BELONGING_TP}  
+                                    ,#{CCTR_CD}
+                                    ,#{PS_CD}
+                                    ,#{RMK}
+                                    ,""  
+                                    ,""  
+                                    ,"" 
+                                    ,"" 
+                                    ,null  
+                                    ,null 
+                                    ,null 
+                                    ,null  
+                                    ,null  
+                                    ,''
+                                    ,''
+                                    ,null 
+                                    ,null 
+                                    ,'' 
+                                    , '' 
+                                    , 0 
+                                    ,'1' 
+                                    ,#{REPORT_NO}
+                                    ,REGR_DH()
+                                    ,#{MOD_DH}
+                                    ,'' 
+                                    ,#{g_userId}
+                                    ,0
+                                    ,TO_NUMBER(#{EXPENSE_AMT})+ TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0
+                                    ,#{CURRENCY_AMT}
+                                    ,#{CURRENCY_RATE}
+                                    ,#{CURRENCY_CD}
+                                    ,#{CURRENCY_DT}
+                                    , EX_GET_BASE_CURRENCY(#{g_comCd});
+                        
+                     <include refid="insertExpenseFiles"></include>             
+                                    
+<!--                   INSERT INTO EXPENSE_FILE(COMPANY_CODE, FILE_NO,EXPENSE_NO,REGR_ID,REGR_DH) -->
+<!--                   VALUES (#{g_comCd}, #{FILE_NO} , #{EXPENSE_NO}, #{g_userId} ,REGR_DH()); -->
+                  
+                  <if test = "mngs != null" >
+			      INSERT INTO EXPENSE_MST_MNG (
+			        EXPENSE_NO, MNG_CD, COMPANY_CODE, ORD, MNGVAL_CD, MNGVAL_NM, USE_YN, REGR_DH, MOD_DH, DEL_DH, REGR_ID)
+			      VALUES
+					    <foreach collection="mngs" item="item" separator=" , " >
+					        ( #{EXPENSE_NO},  "${item.MNG_CD}",  #{g_comCd}, 0, "${item.MNGVAL_CD}", "${item.MNGVAL_NM}",  "1" , REGR_DH(), #{MOD_DH}, null, #{g_userId})
+					    </foreach>                
+		                  ;
+                   </if>
+                 
+                <!-- LOG -->
+                call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 최초 생성'));  
+                 
+    </insert>    
+    
+    <sql id="insertExpenseFiles">
+	
+		<if test = "FILE_LIST != null and FILE_LIST.size > 0" >
+		
+		          INSERT INTO EXPENSE_FILE(COMPANY_CODE, FILE_NO,EXPENSE_NO,REGR_ID,REGR_DH)
+		                  VALUES 
+		                  <foreach collection="FILE_LIST" item="item" separator=" , " >
+		                  (#{g_comCd}, "${item.FILE_NO}", #{EXPENSE_NO}, #{g_userId} ,REGR_DH())
+		                  </foreach> 
+		                  ; 
+	         
+		        <foreach collection="FILE_LIST" item="item"  index="index" >
+		           UPDATE ADMIN_FILE 
+		           SET FILE_OWNER_TP = "EX"  ,  
+		           FILE_OWNER_YN = "1" , 
+		           DISPLAY_ORD = ${index},
+		           MOD_DH = #{MOD_DH}
+		           WHERE FILE_NO = #{item.FILE_NO};
+		        </foreach>      
+		        
+		        
+		</if>
+    </sql>
+    <sql id="deleteExpenseFiles">
+    		    UPDATE ADMIN_FILE SET FILE_OWNER_TP = null  ,  FILE_OWNER_YN = "0" , MAINFILE_YN = '1', MOD_DH = #{MOD_DH}
+		        WHERE FILE_NO IN (SELECT FILE_NO FROM EXPENSE_FILE WHERE EXPENSE_NO = #{EXPENSE_NO} )
+		       ;
+    		    
+<!--     		    UPDATE ADMIN_FILE SET FILE_OWNER_TP = null  ,  FILE_OWNER_YN = "0"  -->
+<!-- 		        WHERE FILE_NO IN (SELECT FILE_NO FROM EXPENSE_FILE WHERE EXPENSE_NO =  #{EXPENSE_NO} ) -->
+<!-- 		        ; -->
+		        
+		        DELETE FROM  EXPENSE_FILE WHERE EXPENSE_NO = #{EXPENSE_NO} ; 
+    </sql>
+    
+    <sql id="updateExpenseFiles">
+          <include refid="deleteExpenseFiles"></include>  
+          <include refid="insertExpenseFiles"></include>  
+    </sql>
+    
+    <insert id="insertExpenseItemToll">
+               <selectKey  resultType="long" keyProperty="EXPENSE_NO" order="BEFORE">
+                    SELECT NEXTVAL(EXPENSE_SEQ);
+               </selectKey>
+            INSERT INTO EXPENSE_MST(COMPANY_CODE
+                                    ,EXPENSE_NO
+                                    ,SOURCE_TP
+                                    ,EVID_NO
+                                    ,RECEIPT_DT
+                                    ,RECEIPT_TS
+                                    ,POSTING_DT
+                                    ,SUPPLY_AMT
+                                    ,VAT_AMT
+                                    ,ETC_AMT
+                                    ,TOT_AMT
+                                    ,EXPENSE_EMP_NO
+                                    ,SPLIT_YN
+                                    ,EXPENSE_AMT
+                                    ,EXPENSE_VAT_AMT
+                                    ,EXPENSE_CD
+                                    ,BELONGING_TP
+                                    ,CCTR_CD
+                                    ,PS_CD
+                                    ,RMK
+                                    ,CARD_CD
+                                    ,CARD_BILL_NO
+                                    ,OVERSEAS_YN
+                                    ,OVERSEAS_CUR_CD
+                                    ,OVERSEAS_AMT
+                                    ,OVERSEAS_DH
+                                    ,TAX_TP
+                                    ,BIZ_NO
+                                    ,BIZ_NM
+                                    ,BP_CD
+                                    ,BIZ_TYPE
+                                    ,BIZ_CATEGORY
+                                    ,BIZ_ADDR
+                                    ,PAY_BP_CD
+                                    ,PAY_TERM
+                                    ,PAY_BPACCT_SEQ
+                                    ,USE_YN
+                                    ,REPORT_NO
+                                    ,REGR_DH
+                                    ,MOD_DH
+                                    ,DEL_DH
+                                    ,REGR_ID
+                                    ,EXCLUDE_AMT
+                                    ,PAY_AMT
+                                    ,CURRENCY_AMT
+                                    ,CURRENCY_RATE
+                                    ,CURRENCY_CD
+                                    ,CURRENCY_DT
+                                    ,BASE_CURRENCY_CD
+            )
+            SELECT                  #{g_comCd}
+                                    , #{EXPENSE_NO}
+                                    ,#{SOURCE_TP}
+                                    , #{FILE_NO}
+                                    , REPLACE_DATE(#{RECEIPT_DT},"")
+                                    , "" 
+                                    , REPLACE_DATE(#{RECEIPT_DT},"")
+                                    ,null
+                                    ,null
+                                    ,null
+                                    ,null 
+                                    ,#{EXPENSE_EMP_NO}
+                                    ,'0' 
+                                    , TO_NUMBER(#{EXPENSE_AMT})
+                                    , 0
+                                    , #{EXPENSE_CD}
+                                    , #{BELONGING_TP}  
+                                    ,#{CCTR_CD}
+                                    ,#{PS_CD}
+                                    ,#{RMK}
+                                    ,""  
+                                    ,""  
+                                    ,"" 
+                                    ,"" 
+                                    ,null  
+                                    ,null 
+                                    ,null 
+                                    ,null  
+                                    ,null  
+                                    ,''
+                                    ,''
+                                    ,null 
+                                    ,null 
+                                    ,'' 
+                                    , '' 
+                                    , 0 
+                                    ,'1' 
+                                    ,#{REPORT_NO}
+                                    ,REGR_DH()
+                                    ,#{MOD_DH}
+                                    ,'' 
+                                    ,#{g_userId}
+                                    ,0
+                                    ,TO_NUMBER(#{EXPENSE_AMT})+ TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0
+                                    ,0
+                                    ,0
+                                    ,""
+                                    ,""
+                                    , EX_GET_BASE_CURRENCY(#{g_comCd})
+                                    ;
+                                    
+                  INSERT INTO EXPENSE_FILE(COMPANY_CODE, FILE_NO,EXPENSE_NO,REGR_ID,REGR_DH)
+                  VALUES (#{g_comCd}, #{FILE_NO} , #{EXPENSE_NO}, #{g_userId} ,REGR_DH());
+                  
+                 <if test = "mngs != null" >
+	                  INSERT INTO EXPENSE_MST_MNG (
+	                    EXPENSE_NO, MNG_CD, COMPANY_CODE, ORD, MNGVAL_CD, MNGVAL_NM, USE_YN, REGR_DH, MOD_DH, DEL_DH, REGR_ID)
+	                  VALUES
+	                <foreach collection="mngs" item="item" separator=" , " >
+	                    ( #{EXPENSE_NO},  "${item.MNG_CD}",  #{g_comCd}, 0, "${item.MNGVAL_CD}", "${item.MNGVAL_NM}",  "1" , REGR_DH(), #{MOD_DH}, null, #{g_userId})
+	                </foreach>                
+	                  ;
+                 </if>     
+                 <if test = "TOLL_DATA != null" >
+                  INSERT INTO EXPENSE_MST_TOLL (
+                    TOLL_NO,EXPENSE_NO,COMPANY_CODE,RECEIPT_DT,RECEIPT_TS,BIZ_NO,BIZ_NM,TEL_NO,
+                    SUPPLY_AMT,VAT_AMT,TOT_AMT, CARD_NO,HIPASS_DOC_NO, RMK,
+                    USE_YN,REGR_DH,MOD_DH,DEL_DH,REGR_ID,MOD_ID,DEL_ID,REGR_NM,MOD_NM,DEL_NM)  VALUES 
+		                <foreach collection="TOLL_DATA" item="item" separator=" , " >
+		                    ( NEXTVAL(TOLL_NO),  ${EXPENSE_NO},  #{g_comCd},  "${item.RECEIPT_DT}", "${item.RECEIPT_TS}",  REPLACE("${item.BIZ_NO}",'-',''),"${item.BIZ_NM}","${item.TEL_NO}",
+		                      TO_NUMBER("${item.SUPPLY_AMT}"),TO_NUMBER("${item.VAT_AMT}"),TO_NUMBER("${item.TOT_AMT}"),"${item.CARD_NO}","${item.HIPASS_DOC_NO}","${item.RMK}",
+		                      "1",REGR_DH(),REGR_DH(),#{MOD_DH},'${g_userId}','${g_userId}',"",'${g_userNm}','${g_userNm}',""
+		                    )
+		                </foreach>                
+		                  ;
+                 </if>
+                 
+                <!-- LOG -->
+                call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('통행료[', #{EXPENSE_NO} , ' ] 최초 생성'));  
+                 
+    </insert>   
+   
+     <insert id="insertExpenseItemPrepay">
+               <selectKey  resultType="long" keyProperty="EXPENSE_NO" order="BEFORE">
+                    SELECT NEXTVAL(EXPENSE_SEQ);
+               </selectKey>
+            INSERT INTO EXPENSE_MST(COMPANY_CODE
+                                    ,EXPENSE_NO
+                                    ,SOURCE_TP
+                                    ,EVID_NO
+                                    ,RECEIPT_DT
+                                    ,RECEIPT_TS
+                                    ,POSTING_DT
+                                    ,SUPPLY_AMT
+                                    ,VAT_AMT
+                                    ,ETC_AMT
+                                    ,TOT_AMT
+                                    ,EXPENSE_EMP_NO
+                                    ,SPLIT_YN
+                                    ,EXPENSE_AMT
+                                    ,EXPENSE_VAT_AMT
+                                    ,EXPENSE_CD
+                                    ,BELONGING_TP
+                                    ,CCTR_CD
+                                    ,PS_CD
+                                    ,RMK
+                                    ,CARD_CD
+                                    ,CARD_BILL_NO
+                                    ,OVERSEAS_YN
+                                    ,OVERSEAS_CUR_CD
+                                    ,OVERSEAS_AMT
+                                    ,OVERSEAS_DH
+                                    ,TAX_TP
+                                    ,BIZ_NO
+                                    ,BIZ_NM
+                                    ,BP_CD
+                                    ,BIZ_TYPE
+                                    ,BIZ_CATEGORY
+                                    ,BIZ_ADDR
+                                    ,PAY_BP_CD
+                                    ,PAY_TERM
+                                    ,PAY_BPACCT_SEQ
+                                    ,USE_YN
+                                    ,REPORT_NO
+                                    ,REGR_DH
+                                    ,MOD_DH
+                                    ,DEL_DH
+                                    ,REGR_ID
+                                    ,EXCLUDE_AMT
+                                    ,PAY_AMT
+                                    ,CURRENCY_AMT
+                                    ,CURRENCY_RATE
+                                    ,CURRENCY_CD
+                                    ,CURRENCY_DT
+                                    ,BASE_CURRENCY_CD
+            )
+            SELECT                  #{g_comCd}
+                                    , #{EXPENSE_NO}
+                                    ,#{SOURCE_TP}
+                                    , #{FILE_NO}
+                                    , REPLACE_DATE(#{RECEIPT_DT},"")
+                                    , "" 
+                                    , REPLACE_DATE(#{RECEIPT_DT},"")
+                                    ,null
+                                    ,null
+                                    ,null
+                                    ,null 
+                                    ,#{EXPENSE_EMP_NO}
+                                    ,'0' 
+                                    , TO_NUMBER(#{EXPENSE_AMT})
+                                    , 0
+                                    , #{EXPENSE_CD}
+                                    , #{BELONGING_TP}  
+                                    ,#{CCTR_CD}
+                                    ,#{PS_CD}
+                                    ,#{RMK}
+                                    ,""  
+                                    ,""  
+                                    ,"" 
+                                    ,"" 
+                                    ,null  
+                                    ,null 
+                                    ,null 
+                                    ,null  
+                                    ,null  
+                                    ,''
+                                    ,''
+                                    ,null 
+                                    ,null 
+                                    ,'' 
+                                    , '' 
+                                    , 0 
+                                    ,'1' 
+                                    ,#{REPORT_NO}
+                                    ,REGR_DH()
+                                    ,#{MOD_DH}
+                                    ,'' 
+                                    ,#{g_userId}
+                                    ,0
+                                    ,TO_NUMBER(#{EXPENSE_AMT})+ TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0
+                                    ,#{CURRENCY_AMT}
+                                    ,#{CURRENCY_RATE}
+                                    ,#{CURRENCY_CD}
+                                    ,#{CURRENCY_DT}
+                                    , EX_GET_BASE_CURRENCY(#{g_comCd})
+                                    ;
+                                    
+                  <include refid="insertExpenseFiles"></include>  
+                  
+                  <if test = "mngs != null" >
+                  INSERT INTO EXPENSE_MST_MNG (
+                    EXPENSE_NO, MNG_CD, COMPANY_CODE, ORD, MNGVAL_CD, MNGVAL_NM, USE_YN, REGR_DH, MOD_DH, DEL_DH, REGR_ID)
+                  VALUES
+                <foreach collection="mngs" item="item" separator=" , " >
+                    ( #{EXPENSE_NO},  "${item.MNG_CD}",  #{g_comCd}, 0, "${item.MNGVAL_CD}", "${item.MNGVAL_NM}",  "1" , REGR_DH(), #{MOD_DH}, null, #{g_userId})
+                </foreach>                
+                  ;
+                 </if>
+                <!-- LOG -->
+                call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 최초 생성'));  
+
+
+    </insert>        
+ 
+      <insert id="insertExpenseItemEtc">
+               <selectKey  resultType="long" keyProperty="EXPENSE_NO" order="BEFORE">
+                    SELECT NEXTVAL(EXPENSE_SEQ);
+               </selectKey>
+            INSERT INTO EXPENSE_MST(COMPANY_CODE
+                                    ,EXPENSE_NO
+                                    ,SOURCE_TP
+                                    ,EVID_NO
+                                    ,RECEIPT_DT
+                                    ,RECEIPT_TS
+                                    , POSTING_DT
+                                    ,SUPPLY_AMT
+                                    ,VAT_AMT
+                                    ,ETC_AMT
+                                    ,TOT_AMT
+                                    ,EXPENSE_EMP_NO
+                                    ,SPLIT_YN
+                                    ,EXPENSE_AMT
+                                    ,EXPENSE_VAT_AMT
+                                    ,EXPENSE_CD
+                                    ,BELONGING_TP
+                                    ,CCTR_CD
+                                    ,PS_CD
+                                    ,RMK
+                                    ,CARD_CD
+                                    ,CARD_BILL_NO
+                                    ,OVERSEAS_YN
+                                    ,OVERSEAS_CUR_CD
+                                    ,OVERSEAS_AMT
+                                    ,OVERSEAS_DH
+                                    ,TAX_TP
+                                    ,BIZ_NO
+                                    ,BIZ_NM
+                                    ,BP_CD
+                                    ,BIZ_TYPE
+                                    ,BIZ_CATEGORY
+                                    ,BIZ_ADDR
+                                    ,PAY_BP_CD
+                                    ,PAY_TERM
+                                    ,PAY_BPACCT_SEQ
+                                    ,USE_YN
+                                    ,REPORT_NO
+                                    ,REGR_DH
+                                    ,MOD_DH
+                                    ,DEL_DH
+                                    ,REGR_ID
+                                    ,EXCLUDE_AMT
+                                    ,PAY_AMT
+                                    ,CURRENCY_AMT
+                                    ,CURRENCY_RATE
+                                    ,CURRENCY_CD
+                                    ,CURRENCY_DT
+                                    ,BASE_CURRENCY_CD
+            )
+            SELECT                  #{g_comCd}
+                                    , #{EXPENSE_NO}
+                                    ,#{SOURCE_TP}
+                                    , #{FILE_NO}
+                                    , REPLACE_DATE(#{RECEIPT_DT},"")
+                                    , "" 
+                                    , REPLACE_DATE(#{RECEIPT_DT},"")
+                                    ,null
+                                    ,null
+                                    ,null
+                                    ,null 
+                                    ,#{EXPENSE_EMP_NO}
+                                    ,'0' 
+                                    , TO_NUMBER(#{EXPENSE_AMT})
+                                    , 0
+                                    , #{EXPENSE_CD}
+                                    , #{BELONGING_TP}  
+                                    ,#{CCTR_CD}
+                                    ,#{PS_CD}
+                                    ,#{RMK}
+                                    ,""  
+                                    ,""  
+                                    ,"" 
+                                    ,"" 
+                                    ,null  
+                                    ,null 
+                                    ,null 
+                                    ,null  
+                                    ,null  
+                                    , #{BP_CD} AS BP_CD
+                                    ,''
+                                    ,null 
+                                    ,null 
+                                    ,#{BP_CD} AS PAY_BP_CD  --
+                                    , '' 
+                                    , 0 
+                                    ,'1' 
+                                    ,#{REPORT_NO}
+                                    ,REGR_DH()
+                                    ,#{MOD_DH}
+                                    ,'' 
+                                    ,#{g_userId}
+                                    ,0
+                                    ,TO_NUMBER(#{EXPENSE_AMT})+ TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0
+                                    ,#{CURRENCY_AMT}
+                                    ,#{CURRENCY_RATE}
+                                    ,#{CURRENCY_CD}
+                                    ,#{CURRENCY_DT}
+                                    ,EX_GET_BASE_CURRENCY(#{g_comCd})
+                                    ;
+                                    
+                  <include refid="insertExpenseFiles"></include>  
+                  
+                  <if test = "mngs != null" >
+                  INSERT INTO EXPENSE_MST_MNG (
+                    EXPENSE_NO, MNG_CD, COMPANY_CODE, ORD, MNGVAL_CD, MNGVAL_NM, USE_YN, REGR_DH, MOD_DH, DEL_DH, REGR_ID)
+                  VALUES
+                <foreach collection="mngs" item="item" separator=" , " >
+                    ( #{EXPENSE_NO},  "${item.MNG_CD}",  #{g_comCd}, 0, "${item.MNGVAL_CD}", "${item.MNGVAL_NM}",  "1" , REGR_DH(), #{MOD_DH}, null, #{g_userId})
+                </foreach>                
+                  ;
+                 </if>
+ 
+                 <!-- LOG -->
+                call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 최초 생성'));  
+ 
+    </insert>  
+ 
+      <insert id="insertExpenseItemPrepaid">
+               <selectKey  resultType="long" keyProperty="EXPENSE_NO" order="BEFORE">
+                    SELECT NEXTVAL(EXPENSE_SEQ);
+               </selectKey>
+            INSERT INTO EXPENSE_MST(COMPANY_CODE
+                                    ,EXPENSE_NO
+                                    ,SOURCE_TP
+                                    ,EVID_NO
+                                    ,RECEIPT_DT
+                                    ,RECEIPT_TS
+                                    ,POSTING_DT
+                                    ,SUPPLY_AMT
+                                    ,VAT_AMT
+                                    ,ETC_AMT
+                                    ,TOT_AMT
+                                    ,EXPENSE_EMP_NO
+                                    ,SPLIT_YN
+                                    ,EXPENSE_AMT
+                                    ,EXPENSE_VAT_AMT
+                                    ,EXPENSE_CD
+                                    ,BELONGING_TP
+                                    ,CCTR_CD
+                                    ,PS_CD
+                                    ,RMK
+                                    ,CARD_CD
+                                    ,CARD_BILL_NO
+                                    ,OVERSEAS_YN
+                                    ,OVERSEAS_CUR_CD
+                                    ,OVERSEAS_AMT
+                                    ,OVERSEAS_DH
+                                    ,TAX_TP
+                                    ,BIZ_NO
+                                    ,BIZ_NM
+                                    ,BP_CD
+                                    ,BIZ_TYPE
+                                    ,BIZ_CATEGORY
+                                    ,BIZ_ADDR
+                                    ,PAY_BP_CD
+                                    ,PAY_TERM
+                                    ,PAY_BPACCT_SEQ
+                                    ,USE_YN
+                                    ,REPORT_NO
+                                    ,REGR_DH
+                                    ,MOD_DH
+                                    ,DEL_DH
+                                    ,REGR_ID
+                                    ,EXCLUDE_AMT
+                                    ,PAY_AMT
+                                    ,CURRENCY_AMT
+                                    ,CURRENCY_RATE
+                                    ,CURRENCY_CD
+                                    ,CURRENCY_DT
+                                    ,BASE_CURRENCY_CD
+            )
+            SELECT                  #{g_comCd}
+                                    , #{EXPENSE_NO}
+                                    ,#{SOURCE_TP}
+                                    , #{FILE_NO}
+                                    , REPLACE_DATE(#{RECEIPT_DT},"")
+                                    , "" 
+                                    , REPLACE_DATE(#{RECEIPT_DT},"")
+                                    ,null
+                                    ,null
+                                    ,null
+                                    ,null 
+                                    ,#{EXPENSE_EMP_NO}
+                                    ,'0' 
+                                    , TO_NUMBER(#{EXPENSE_AMT})
+                                    , 0
+                                    , #{EXPENSE_CD}
+                                    , #{BELONGING_TP}  
+                                    ,#{CCTR_CD}
+                                    ,#{PS_CD}
+                                    ,#{RMK}
+                                    ,""  
+                                    ,""  
+                                    ,"" 
+                                    ,"" 
+                                    ,null  
+                                    ,null 
+                                    ,null 
+                                    ,null  
+                                    ,null  
+                                    , #{BP_CD} AS BP_CD
+                                    ,''
+                                    ,null 
+                                    ,null 
+                                    ,#{BP_CD} AS PAY_BP_CD  --
+                                    , '' 
+                                    , 0 
+                                    ,'1' 
+                                    ,#{REPORT_NO}
+                                    ,REGR_DH()
+                                    ,#{MOD_DH}
+                                    ,'' 
+                                    ,#{g_userId}
+                                    ,0
+                                    ,TO_NUMBER(#{EXPENSE_AMT})+ TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0
+                                    ,#{CURRENCY_AMT}
+                                    ,#{CURRENCY_RATE}
+                                    ,#{CURRENCY_CD}
+                                    ,#{CURRENCY_DT}
+                                    , EX_GET_BASE_CURRENCY(#{g_comCd})
+                                    ;
+                                    
+                  <include refid="insertExpenseFiles"></include>  
+                  
+                  <if test = "mngs != null" >
+                  INSERT INTO EXPENSE_MST_MNG (
+                    EXPENSE_NO, MNG_CD, COMPANY_CODE, ORD, MNGVAL_CD, MNGVAL_NM, USE_YN, REGR_DH, MOD_DH, DEL_DH, REGR_ID)
+                  VALUES
+                <foreach collection="mngs" item="item" separator=" , " >
+                    ( #{EXPENSE_NO},  "${item.MNG_CD}",  #{g_comCd}, 0, "${item.MNGVAL_CD}", "${item.MNGVAL_NM}",  "1" , REGR_DH(), #{MOD_DH}, null, #{g_userId})
+                </foreach>                
+                  ;
+                 </if>
+
+                <!-- LOG -->
+                call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 최초 생성'));  
+
+    </insert>  
+ 
+ 
+     <insert id="insertExpenseItemGas">
+               <selectKey  resultType="long" keyProperty="EXPENSE_NO" order="BEFORE">
+                    SELECT NEXTVAL(EXPENSE_SEQ);
+               </selectKey>
+               
+            INSERT INTO EXPENSE_MST(COMPANY_CODE ,EXPENSE_NO ,SOURCE_TP ,EVID_NO,RECEIPT_DT,RECEIPT_TS , POSTING_DT,SUPPLY_AMT ,VAT_AMT ,ETC_AMT,TOT_AMT
+                                    ,EXPENSE_EMP_NO,SPLIT_YN ,EXPENSE_AMT,EXPENSE_VAT_AMT,EXPENSE_CD,BELONGING_TP  ,CCTR_CD  ,PS_CD ,RMK
+                                    ,CARD_CD,CARD_BILL_NO ,OVERSEAS_YN ,OVERSEAS_CUR_CD ,OVERSEAS_AMT ,OVERSEAS_DH ,TAX_TP
+                                    ,BIZ_NO ,BIZ_NM ,BP_CD ,BIZ_TYPE ,BIZ_CATEGORY ,BIZ_ADDR ,PAY_BP_CD ,PAY_TERM ,PAY_BPACCT_SEQ ,USE_YN
+                                    ,REPORT_NO ,REGR_DH ,MOD_DH ,DEL_DH ,REGR_ID
+                                    ,DISTANCE_TP,DISTANCE,MILEAGE_RATE_CD,ODOMETER_START,ODOMETER_END
+                                    ,BIZTRIP_TP,BIZTRIP_START,BIZTRIP_END,BIZTRIP_DAYS,EXCLUDE_AMT,PAY_AMT
+                                    ,START_LAT, START_LONG, START_ADDR, END_LAT, END_LONG, END_ADDR , START_DH, END_DH , BASE_CURRENCY_CD, URL
+            )
+            SELECT  #{g_comCd} , #{EXPENSE_NO} ,#{SOURCE_TP} , #{EVID_NO} , REPLACE_DATE(#{RECEIPT_DT},"") , "", REPLACE_DATE(#{RECEIPT_DT},"")  ,null, null  ,null  ,null 
+                     ,#{EXPENSE_EMP_NO} ,'0' as SPLIT_YN , TO_NUMBER(#{EXPENSE_AMT}) , 0 as EXPENSE_VAT_AMT , #{EXPENSE_CD} , #{BELONGING_TP}   ,#{CCTR_CD} ,#{PS_CD} ,#{RMK}
+                     ,""  as CARD_CD ,""  as CARD_BILL_NO ,""  as OVERSEAS_YN ,""  as  OVERSEAS_CUR_CD ,null  as OVERSEAS_AMT ,null  as  OVERSEAS_DH ,null  as  TAX_TP
+                     ,null  as BIZ_NO ,null  as BIZ_NM ,'' as BP_CD ,'' as BIZ_TYPE ,null  as  BIZ_CATEGORY ,null  as  BIZ_ADDR ,'' as PAY_BP_CD , '' as PAY_TERM , 0 as PAY_BPACCT_SEQ ,'1' as USE_YN
+                     , #{REPORT_NO} ,REGR_DH() ,#{MOD_DH} ,'' as DEL_DH ,#{g_userId}
+                     , #{DISTANCE_TP},#{DISTANCE},#{MILEAGE_RATE_CD}, TO_NUMBER(#{ODOMETER_START}),TO_NUMBER(#{ODOMETER_END})
+                     , #{BIZTRIP_TP},#{BIZTRIP_START},#{BIZTRIP_END},TO_NUMBER(#{BIZTRIP_DAYS})
+                     , 0 ,TO_NUMBER(#{EXPENSE_AMT}) + TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0
+                     , #{START_LAT}, #{START_LONG}, #{START_ADDR}, #{END_LAT}, #{END_LONG}, #{END_ADDR} , #{START_DH}, #{END_DH}, EX_GET_BASE_CURRENCY(#{g_comCd}), #{URL} ;
+                                    
+<!--                <if test='ODOMETER_START_FILE != null  and ODOMETER_START_FILE !=""'> -->
+<!--                   INSERT INTO EXPENSE_FILE(FILE_NO, COMPANY_CODE, EXPENSE_NO,REGR_ID,REGR_DH, REF) -->
+<!--                   VALUES (#{ODOMETER_START_FILE} , #{g_comCd} , #{EXPENSE_NO}, #{g_userId} ,REGR_DH(),"START"); -->
+<!--                </if> -->
+<!--                <if test='ODOMETER_END_FILE != null and ODOMETER_END_FILE !=""'> -->
+<!--                   INSERT INTO EXPENSE_FILE(FILE_NO, COMPANY_CODE, EXPENSE_NO,REGR_ID,REGR_DH, REF) -->
+<!--                   VALUES (#{ODOMETER_END_FILE} , #{g_comCd} ,#{EXPENSE_NO}, #{g_userId} ,REGR_DH(), "END"); -->
+<!--                </if> -->
+                
+                
+                
+                    <include refid="insertExpenseFiles"></include>   
+                
+                    <if test = "PASS_ITEMS != null and PASS_ITEMS.size > 0" >
+	                  INSERT INTO EXPENSE_GPS (
+	                    COMPANY_CODE,EXPENSE_NO, GPS_ORDER ,START_DH, START_LAT, START_LONG, START_ADDR, DISTANCE,
+	                    USE_YN,REGR_DH,MOD_DH,DEL_DH,REGR_ID,MOD_ID,DEL_ID,REGR_NM,MOD_NM,DEL_NM)  VALUES 
+			                <foreach collection="PASS_ITEMS" item="item" index="index" separator=" , " >
+			                    (  #{g_comCd},  ${EXPENSE_NO}, ${index + 1}, "${item.PASS_DH}", "${item.PASS_LAT}","${item.PASS_LONG}","${item.PASS_ADDR}",0,  
+			                      "1",REGR_DH(),REGR_DH(),#{MOD_DH},'${g_userId}','${g_userId}',"",'${g_userNm}','${g_userNm}',""
+			                    )
+			                </foreach>                
+			                  ;
+	                 </if>
+                 
+                          
+	                <if test='EVID_NO != null and EVID_NO !=""'>
+	                  UPDATE EXPENSE_INBOX_GPS SET EXPENSE_NO = #{EXPENSE_NO}, MOD_DH = #{MOD_DH} WHERE GPS_LOG_NO = #{EVID_NO};
+	                </if>
+
+                <!-- LOG -->
+                call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 최초 생성'));  
+
+
+    </insert>    
+    
+    
+       <select  id="expenseItemTravelNextVal" resultType="int">
+                    SELECT NEXTVAL(EXPENSE_SEQ);
+       </select>
+    
+      <insert id="insertExpenseItemTravel">
+    
+            INSERT INTO EXPENSE_MST(COMPANY_CODE ,EXPENSE_NO ,SOURCE_TP ,EVID_NO,RECEIPT_DT,RECEIPT_TS , POSTING_DT,  SUPPLY_AMT ,VAT_AMT ,ETC_AMT,TOT_AMT
+                                    ,EXPENSE_EMP_NO,SPLIT_YN ,EXPENSE_AMT,EXPENSE_VAT_AMT,EXPENSE_CD,BELONGING_TP  ,CCTR_CD  ,PS_CD ,RMK
+                                    ,CARD_CD,CARD_BILL_NO ,OVERSEAS_YN ,OVERSEAS_CUR_CD ,OVERSEAS_AMT ,OVERSEAS_DH ,TAX_TP
+                                    ,BIZ_NO ,BIZ_NM ,BIZ_TYPE ,BIZ_CATEGORY ,BIZ_ADDR ,USE_YN
+                                    ,REPORT_NO ,REGR_DH ,MOD_DH ,DEL_DH ,REGR_ID
+                                    ,DISTANCE_TP,DISTANCE,MILEAGE_RATE_CD,ODOMETER_START,ODOMETER_END
+                                    ,BIZTRIP_TP,BIZTRIP_START,BIZTRIP_END,BIZTRIP_DAYS
+                                    ,EXCLUDE_AMT,PAY_AMT, BASE_CURRENCY_CD
+                                    ,CURRENCY_AMT, CURRENCY_CD, CURRENCY_DT, CURRENCY_RATE
+                                    ,BP_CD ,PAY_BP_CD , PAY_BPACCT_SEQ, PAY_TERM 
+                                    ,BIZTRIP_CAL_MTHD
+                                    ,START_LAT, START_LONG, START_ADDR, END_LAT, END_LONG, END_ADDR , START_DH, END_DH) 
+            SELECT  #{g_comCd} , #{EXPENSE_NO} ,#{SOURCE_TP} , "" , REPLACE_DATE(#{RECEIPT_DT},"") , "" , REPLACE_DATE(#{RECEIPT_DT},"") ,null  ,null  ,null ,null 
+                     ,#{EXPENSE_EMP_NO} ,'0' as SPLIT_YN , TO_NUMBER(#{EXPENSE_AMT}) , 0 as EXPENSE_VAT_AMT , #{EXPENSE_CD} , #{BELONGING_TP}   ,#{CCTR_CD} ,#{PS_CD} ,#{RMK}
+                     ,""  as CARD_CD ,""  as CARD_BILL_NO ,""  as OVERSEAS_YN ,""  as  OVERSEAS_CUR_CD ,null  as OVERSEAS_AMT ,null  as  OVERSEAS_DH ,null  as  TAX_TP
+                     ,null  as BIZ_NO ,null  as BIZ_NM ,'' as BIZ_TYPE ,null  as  BIZ_CATEGORY ,null  as  BIZ_ADDR ,'1' as USE_YN
+                     , #{REPORT_NO} ,REGR_DH() AS REGR_DH , #{MOD_DH}  ,'' as DEL_DH ,#{g_userId}
+                     , #{DISTANCE_TP},#{DISTANCE},#{MILEAGE_RATE_CD},#{ODOMETER_START},#{ODOMETER_END}
+                     , #{BIZTRIP_TP},REPLACE(#{BIZTRIP_START},"-",""),REPLACE(#{BIZTRIP_END},"-",""),#{BIZTRIP_DAYS}
+                     , 0 ,TO_NUMBER(#{EXPENSE_AMT})+ TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0,  EX_GET_BASE_CURRENCY(#{g_comCd})
+                     , TO_NUMBER(#{BIZTRIP_DAYS}) * (SELECT BIZTRIP_RATE FROM EXPENSE_BIZTRIP_RATE WHERE COMPANY_CODE = #{g_comCd} AND BIZTRIP_RATE_CD = #{BIZTRIP_TP} )  ,#{CURRENCY_CD} ,#{CURRENCY_DT} ,#{CURRENCY_RATE} 
+                     , A.ERP_BP_CD ,A.ERP_BP_CD, ERP_PAY_BPACCT_SEQ, ERP_PAY_TERM
+                     , #{BIZTRIP_CAL_MTHD}
+                     , #{START_LAT}, #{START_LONG}, #{START_ADDR}, #{END_LAT}, #{END_LONG}, #{END_ADDR} , #{START_DH}, #{END_DH}
+                     FROM ADMIN_EMP A
+                     WHERE COMPANY_CODE = #{g_comCd}
+                     AND EMP_NO = #{EXPENSE_EMP_NO}
+                  ;
+                  
+                                    
+<!--                   INSERT INTO EXPENSE_FILE(FILE_NO,EXPENSE_NO,REGR_ID,REGR_DH) -->
+<!--                   VALUES (#{FILE_NO} , #{EXPENSE_NO}, #{g_userId} ,REGR_DH()); -->
+                  
+                <!-- LOG -->
+                call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 최초 생성'));  
+
+
+    </insert>  
+    
+      <update id="updateExpenseItemTravel">
+         update EXPENSE_MST MST set RMK = #{RMK}
+                               ,REPORT_NO = #{REPORT_NO}
+                               ,EXPENSE_CD = #{EXPENSE_CD}
+                               ,CCTR_CD = #{CCTR_CD}
+                               ,PS_CD = #{PS_CD}
+                               ,EXPENSE_AMT = TO_NUMBER(#{EXPENSE_AMT})    
+                               ,EXPENSE_VAT_AMT = TO_NUMBER(#{EXPENSE_VAT_AMT})
+                               ,BELONGING_TP = #{BELONGING_TP}
+                               ,EXPENSE_EMP_NO = #{EXPENSE_EMP_NO} 
+                               ,BIZTRIP_TP = #{BIZTRIP_TP} 
+                               ,MILEAGE_RATE_CD = #{MILEAGE_RATE_CD} 
+                               ,BIZTRIP_START = REPLACE(#{BIZTRIP_START},"-","")
+                               ,BIZTRIP_END = REPLACE(#{BIZTRIP_END},"-","")
+                               ,RECEIPT_DT = REPLACE(#{BIZTRIP_END},"-","")
+                               ,POSTING_DT = REPLACE_DATE(#{BIZTRIP_END},"")
+                               ,BIZTRIP_DAYS = TO_NUMBER(#{BIZTRIP_DAYS})
+                               ,MOD_DH = #{MOD_DH}
+                               ,PAY_AMT = TO_NUMBER(#{EXPENSE_AMT}) + TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0
+                               ,CURRENCY_AMT = TO_NUMBER(#{BIZTRIP_DAYS}) * (SELECT BIZTRIP_RATE FROM EXPENSE_BIZTRIP_RATE WHERE COMPANY_CODE = #{g_comCd} AND BIZTRIP_RATE_CD = #{BIZTRIP_TP} )
+                               ,CURRENCY_RATE =  #{CURRENCY_RATE}
+                               ,CURRENCY_CD =  #{CURRENCY_CD}
+                               ,CURRENCY_DT =  #{CURRENCY_DT}  
+                               ,BP_CD = (SELECT ERP_BP_CD  FROM ADMIN_EMP EMP WHERE EMP.EMP_NO = #{EXPENSE_EMP_NO} AND COMPANY_CODE = #{g_comCd}  )
+                               ,PAY_BP_CD = (SELECT ERP_BP_CD  FROM ADMIN_EMP EMP WHERE EMP.EMP_NO = #{EXPENSE_EMP_NO}  AND COMPANY_CODE = #{g_comCd} )    
+                               ,PAY_BPACCT_SEQ = (SELECT ERP_PAY_BPACCT_SEQ FROM ADMIN_EMP EMP WHERE EMP.EMP_NO = #{EXPENSE_EMP_NO}  AND COMPANY_CODE = #{g_comCd}  )      
+                                ,PAY_TERM = (SELECT ERP_PAY_TERM FROM ADMIN_EMP EMP WHERE EMP.EMP_NO = #{EXPENSE_EMP_NO}  AND COMPANY_CODE = #{g_comCd} ) 
+                               ,BIZTRIP_CAL_MTHD = #{BIZTRIP_CAL_MTHD}
+                               ,START_LAT = #{START_LAT}
+                               ,START_LONG = #{START_LONG}
+                               ,START_ADDR = #{START_ADDR}
+                               ,END_LAT = #{END_LAT}
+                               ,END_LONG = #{END_LONG}
+                               ,END_ADDR = #{END_ADDR}
+                               ,START_DH = #{START_DH}
+                               ,END_DH  = #{END_DH}  
+                               ,DISTANCE = #{DISTANCE}                            
+         where EXPENSE_NO = #{EXPENSE_NO};
+         
+        call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 변경'));       
+        
+     </update>
+ 
+     
+      <update id="updateExpenseItemGas">
+         update EXPENSE_MST set RMK = #{RMK}
+                               ,REPORT_NO = #{REPORT_NO}
+                               ,EXPENSE_CD = #{EXPENSE_CD}
+                               ,CCTR_CD = #{CCTR_CD}
+                               ,PS_CD = #{PS_CD}
+                               ,EXPENSE_AMT = TO_NUMBER(#{EXPENSE_AMT})
+                               ,EXPENSE_VAT_AMT =  TO_NUMBER(#{EXPENSE_VAT_AMT})
+                               ,BELONGING_TP = #{BELONGING_TP}
+                               ,EXPENSE_EMP_NO = #{EXPENSE_EMP_NO} 
+                               ,DISTANCE = TO_NUMBER(#{DISTANCE} )
+                               ,DISTANCE_TP = #{DISTANCE_TP} 
+                               ,MILEAGE_RATE_CD = #{MILEAGE_RATE_CD} 
+                               ,ODOMETER_START = TO_NUMBER(#{ODOMETER_START} )
+                               ,ODOMETER_END = TO_NUMBER(#{ODOMETER_END} )
+                               ,RECEIPT_DT = REPLACE_DATE(#{RECEIPT_DT},"")
+                               ,POSTING_DT = REPLACE_DATE(#{RECEIPT_DT},"")
+                               ,MOD_DH = #{MOD_DH}
+                               ,PAY_AMT = TO_NUMBER(#{EXPENSE_AMT}) + TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0
+                               ,START_LAT = #{START_LAT}
+                               ,START_LONG = #{START_LONG}
+                               ,START_ADDR = #{START_ADDR}
+                               ,END_LAT = #{END_LAT}
+                               ,END_LONG = #{END_LONG}
+                               ,END_ADDR = #{END_ADDR}
+                               ,URL = #{URL}
+                               ,START_DH = #{START_DH}
+                               ,END_DH  = #{END_DH}                               
+         where EXPENSE_NO = #{EXPENSE_NO};
+         
+<!--          odometer delete , insert -->
+<!--                <if test='ODOMETER_START_FILE != null  and ODOMETER_START_FILE !=""'> -->
+<!--                   INSERT INTO EXPENSE_FILE(FILE_NO, COMPANY_CODE, EXPENSE_NO,REGR_ID,REGR_DH, REF) -->
+<!--                   VALUES (#{ODOMETER_START_FILE} , #{g_comCd} , #{EXPENSE_NO}, #{g_userId} ,REGR_DH(),"START"); -->
+<!--                </if> -->
+<!--                <if test='ODOMETER_END_FILE != null  and ODOMETER_END_FILE !=""'> -->
+<!--                   INSERT INTO EXPENSE_FILE(FILE_NO, COMPANY_CODE, EXPENSE_NO,REGR_ID,REGR_DH, REF) -->
+<!--                   VALUES (#{ODOMETER_END_FILE} , #{g_comCd} ,#{EXPENSE_NO}, #{g_userId} ,REGR_DH(), "END"); -->
+<!--                </if>    -->
+               
+               <include refid="updateExpenseFiles"></include>   
+               
+               
+         delete from EXPENSE_GPS where EXPENSE_NO = #{EXPENSE_NO} and COMPANY_CODE = #{g_comCd};
+         
+                    <if test = "PASS_ITEMS != null and PASS_ITEMS.size > 0" >
+	                  INSERT INTO EXPENSE_GPS (
+	                    COMPANY_CODE,EXPENSE_NO, GPS_ORDER ,START_DH, START_LAT, START_LONG, START_ADDR, DISTANCE,
+	                    USE_YN,REGR_DH,MOD_DH,DEL_DH,REGR_ID,MOD_ID,DEL_ID,REGR_NM,MOD_NM,DEL_NM)  VALUES 
+			                <foreach collection="PASS_ITEMS" item="item" index="index" separator=" , " >
+			                    (  #{g_comCd},  ${EXPENSE_NO}, ${index + 1}, "${item.PASS_DH}", "${item.PASS_LAT}","${item.PASS_LONG}","${item.PASS_ADDR}",0,  
+			                      "1",REGR_DH(),REGR_DH(),#{MOD_DH},'${g_userId}','${g_userId}',"",'${g_userNm}','${g_userNm}',""
+			                    )
+			                </foreach>                
+			                  ;
+	                 </if>
+               
+               
+                    
+          
+          call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 변경'));         
+     
+     </update>
+        
+     <update id="updateExpenseItemCard">
+         <selectKey  resultType="long" keyProperty="GROUP_NO" order="BEFORE">
+              SELECT NEXTVAL(GROUP_FILE_NO_SEQ) AS GROUP_NO;
+         </selectKey>
+         update EXPENSE_MST set RMK = #{RMK} /* updateExpenseItemCard */
+                               ,REPORT_NO = #{REPORT_NO}
+                               ,EXPENSE_CD = #{EXPENSE_CD}
+                               ,CCTR_CD = #{CCTR_CD}
+                               ,PS_CD = #{PS_CD}
+                               ,EXPENSE_AMT = TO_NUMBER(#{EXPENSE_AMT})    
+                               ,EXPENSE_VAT_AMT =  TO_NUMBER(#{EXPENSE_VAT_AMT})
+                               ,BELONGING_TP = #{BELONGING_TP}
+                               ,MOD_DH = #{MOD_DH}
+                               ,PAY_AMT = (#{EXPENSE_AMT}) + TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0
+                               ,EXPENSE_EMP_NO = #{EXPENSE_EMP_NO}
+         where EXPENSE_NO = #{EXPENSE_NO}
+         and COMPANY_CODE = #{g_comCd} ;
+         
+         
+         <include refid="updateExpenseFiles"></include>   
+         
+         
+         delete from EXPENSE_MST_MNG where EXPENSE_NO = #{EXPENSE_NO};
+         
+         
+         <if test = "mngs != null" >
+         INSERT INTO EXPENSE_MST_MNG (
+                    EXPENSE_NO, MNG_CD, COMPANY_CODE, ORD, MNGVAL_CD, MNGVAL_NM, USE_YN, REGR_DH, MOD_DH, DEL_DH, REGR_ID)
+                  VALUES
+                <foreach collection="mngs" item="item" separator=" , " >
+                    ( #{EXPENSE_NO},  "${item.MNG_CD}",  #{g_comCd}, 0, "${item.MNGVAL_CD}", "${item.MNGVAL_NM}",  "1" , REGR_DH(), #{MOD_DH}, null, #{g_userId})
+                </foreach>                
+                  ;         
+         </if>
+         
+         
+<!--            <if test='FILE_NO != null  and FILE_NO !=""'> -->
+<!--                     delete from EXPENSE_FILE where EXPENSE_NO = #{EXPENSE_NO}; -->
+                 
+<!--                     INSERT INTO EXPENSE_FILE(COMPANY_CODE, FILE_NO,EXPENSE_NO,REGR_ID,REGR_DH) -->
+<!--                       VALUES (#{g_comCd}, #{FILE_NO} , #{EXPENSE_NO}, #{g_userId} ,REGR_DH());  -->
+<!--            </if> -->
+         
+         call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 변경'));    
+     </update>
+     
+      <update id="updateExpenseItemEtax">
+         update EXPENSE_MST set RMK = #{RMK} /* updateExpenseItemEtax */
+                               ,REPORT_NO = #{REPORT_NO}
+                               ,EXPENSE_CD = #{EXPENSE_CD}
+                               ,CCTR_CD = #{CCTR_CD}
+                               ,BP_CD = #{BP_CD}
+                               ,PAY_BP_CD = #{BP_CD}
+                               ,CCTR_CD = #{CCTR_CD}
+                               ,PS_CD = #{PS_CD}
+                               ,BELONGING_TP = #{BELONGING_TP}
+                               ,MOD_DH = #{MOD_DH}
+                               ,PAY_AMT = TO_NUMBER(#{EXPENSE_AMT}) + TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0
+                               ,TAX_TP = #{TAX_TP}
+         where EXPENSE_NO = #{EXPENSE_NO};
+         
+        delete from EXPENSE_MST_MNG where EXPENSE_NO = #{EXPENSE_NO};
+        delete from EXPENSE_MST_SPLIT where EXPENSE_NO = #{EXPENSE_NO};
+        
+         <if test = 'mngs != null and SPLIT_YN == "0"' >
+         INSERT INTO EXPENSE_MST_MNG (
+                    EXPENSE_NO, MNG_CD, COMPANY_CODE, ORD, MNGVAL_CD, MNGVAL_NM, USE_YN, REGR_DH, MOD_DH, DEL_DH, REGR_ID)
+                  VALUES
+                <foreach collection="mngs" item="item" separator=" , " >
+                    ( #{EXPENSE_NO},  "${item.MNG_CD}",  #{g_comCd}, 0, "${item.MNGVAL_CD}", "${item.MNGVAL_NM}",  "1" , REGR_DH(), #{MOD_DH}, null, #{g_userId})
+                </foreach>                
+                  ;
+         </if>         
+                  
+                  <if test = 'splitedMngList != null and SPLIT_YN == "1"'  >
+				      INSERT INTO EXPENSE_MST_MNG (
+				        EXPENSE_NO, EXPENSE_SPLIT_NO, MNG_CD, COMPANY_CODE, ORD, MNGVAL_CD, MNGVAL_NM, USE_YN, REGR_DH, MOD_DH, DEL_DH, REGR_ID)
+				      VALUES
+					    <foreach collection="splitedMngList" item="item" separator=" , " >
+					        ( #{EXPENSE_NO}, ${item.EXPENSE_SPLIT_NO}, "${item.MNG_CD}",  #{g_comCd}, 0, "${item.MNGVAL_CD}", "${item.MNGVAL_NM}",  "1" , REGR_DH(), #{MOD_DH}, null, #{g_userId})
+					    </foreach>                
+		                  ;
+                  </if>
+                  <if test = "splitedList != null" >
+				      INSERT INTO EXPENSE_MST_SPLIT (
+				        EXPENSE_NO	,
+						EXPENSE_SPLIT_NO	,
+						SPLIT_TP	,
+						TAX_CD	,
+						ACC_CD	,
+						EXPENSE_CD	,
+						BELONGING_TP	,
+						CCTR_CD	,
+						PS_CD	,
+						EXPENSE_AMT	,
+						RMK	,
+						REGR_DH	,
+						MOD_DH	,
+						DEL_DH	,
+						REGR_ID	,
+						MOD_ID	,
+						DEL_ID	
+)
+				      VALUES
+					    <foreach collection="splitedList" item="item" separator=" , " >
+					        ( #{EXPENSE_NO},  ${item.EXPENSE_SPLIT_NO},  #{item.SPLIT_TP}, #{item.TAX_CD}, #{item.ACC_CD}, "${item.EXPENSE_CD}", "${item.BELONGING_TP}",
+					         "${item.CCTR_CD}","${item.PS_CD}", TO_NUMBER(#{item.EXPENSE_AMT}), #{item.RMK}, REGR_DH(), #{MOD_DH}, null, #{g_userId}, #{g_userId}, null)
+					    </foreach>                
+		                  ;
+                  </if>
+         
+         call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 변경'));    
+         
+     </update>
+ 
+           <update id="updateExpenseItemPtax">
+         update EXPENSE_MST set RMK = #{RMK} /* updateExpenseItemPtax */
+                               ,REPORT_NO = #{REPORT_NO}
+                               ,EXPENSE_CD = #{EXPENSE_CD}
+                               ,CCTR_CD = #{CCTR_CD}
+                               ,BP_CD = #{BP_CD}
+                               ,PAY_BP_CD = #{BP_CD}
+                               ,CCTR_CD = #{CCTR_CD}
+                               ,PS_CD = #{PS_CD}
+                               ,SUPPLY_AMT = #{SUPPLY_AMT}    
+                               ,VAT_AMT = #{VAT_AMT}    
+                               ,TOT_AMT = TO_NUMBER(#{EXPENSE_AMT}) + TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0
+                               ,EXPENSE_AMT = TO_NUMBER(#{EXPENSE_AMT})    
+                               ,EXPENSE_VAT_AMT =  TO_NUMBER(#{EXPENSE_VAT_AMT})
+                               ,BELONGING_TP = #{BELONGING_TP}
+                               ,MOD_DH = #{MOD_DH}
+                               ,PAY_AMT = TO_NUMBER(#{EXPENSE_AMT}) + TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0
+                               ,EXPENSE_EMP_NO = #{EXPENSE_EMP_NO}
+                               ,TAX_TP = #{TAX_TP}
+                               ,RECEIPT_DT = REPLACE_DATE(#{RECEIPT_DT},"")
+                               ,POSTING_DT = REPLACE_DATE(#{RECEIPT_DT},"")
+         where EXPENSE_NO = #{EXPENSE_NO};
+         
+            <include refid="updateExpenseFiles"></include>  
+            
+            
+         delete from EXPENSE_MST_MNG where EXPENSE_NO = #{EXPENSE_NO};
+         
+         <if test = "mngs != null" >
+         INSERT INTO EXPENSE_MST_MNG (
+                    EXPENSE_NO, MNG_CD, COMPANY_CODE, ORD, MNGVAL_CD, MNGVAL_NM, USE_YN, REGR_DH, MOD_DH, DEL_DH, REGR_ID)
+                  VALUES
+                <foreach collection="mngs" item="item" separator=" , " >
+                    ( #{EXPENSE_NO},  "${item.MNG_CD}",  #{g_comCd}, 0, "${item.MNGVAL_CD}", "${item.MNGVAL_NM}",  "1" , REGR_DH(), #{MOD_DH}, null, #{g_userId})
+                </foreach>                
+                  ;
+         </if>     
+         call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 변경'));    
+         
+     </update>
+ 
+       <update id="updateExpenseItemEtc">
+         update EXPENSE_MST set RMK = #{RMK} /* updateExpenseItemEtc */
+                               ,REPORT_NO = #{REPORT_NO}
+                               ,EXPENSE_CD = #{EXPENSE_CD}
+                               ,BP_CD = #{BP_CD}
+                               ,PAY_BP_CD = #{BP_CD}
+                               ,CCTR_CD = #{CCTR_CD}
+                               ,PS_CD = #{PS_CD}
+                               ,EXPENSE_AMT = TO_NUMBER(#{EXPENSE_AMT} )   
+                               ,EXPENSE_VAT_AMT =  TO_NUMBER(#{EXPENSE_VAT_AMT})
+                               ,BELONGING_TP = #{BELONGING_TP}
+                               ,MOD_DH = #{MOD_DH}
+                               ,PAY_AMT = TO_NUMBER(#{EXPENSE_AMT}) + TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0
+                               ,EXPENSE_EMP_NO = #{EXPENSE_EMP_NO}
+                               ,TAX_TP = #{TAX_TP}
+                               ,RECEIPT_DT = REPLACE_DATE(#{RECEIPT_DT},"")
+                               ,POSTING_DT = REPLACE_DATE(#{RECEIPT_DT},"")
+                               ,CURRENCY_AMT = #{CURRENCY_AMT}
+                               ,CURRENCY_RATE =  #{CURRENCY_RATE}
+                               ,CURRENCY_CD =  #{CURRENCY_CD}
+                               ,CURRENCY_DT =  #{CURRENCY_DT}                                  
+         where EXPENSE_NO = #{EXPENSE_NO};
+         
+            <include refid="updateExpenseFiles"></include>  
+         
+         delete from EXPENSE_MST_MNG where EXPENSE_NO = #{EXPENSE_NO};
+         
+         
+         <if test = "mngs != null" >
+         INSERT INTO EXPENSE_MST_MNG (
+                    EXPENSE_NO, MNG_CD, COMPANY_CODE, ORD, MNGVAL_CD, MNGVAL_NM, USE_YN, REGR_DH, MOD_DH, DEL_DH, REGR_ID)
+                  VALUES
+                <foreach collection="mngs" item="item" separator=" , " >
+                    ( #{EXPENSE_NO},  "${item.MNG_CD}",  #{g_comCd}, 0, "${item.MNGVAL_CD}", "${item.MNGVAL_NM}",  "1" , REGR_DH(), #{MOD_DH}, null, #{g_userId})
+                </foreach>                
+                  ;
+         </if>         
+         call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 변경'));    
+         
+     </update>
+ 
+       <update id="updateExpenseItemPrepaid">
+         update EXPENSE_MST set RMK = #{RMK} /* updateExpenseItemEtc */
+                               ,REPORT_NO = #{REPORT_NO}
+                               ,EXPENSE_CD = #{EXPENSE_CD}
+                               ,BP_CD = #{BP_CD}
+                               ,PAY_BP_CD = #{BP_CD}
+                               ,CCTR_CD = #{CCTR_CD}
+                               ,PS_CD = #{PS_CD}
+                               ,EXPENSE_AMT = TO_NUMBER(#{EXPENSE_AMT})    
+                               ,EXPENSE_VAT_AMT =  TO_NUMBER(#{EXPENSE_VAT_AMT})
+                               ,BELONGING_TP = #{BELONGING_TP}
+                               ,MOD_DH = #{MOD_DH}
+                               ,PAY_AMT = TO_NUMBER(#{EXPENSE_AMT}) + TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0
+                               ,EXPENSE_EMP_NO = #{EXPENSE_EMP_NO}
+                               ,TAX_TP = #{TAX_TP}
+                               ,RECEIPT_DT = REPLACE_DATE(#{RECEIPT_DT},"")
+                               ,POSTING_DT = REPLACE_DATE(#{RECEIPT_DT},"")
+                               ,CURRENCY_AMT = #{CURRENCY_AMT}
+                               ,CURRENCY_RATE =  #{CURRENCY_RATE}
+                               ,CURRENCY_CD =  #{CURRENCY_CD}
+                               ,CURRENCY_DT =  #{CURRENCY_DT}                                  
+         where EXPENSE_NO = #{EXPENSE_NO};
+         
+            <include refid="updateExpenseFiles"></include>  
+         
+         delete from EXPENSE_MST_MNG where EXPENSE_NO = #{EXPENSE_NO};
+         
+         <if test = "mngs != null" >
+         INSERT INTO EXPENSE_MST_MNG (
+                    EXPENSE_NO, MNG_CD, COMPANY_CODE, ORD, MNGVAL_CD, MNGVAL_NM, USE_YN, REGR_DH, MOD_DH, DEL_DH, REGR_ID)
+                  VALUES
+                <foreach collection="mngs" item="item" separator=" , " >
+                    ( #{EXPENSE_NO},  "${item.MNG_CD}",  #{g_comCd}, 0, "${item.MNGVAL_CD}", "${item.MNGVAL_NM}",  "1" , REGR_DH(), #{MOD_DH}, null, #{g_userId})
+                </foreach>                
+                  ;
+         </if>         
+         call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 변경'));    
+         
+     </update> 
+ 
+      <update id="updateExpenseItemReceipt">
+               <selectKey  resultType="long" keyProperty="GROUP_NO" order="BEFORE">
+                    SELECT NEXTVAL(GROUP_FILE_NO_SEQ) AS GROUP_NO;
+               </selectKey>
+               
+<!--            <selectKey  resultType="HashMap" keyProperty="GROUP_NO,FILE_KIND" order="BEFORE"> -->
+<!--                 SELECT NEXTVAL(group_file_no_seq) AS GROUP_NO, GET_FILE_KIND(#{ORG_FILE_NAME}) AS FILE_KIND -->
+               
+<!--            </selectKey> -->
+               
+         update EXPENSE_MST set RMK = #{RMK} /* updateExpenseItemReceipt */
+                               ,REPORT_NO = #{REPORT_NO}
+                               ,EXPENSE_CD = #{EXPENSE_CD}
+                               ,CCTR_CD = #{CCTR_CD}
+                               ,PS_CD = #{PS_CD}
+                               ,EXPENSE_AMT = TO_NUMBER(#{EXPENSE_AMT}) 
+                               ,BELONGING_TP = #{BELONGING_TP}
+                               ,RECEIPT_DT = REPLACE_DATE(#{RECEIPT_DT},"")
+                               ,POSTING_DT = REPLACE_DATE(#{RECEIPT_DT},"")
+                               ,EXPENSE_EMP_NO = #{EXPENSE_EMP_NO} 
+                               ,MOD_DH = #{MOD_DH}
+                               ,PAY_AMT = TO_NUMBER(#{EXPENSE_AMT}) + TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0
+                               ,CURRENCY_AMT = #{CURRENCY_AMT}
+                               ,CURRENCY_RATE =  #{CURRENCY_RATE}
+                               ,CURRENCY_CD =  #{CURRENCY_CD}
+                               ,CURRENCY_DT =  #{CURRENCY_DT}
+         where EXPENSE_NO = #{EXPENSE_NO};
+         
+         <include refid="updateExpenseFiles"></include>   
+         
+         delete from EXPENSE_MST_MNG where EXPENSE_NO = #{EXPENSE_NO};
+         
+         <if test = "mngs != null" >
+         INSERT INTO EXPENSE_MST_MNG (
+                    EXPENSE_NO, MNG_CD, COMPANY_CODE, ORD, MNGVAL_CD, MNGVAL_NM, USE_YN, REGR_DH, MOD_DH, DEL_DH, REGR_ID)
+                  VALUES
+                <foreach collection="mngs" item="item" separator=" , " >
+                    ( #{EXPENSE_NO},  "${item.MNG_CD}",  #{g_comCd}, 0, "${item.MNGVAL_CD}", "${item.MNGVAL_NM}",  "1" , REGR_DH(), #{MOD_DH}, null, #{g_userId})
+                </foreach>                
+                  ;
+         </if>
+         
+         call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 변경'));    
+         
+     </update>
+     
+         <update id="updateExpenseItemToll">
+	         update EXPENSE_MST set RMK = #{RMK} /* updateExpenseItemToll */
+	                               ,REPORT_NO = #{REPORT_NO}
+	                               ,EXPENSE_CD = #{EXPENSE_CD}
+	                               ,CCTR_CD = #{CCTR_CD}
+	                               ,PS_CD = #{PS_CD}
+	                               ,EXPENSE_AMT = TO_NUMBER(#{EXPENSE_AMT}) 
+	                               ,BELONGING_TP = #{BELONGING_TP}
+	                               ,RECEIPT_DT = REPLACE_DATE(#{RECEIPT_DT},"")
+	                               ,POSTING_DT = REPLACE_DATE(#{RECEIPT_DT},"")
+	                               ,EXPENSE_EMP_NO = #{EXPENSE_EMP_NO} 
+	                               ,MOD_DH = #{MOD_DH}
+	                               ,MOD_ID = #{g_userId} 
+	                               ,MOD_NM = #{g_userNm} 
+	                               ,PAY_AMT = TO_NUMBER(#{EXPENSE_AMT}) + TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0
+	         where EXPENSE_NO = #{EXPENSE_NO}
+	         and COMPANY_CODE = #{g_comCd};
+         
+            <include refid="updateExpenseFiles"></include>  
+         
+          delete from EXPENSE_MST_TOLL where EXPENSE_NO = #{EXPENSE_NO};
+          delete from EXPENSE_MST_MNG where EXPENSE_NO = #{EXPENSE_NO};
+                  <if test = "mngs != null" >
+			         INSERT INTO EXPENSE_MST_MNG (
+			                    EXPENSE_NO, MNG_CD, COMPANY_CODE, ORD, MNGVAL_CD, MNGVAL_NM, USE_YN, REGR_DH, MOD_DH, DEL_DH, REGR_ID)
+			                  VALUES
+			                <foreach collection="mngs" item="item" separator=" , " >
+			                    ( #{EXPENSE_NO},  "${item.MNG_CD}",  #{g_comCd}, 0, "${item.MNGVAL_CD}", "${item.MNGVAL_NM}",  "1" , REGR_DH(), #{MOD_DH}, null, #{g_userId})
+			                </foreach>                
+			                  ;         
+                 </if>
+         
+                 <if test = "TOLL_DATA != null" >
+                  INSERT INTO EXPENSE_MST_TOLL (
+                    TOLL_NO,EXPENSE_NO,COMPANY_CODE,RECEIPT_DT,RECEIPT_TS,BIZ_NO,BIZ_NM,TEL_NO,
+                    SUPPLY_AMT,VAT_AMT,TOT_AMT,CARD_NO,HIPASS_DOC_NO, RMK,
+                    USE_YN,REGR_DH,MOD_DH,DEL_DH,REGR_ID,MOD_ID,DEL_ID,REGR_NM,MOD_NM,DEL_NM)  VALUES 
+                        <foreach collection="TOLL_DATA" item="item" separator=" , " >
+                            ( NEXTVAL(TOLL_NO),  ${EXPENSE_NO},  #{g_comCd},  "${item.RECEIPT_DT}", "${item.RECEIPT_TS}",  REPLACE("${item.BIZ_NO}",'-',''),"${item.BIZ_NM}","${item.TEL_NO}",
+                              TO_NUMBER("${item.SUPPLY_AMT}"),TO_NUMBER("${item.VAT_AMT}"),TO_NUMBER("${item.TOT_AMT}"),"${item.CARD_NO}","${item.HIPASS_DOC_NO}","${item.RMK}",
+                              "1",REGR_DH(),#{MOD_DH},"",'${g_userId}','${g_userId}',"",'${g_userNm}','${g_userNm}',""
+                            )
+                        </foreach>                
+                          ;
+                 </if>
+         
+         call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 변경'));    
+         
+     </update>
+    
+      <update id="updateExpenseItemPrepay">
+         update EXPENSE_MST set RMK = #{RMK} /* updateExpenseItemPrepay */
+                               ,REPORT_NO = #{REPORT_NO}
+                               ,EXPENSE_CD = #{EXPENSE_CD}
+                               ,CCTR_CD = #{CCTR_CD}
+                               ,PS_CD = #{PS_CD}
+                               ,EXPENSE_AMT = TO_NUMBER(#{EXPENSE_AMT}) 
+                               ,BELONGING_TP = #{BELONGING_TP}
+                               ,RECEIPT_DT = REPLACE_DATE(#{RECEIPT_DT},"")
+                               ,POSTING_DT = REPLACE_DATE(#{RECEIPT_DT},"")
+                               ,EXPENSE_EMP_NO = #{EXPENSE_EMP_NO} 
+                               ,MOD_DH = #{MOD_DH}
+                               ,PAY_AMT = TO_NUMBER(#{EXPENSE_AMT}) + TO_NUMBER(#{EXPENSE_VAT_AMT}) + 0
+                               ,CURRENCY_AMT = #{CURRENCY_AMT}
+                               ,CURRENCY_RATE =  #{CURRENCY_RATE}
+                               ,CURRENCY_CD =  #{CURRENCY_CD}
+                               ,CURRENCY_DT =  #{CURRENCY_DT}
+         where EXPENSE_NO = #{EXPENSE_NO}
+         ;
+         
+         
+        <include refid="updateExpenseFiles"></include>  
+         
+         delete from EXPENSE_MST_MNG where EXPENSE_NO = #{EXPENSE_NO};
+         
+         <if test = "mngs != null" >
+         INSERT INTO EXPENSE_MST_MNG (
+                    EXPENSE_NO, MNG_CD, COMPANY_CODE, ORD, MNGVAL_CD, MNGVAL_NM, USE_YN, REGR_DH, MOD_DH, DEL_DH, REGR_ID)
+                  VALUES
+                <foreach collection="mngs" item="item" separator=" , " >
+                    ( #{EXPENSE_NO},  "${item.MNG_CD}",  #{g_comCd}, 0, "${item.MNGVAL_CD}", "${item.MNGVAL_NM}",  "1" , REGR_DH(), #{MOD_DH}, null, #{g_userId})
+                </foreach>                
+                  ;
+         </if>
+         
+         call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 변경'));    
+     </update>    
+   
+       <select id="updateExpenseReportCheck" resultType="int">
+	       <if test='COMPONENT_ID == "report-apprv-expense-list" '><include refid="report-apprv-expense-list-check"></include></if>
+	       <if test='COMPONENT_ID == "report-apprv-transportation-list" '><include refid="report-apprv-transportation-list-check"></include></if>
+	       <if test='COMPONENT_ID == "report-apprv-smalldeposit-list" '><include refid="report-apprv-smalldeposit-list-check"></include></if>
+	       <if test='COMPONENT_ID == "report-apprv-trans-list" '><include refid="report-apprv-trans-list-check"></include></if>
+	       <if test='COMPONENT_ID == "report-apprv-club-list" '><include refid="report-apprv-club-list-check"></include></if> 
+	       <if test='COMPONENT_ID == "report-apprv-condolence-list" '><include refid="report-apprv-condolence-list-check"></include></if>
+	       
+	       
+	       <if test='COMPONENT_ID == "report-apprv-biztrip-exp-list" '><include refid="report-apprv-biztrip-exp-list-check"></include></if>
+	       <if test='COMPONENT_ID == "report-apprv-hoteltrip-exp-list" '><include refid="report-apprv-hoteltrip-exp-list-check"></include></if>
+	       
+	       
+	          
+       </select>  
+       
+       
+		<!--        호텔패키지 교통비 정산서 -->
+	   <sql id="report-apprv-hoteltrip-exp-list-check">
+			SELECT COUNT(*) CNT FROM
+			(SELECT COUNT(*) cnt FROM EXPENSE_MST
+			WHERE expense_no IN
+			<foreach collection="ds_etcList.data" item="item" open="("
+				close=")" separator=","> #{item.EXPENSE_NO} </foreach>
+			) a,
+			(
+			SELECT COUNT(*) cnt FROM EXPENSE_MST
+			WHERE (expense_no, mod_dh) IN
+			<foreach collection="ds_etcList.data" item="item" open="("
+				close=")" separator="union all">
+				select #{item.EXPENSE_NO}, #{item.MOD_DH}
+			</foreach>
+			) b
+			WHERE a.cnt = b.cnt;
+		</sql>
+       <sql id="report-apprv-trans-list-check">
+		SELECT COUNT(*) CNT FROM 
+			(SELECT COUNT(*) cnt FROM EXPENSE_MST
+			WHERE expense_no IN <foreach collection="ds_etcList.data" item="item"  open="(" close=")" separator=","> #{item.EXPENSE_NO} </foreach>
+			) a,
+			(
+			SELECT COUNT(*) cnt FROM EXPENSE_MST
+			WHERE (expense_no, mod_dh) IN <foreach collection="ds_etcList.data" item="item"  open="(" close=")" separator="union all"> 
+			                                   select #{item.EXPENSE_NO},  #{item.MOD_DH}
+			                              </foreach>
+			) b
+			WHERE a.cnt = b.cnt;
+
+       </sql>
+        <sql id="report-apprv-club-list-check">
+		SELECT COUNT(*) CNT FROM 
+			(SELECT COUNT(*) cnt FROM EXPENSE_MST
+			WHERE expense_no IN <foreach collection="ds_etcList.data" item="item"  open="(" close=")" separator=","> #{item.EXPENSE_NO} </foreach>
+			) a,
+			(
+			SELECT COUNT(*) cnt FROM EXPENSE_MST
+			WHERE (expense_no, mod_dh) IN <foreach collection="ds_etcList.data" item="item"  open="(" close=")" separator="union all"> 
+			                                   select #{item.EXPENSE_NO},  #{item.MOD_DH}
+			                              </foreach>
+			) b
+			WHERE a.cnt = b.cnt;
+
+       </sql>
+        <sql id="report-apprv-condolence-list-check">
+		SELECT COUNT(*) CNT FROM 
+			(SELECT COUNT(*) cnt FROM EXPENSE_MST
+			WHERE expense_no IN <foreach collection="ds_etcList.data" item="item"  open="(" close=")" separator=","> #{item.EXPENSE_NO} </foreach>
+			) a,
+			(
+			SELECT COUNT(*) cnt FROM EXPENSE_MST
+			WHERE (expense_no, mod_dh) IN <foreach collection="ds_etcList.data" item="item"  open="(" close=")" separator="union all"> 
+			                                   select #{item.EXPENSE_NO},  #{item.MOD_DH}
+			                              </foreach>
+			) b
+			WHERE a.cnt = b.cnt;
+
+       </sql>
+ 
+       
+          
+       <sql id="report-apprv-expense-list-check">
+		SELECT COUNT(*) CNT FROM 
+			(SELECT COUNT(*) cnt FROM EXPENSE_MST
+			WHERE expense_no IN <foreach collection="ds_etcList.data" item="item"  open="(" close=")" separator=","> #{item.EXPENSE_NO} </foreach>
+			) a,
+			(
+			SELECT COUNT(*) cnt FROM EXPENSE_MST
+			WHERE (expense_no, mod_dh) IN <foreach collection="ds_etcList.data" item="item"  open="(" close=")" separator="union all"> 
+			                                   select #{item.EXPENSE_NO},  #{item.MOD_DH}
+			                              </foreach>
+			) b
+			WHERE a.cnt = b.cnt;
+
+       </sql>
+       <sql id="report-apprv-transportation-list-check">
+		SELECT COUNT(*) CNT FROM 
+			(SELECT COUNT(*) cnt FROM EXPENSE_MST
+			WHERE expense_no IN <foreach collection="ds_etcList.data" item="item"  open="(" close=")" separator=","> #{item.EXPENSE_NO} </foreach>
+			) a,
+			(
+			SELECT COUNT(*) cnt FROM EXPENSE_MST
+			WHERE (expense_no, mod_dh) IN <foreach collection="ds_etcList.data" item="item"  open="(" close=")" separator="union all"> 
+			                                   select #{item.EXPENSE_NO},  #{item.MOD_DH}
+			                              </foreach>
+			) b
+			WHERE a.cnt = b.cnt;
+       </sql>
+       
+		<sql id="report-apprv-smalldeposit-list-check">
+			SELECT COUNT(*) CNT FROM
+			(SELECT COUNT(*) cnt FROM EXPENSE_MST
+			WHERE expense_no IN
+			<foreach collection="ds_etcList.data" item="item" open="("
+				close=")" separator=","> #{item.EXPENSE_NO} </foreach>
+			) a,
+			(
+			SELECT COUNT(*) cnt FROM EXPENSE_MST
+			WHERE (expense_no, mod_dh) IN
+			<foreach collection="ds_etcList.data" item="item" open="("
+				close=")" separator="union all">
+				select #{item.EXPENSE_NO}, #{item.MOD_DH}
+			</foreach>
+			) b
+			WHERE a.cnt = b.cnt;
+		</sql> 
+		
+<!--        국내출장정산서 -->
+       <sql id="report-apprv-biztrip-exp-list-check">
+		SELECT COUNT(*) CNT FROM 
+			(SELECT COUNT(*) cnt FROM EXPENSE_MST
+			WHERE expense_no IN <foreach collection="ds_etcList.data" item="item"  open="(" close=")" separator=","> #{item.EXPENSE_NO} </foreach>
+			) a,
+			(
+			SELECT COUNT(*) cnt FROM EXPENSE_MST
+			WHERE (expense_no, mod_dh) IN <foreach collection="ds_etcList.data" item="item"  open="(" close=")" separator="union all"> 
+			                                   select #{item.EXPENSE_NO},  #{item.MOD_DH}
+			                              </foreach>
+			) b
+			WHERE a.cnt = b.cnt;
+       </sql>
+		
+		
+      <update id="updateExpenseReport">
+	    
+	    <if test='COMPONENT_ID == "report-apprv-expense-list" '><include refid="report-apprv-expense-list"></include></if>
+	    <if test='COMPONENT_ID == "report-apprv-transportation-list" '><include refid="report-apprv-transportation-list"></include></if>
+	    <if test='COMPONENT_ID == "report-apprv-smalldeposit-list" '><include refid="report-apprv-smalldeposit-list"></include></if>
+		<if test='COMPONENT_ID == "report-apprv-trans-list" '><include refid="report-apprv-trans-list"></include></if>
+		<if test='COMPONENT_ID == "report-apprv-club-list" '><include refid="report-apprv-club-list"></include></if>
+		<if test='COMPONENT_ID == "report-apprv-condolence-list" '><include refid="report-apprv-condolence-list"></include></if>
+	    
+	    <if test='COMPONENT_ID == "report-apprv-biztrip-exp-list" '><include refid="report-apprv-biztrip-exp-list"></include></if>
+	    <if test='COMPONENT_ID == "report-apprv-hoteltrip-exp-list" '><include refid="report-apprv-hoteltrip-exp-list"></include></if>
+
+      </update>   
+      
+		<!--        호텔패키지 교통비 정산서 -->
+		<sql id="report-apprv-hoteltrip-exp-list">
+       		<foreach collection="ds_etcList.data" item="item"  >
+	         UPDATE EXPENSE_MST 
+	         set REPORT_NO = #{REPORT_NO},
+	             POSTING_DT = RECEIPT_DT,
+	             MOD_DH = REGR_DH()
+	         where EXPENSE_NO = #{item.EXPENSE_NO}
+	         AND (REPORT_NO is null or REPORT_NO = '');
+         </foreach>
+         
+         INSERT INTO EXPENSE_REPORT_HOTELTRIP (
+	        REPORT_NO,
+			COMPANY_CODE,
+			HOTEL_PKG,
+			MARRIED_TP,
+			HOTEL_PKG_NM,
+			MARRIED_TP_NM,
+			LIMIT_AMT,
+			REGR_ID,
+			REGR_NM
+         )VALUES (
+         	#{REPORT_NO},
+			#{g_comCd},
+			#{ds_etcList.item.HOTEL_PKG},
+			#{ds_etcList.item.MARRIED_TP},
+			#{ds_etcList.item.HOTEL_PKG_NM},
+			#{ds_etcList.item.MARRIED_TP_NM},
+			#{ds_etcList.item.LIMIT_AMT},
+			#{g_userId},
+			#{g_userNm}
+         );
+       </sql>      
+ 
+       <sql id="report-apprv-trans-list">
+	       <foreach collection="ds_etcList.data" item="item"  >
+	         UPDATE EXPENSE_MST 
+	         set REPORT_NO = #{REPORT_NO},
+	             POSTING_DT = RECEIPT_DT,
+	             MOD_DH = REGR_DH()
+	         where EXPENSE_NO = #{item.EXPENSE_NO}
+	         AND (REPORT_NO is null or REPORT_NO = '');
+         </foreach>
+       </sql>
+       
+       <sql id="report-apprv-club-list">
+	       <foreach collection="ds_etcList.data" item="item"  >
+	         UPDATE EXPENSE_MST 
+	         set REPORT_NO = #{REPORT_NO},
+	             POSTING_DT = RECEIPT_DT,
+	             MOD_DH = REGR_DH()
+	         where EXPENSE_NO = #{item.EXPENSE_NO}
+	         AND (REPORT_NO is null or REPORT_NO = '');
+         </foreach>
+       </sql>
+       
+       <sql id="report-apprv-condolence-list">
+	       <foreach collection="ds_etcList.data" item="item"  >
+	         UPDATE EXPENSE_MST 
+	         set REPORT_NO = #{REPORT_NO},
+	             POSTING_DT = RECEIPT_DT,
+	             MOD_DH = REGR_DH()
+	         where EXPENSE_NO = #{item.EXPENSE_NO}
+	         AND (REPORT_NO is null or REPORT_NO = '');
+         </foreach>
+       </sql>    
+     
+       <sql id="report-apprv-expense-list">
+	       <foreach collection="ds_etcList.data" item="item"  >
+	         UPDATE EXPENSE_MST 
+	         set REPORT_NO = #{REPORT_NO},
+	             POSTING_DT = RECEIPT_DT,
+	             MOD_DH = REGR_DH()
+	         where EXPENSE_NO = #{item.EXPENSE_NO}
+	         AND (REPORT_NO is null or REPORT_NO = '');
+         </foreach>
+       </sql>
+       
+       <sql id="report-apprv-transportation-list">
+	       <foreach collection="ds_etcList.data" item="item"  >
+	         UPDATE EXPENSE_MST 
+	         set REPORT_NO = #{REPORT_NO},
+	             POSTING_DT = RECEIPT_DT,
+	             MOD_DH = REGR_DH()
+	         where EXPENSE_NO = #{item.EXPENSE_NO}
+	         AND (REPORT_NO is null or REPORT_NO = '');
+         </foreach>
+       </sql>   
+        
+       <sql id="report-apprv-smalldeposit-list">
+	       
+	       <foreach collection="ds_etcList.data" item="item"  >
+	         UPDATE EXPENSE_MST 
+	         set REPORT_NO = #{REPORT_NO},
+	             POSTING_DT = RECEIPT_DT,
+	             MOD_DH = REGR_DH()
+	         where EXPENSE_NO = #{item.EXPENSE_NO}
+	         AND (REPORT_NO is null or REPORT_NO = '');
+         </foreach>
+       </sql>
+       
+       <sql id="report-apprv-biztrip-exp-list">
+	       
+	      <foreach collection="ds_etcList.data" item="item"  >
+	         UPDATE EXPENSE_MST 
+	         set REPORT_NO = #{REPORT_NO},
+	             POSTING_DT = RECEIPT_DT,
+	             MOD_DH = REGR_DH()
+	         where EXPENSE_NO = #{item.EXPENSE_NO}
+	         AND (REPORT_NO is null or REPORT_NO = '');
+          </foreach>
+          
+             <foreach collection="ds_etcList.gridItem" item="item" >
+          	 INSERT INTO EXPENSE_REPORT_BIZTRV ( 
+                 REPORT_NO,
+		         COMPANY_CODE,
+		         EMP_NO,
+		         DEPT_NM,
+		         BIZTRIP_FRDT,
+		         BIZTRIP_TODT,
+		         REGR_DH,
+		         REGR_ID,
+		         REGR_NM
+              ) VALUES
+                (
+                  #{REPORT_NO},
+	         	  #{g_comCd},
+	         	  "${item.EMP_NO}",
+	         	  
+	         	  "${item.DEPT_NM}",
+	         	  "${item.BIZTRIP_FRDT}",
+	         	  "${item.BIZTRIP_TODT}",
+	         	  REGR_DH(),
+	         	  #{g_userId},
+	         	  #{g_userNm}
+                );
+             </foreach>
+             
+             INSERT INTO EXPENSE_REPORT_BIZTRIP (
+	         	REPORT_NO,
+	         	COMPANY_CODE,
+	         	BIZTRIP_PLACE,
+	         	BIZTRIP_GOAL,
+	         	BIZTRIP_FRDT,
+	         	BIZTRIP_TODT,
+	         	BIZTRIP_NIGHT,
+	         	BIZTRIP_DAYS,
+	         	REGR_DH,
+	         	REGR_ID,
+	         	REGR_NM
+	         ) VALUES (
+	         	#{REPORT_NO},
+	         	#{g_comCd},
+	         	#{ds_etcList.item.BIZTRIP_PLACE},
+	         	#{ds_etcList.item.BIZTRIP_GOAL},
+	         	#{ds_etcList.item.BIZTRIP_FRDT},
+	         	#{ds_etcList.item.BIZTRIP_TODT},
+	         	#{ds_etcList.item.BIZTRIP_NIGHT},
+	         	#{ds_etcList.item.BIZTRIP_DAYS},
+	         	REGR_DH(),
+	         	#{g_userId},
+	         	#{g_userNm}
+	         );
+         </sql>
+     
+     <update id="provExpToReport">
+         update EXPENSE_MST set REPORT_NO = #{REPORT_NO}, MOD_DH = REGR_DH()
+         where EXPENSE_NO = #{EXPENSE_NO};
+         
+         -- 조건 추가 : 결재된 건 제외
+     </update>   
+      <update id="ceaseExpToReport">
+         update EXPENSE_MST set REPORT_NO = NULL, MOD_DH = #{MOD_DH}
+         where EXPENSE_NO = #{EXPENSE_NO};
+         
+         -- 조건 추가 : 결재된 건 제외
+     </update>       
+     
+     
+     <update id="savePrivateUse">
+     
+         UPDATE EXPENSE_INBOX_CARD SET 
+         PRIVATE_YN = #{PRIVATE_YN},
+         MOD_ID = #{g_userId},
+         MOD_NM = #{g_userNm},
+         MOD_DH = #{MOD_DH}
+         WHERE EVID_NO = #{EVID_NO}
+         AND COMPANY_CODE = #{g_comCd}
+        <if test = 'EXPENSE_NO != ""  and EXPENSE_NO != null  '   > 
+         AND EX_IS_REPORTED(#{EXPENSE_NO}) = '0' ; 
+         </if>
+     
+     <if test = 'PRIVATE_YN == "1" and EXPENSE_NO != ""  and EXPENSE_NO != null  '   >
+         UPDATE EXPENSE_MST SET 
+         USE_YN = '0',
+         DEL_DH = REGR_DH(),
+         MOD_DH = #{MOD_DH}
+         WHERE EXPENSE_NO = #{EXPENSE_NO}
+         AND EX_IS_REPORTED(#{EXPENSE_NO}) = '0' ; 
+         
+         call insertExpLog(#{g_userId},#{g_comCd},#{EXPENSE_NO},  'EXPENSE_MST', concat('비용[', #{EXPENSE_NO} , ' ] 변경(사적사용)')); 
+     </if>
+     
+        
+     
+     
+     </update>
+     
+       <update id="saveCardSharedEmp">
+     
+         UPDATE EXPENSE_INBOX_CARD SET 
+         SHARED_USER_ID = #{SHARED_USER_ID}
+         , MOD_DH = #{MOD_DH}
+         WHERE EVID_NO = #{EVID_NO}
+         AND #{SHARED_USER_ID} != #{g_userId}
+         AND COMPANY_CODE = #{g_comCd};
+        
+     </update>
+     
+     
+     <delete id="deleteExpenseItem">
+     
+       <!-- inbox(card, gps..)의 데이터를 제외하고 모두 삭제 -->
+         
+         UPDATE /* deleteExpenseItem hcho 2021.8.01 */ EXPENSE_INBOX_CARD SET 
+         EXPENSE_NO = NULL,
+         MOD_DH = REGR_DH(),
+         MOD_ID = #{g_userId},
+         MOD_NM = #{g_userNm}
+         WHERE EVID_NO = #{EVID_NO}
+         AND COMPANY_CODE = #{g_comCd}
+         AND EX_IS_REPORTED(TO_NUMBER(#{EXPENSE_NO})) = '0' ;
+         
+         UPDATE EXPENSE_INBOX_TAX SET 
+         EXPENSE_NO = NULL,
+         MOD_DH = REGR_DH()
+         WHERE EVID_NO = #{EVID_NO}
+         AND COMPANY_CODE = #{g_comCd}
+         AND EX_IS_REPORTED(TO_NUMBER(#{EXPENSE_NO})) = '0' ;   
+         
+         UPDATE EXPENSE_INBOX_GPS SET 
+         USE_YN = "0",
+         MOD_DH = REGR_DH()
+         WHERE (#{EVID_NO} REGEXP '^[0-9]+\\.?[0-9]*$' AND  GPS_LOG_NO = #{EVID_NO} )
+         AND COMPANY_CODE = #{g_comCd}
+         AND EX_IS_REPORTED(TO_NUMBER(#{EXPENSE_NO})) = '0' ;  
+
+         DELETE FROM EXPENSE_FILE 
+         WHERE EXPENSE_NO = #{EXPENSE_NO}
+         AND EX_IS_REPORTED(TO_NUMBER(#{EXPENSE_NO})) = '0';
+         
+         
+         <!--다시 처리하기 위해서 삭제보관함에서 복원처리 해야함-->
+         
+         UPDATE ADMIN_FILE SET 
+         USE_YN = "0",
+         DEL_DH = REGR_DH(),
+         MOD_DH = REGR_DH(),
+         FILE_OWNER_TP = NULL,
+         FILE_OWNER_YN = '0'
+         WHERE FILE_NO = #{FILE_NO}
+         AND EX_IS_REPORTED(TO_NUMBER(#{EXPENSE_NO})) = '0' ;
+         <!--다시 처리하기 위해서 삭제보관함에서 복원처리 해야함-->
+         UPDATE ADMIN_FILE SET 
+         USE_YN = "0",
+         FILE_OWNER_TP = null,
+         FILE_OWNER_YN = '0',
+         MOD_DH = REGR_DH
+         WHERE GROUP_NO = #{GROUP_NO}
+         AND EX_IS_REPORTED(TO_NUMBER(#{EXPENSE_NO})) = '0' ;   
+         
+
+         UPDATE EXPENSE_MST SET 
+         USE_YN = '0', 
+         DEL_DH = REGR_DH(),
+         MOD_DH = REGR_DH()
+         WHERE EXPENSE_NO = #{EXPENSE_NO}
+         AND EX_IS_REPORTED(TO_NUMBER(#{EXPENSE_NO})) = '0' ;
+         
+         UPDATE EXPENSE_MST_MNG SET 
+         USE_YN = '0', 
+         DEL_DH = REGR_DH(),
+         MOD_DH = REGR_DH()
+         WHERE EXPENSE_NO = #{EXPENSE_NO}
+         AND EX_IS_REPORTED(TO_NUMBER(#{EXPENSE_NO})) = '0' ; 
+         
+         
+<!--          UPDATE expense_mst_split SET  -->
+<!--          USE_YN = '0',  -->
+<!--          DEL_DH = REGR_DH() -->
+<!--          WHERE EXPENSE_NO = #{EXPENSE_NO} -->
+<!--          AND EX_IS_REPORTED(#{EXPENSE_NO}) = '0' ;     -->
+         
+         UPDATE EXPENSE_MST_TOLL SET 
+         USE_YN = '0', 
+         DEL_DH = REGR_DH(),
+         DEL_ID = #{g_userId},
+         DEL_NM = #{g_userNm},
+         MOD_DH = REGR_DH()
+         WHERE EXPENSE_NO = #{EXPENSE_NO}
+         AND EX_IS_REPORTED(TO_NUMBER(#{EXPENSE_NO})) = '0' ;      
+              
+         UPDATE EXPENSE_GPS SET 
+         USE_YN = '0', 
+         DEL_DH = REGR_DH(),
+         DEL_ID = #{g_userId},
+         DEL_NM = #{g_userNm},
+         MOD_DH = REGR_DH()
+         WHERE EXPENSE_NO = #{EXPENSE_NO}
+         AND EX_IS_REPORTED(TO_NUMBER(#{EXPENSE_NO})) = '0' ;        
+              
+         -- 조건 추가 : 결재된 건 제외
+         
+         call insertExpLog(#{g_userId},#{g_comCd},TO_NUMBER(#{EXPENSE_NO}),  'EXPENSE_MST', concat('비용[', TO_NUMBER(#{EXPENSE_NO}) , ' ] 삭제'));    
+    
+
+    
+     </delete>     
+
+</mapper>

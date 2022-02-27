@@ -1,0 +1,312 @@
+<!-- 
+	-- 프로그램명 : 급여관리 / 급여 RC
+	-- 날짜 : 2021.06.28 by hshwang
+	-- 수정 : 
+-->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+	<meta charset="utf-8" />
+</head>
+  <body>
+   <div th:fragment="js">
+    <script type="text/javascript" >
+	  var [[${param.pgm_id}]] = new Vue({
+		  el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************		  
+	 	  
+		  data: {  pgmid : "[[${param.pgm_id}]]",
+			       columnlayout : [],
+			       columnlayout1 : [],
+			       gridProps : {editable : false}, 
+			       newgriditem : {} ,
+			       gridView : '',
+			       gridView1 : {},
+			       timerId : 0, //master-detail구조에서만 사용, 민감도
+			       masterBeforeRowIndex : 0, //master-detail구조에서만 사용
+			       masterBeforeColIndex : 0, //master-detail구조에서만 사용
+			       tempCurItem : {},
+			       curItem : {},
+		  },//data
+		  created () { //초기화================================================================
+			    //그리드 초기화
+				initGridDropDownBox("TAX_TP","/pay/common/commonSelect/search",auiDropDownCallBack,{ SELECT_ID:"getTaxCode" }); 		  
+		  
+		    	this.columnlayout =   
+		    	[
+		    		{dataField : "undefined",   headerText : "작성일",  width: 120, style : "aui_col_center", renderer : {type : "TemplateRenderer"},labelFunction : this.setAuiDate,   },
+                    {dataField : "TAX_TP",     headerText : "과세구분",   width: 120 , editRenderer : gridDropdownRenderer['TAX_TP'], labelFunction : auiDrodownLabelFunction }, 
+                    {dataField : "BIZ_NM",   headerText : "상호",  width: 200, style : "aui_col_left",},
+                    {dataField : "BIZ_NO",   headerText : "사업자번호",  width: 120, style : "aui_col_center", labelFunction : function( rowIndex, columnIndex, value, headerText, item ) { return biznoformat(nvl(value,''));} },
+                    {dataField : "SUPPLY_AMT",   headerText : "공급가액",formatString : "#,###", dataType : "numeric" , width: 100, style : "aui_col_right", },
+                    {dataField : "VAT_AMT",   headerText : "부가세",formatString : "#,###", dataType : "numeric" , width: 100, style : "aui_col_right", },
+                    {dataField : "TOT_AMT",   headerText : "합계",formatString : "#,###", dataType : "numeric" , width: 100, style : "aui_col_right", },
+                    {dataField : "BIZ_ITEM",   headerText : "품목",  width: 150, style : "aui_col_left",},
+                    {dataField : "OWNER_NM",   headerText : "대표자명",  width: 100, style : "aui_col_center",},
+                    {dataField : "BIZ_ADDR",   headerText : "주소",  width: 240, style : "aui_col_left",},
+                    {dataField : "SENDER_EMAIL",   headerText : "발행자e-mail",  width: 150, style : "aui_col_left",},
+                    {dataField : "RECEIVE_EMAIL",   headerText : "수신자e-mail",  width: 150, style : "aui_col_left",},
+                    {dataField : "EVID_NO",   headerText : "국세청문서번호",  width: 200, style : "aui_col_center",},
+		        ];//columnlayout
+		    
+		    // 선택 변경 이벤트 바인딩 (master-detail구조에서 필요)
+		     this.columnlayout1 =
+		        [
+			        {dataField : "undefined1",   headerText : "계정명", width : "15%", minWidth: 100, style : "aui_col_right" },
+			        {dataField : "undefined2",   headerText : "계정코드", width : "15%", minWidth: 100, style : "aui_col_right"},
+			        {dataField : "undefined3",   headerText : "코스트센터명", width : "15%", minWidth: 100, style : "aui_col_right"},
+			        {dataField : "undefined4",  headerText : "코스트센터코드", width : "15%", minWidth: 100, style : "aui_col_right"}, 
+			        {dataField : "undefined5",  headerText : "적요", width : "15%", minWidth: 120, style : "aui_col_right"}, 
+			        {dataField : "undefined6",   headerText : "금액", formatString : "#,###", dataType : "numeric", width : "15%", minWidth: 100, style : "aui_col_right"},
+		        ];     
+		  }, // created		 
+		  methods : {  // ======================================================================================
+				
+			// 전자세금계산서 조회
+			  user1ButtonOnClick : function () {
+				  alert('전자세금계산서 조회');
+			  },
+			  
+			  // 자동분개
+			  user2ButtonOnClick : function () {
+				  alert('자동분개');
+			  },
+			  
+			  // 예산체크
+			  user3ButtonOnClick : function () {
+				  alert('예산체크');
+			  },
+			  
+			  // 결재요청
+			  user4ButtonOnClick : function () {
+				  alert('결재요청');
+			  },
+			  
+			  // 전표생성
+			  createStatement : function() {
+				  alert('전표생성');
+			  },
+			  
+			  // 거래처 등록
+			  registerAccounts : function() {
+				alert('거래처 등록');  
+			  },
+			  
+			  //popup change
+			  //분개유형
+			  journalTypeChange : function (isvalid, codeId, item) {
+                
+                if (typeof item == 'undefined'){ 
+                    this.tempCurItem.JOURNAL_TYPE_CODE = "";
+                    this.tempCurItem.JOURNAL_TYPE_NAME = "";
+                }else{
+                    this.tempCurItem.JOURNAL_TYPE_CODE = item.CODE;
+                    this.tempCurItem.JOURNAL_TYPE_NAME = item.NAME;
+                }
+             },//journalTypeChange
+			  
+			  
+			  
+			  
+			  // 이미지 첨부 
+			  // 이미지 편집 후 저장(기존 파일 제거 & replace)
+			  receiptimgedited: function (fileno) { 
+                  // reload 보류
+                  $('#'+this.pgmid+'expbox'+this.curItem.INDEX).find('img').attr('src', '/ec/common/syscommon/fileupload/downloadFile/' + fileno+'?objid='+objId());
+                  $('#'+this.pgmid+'expmobilebox'+this.curItem.INDEX).find('img').attr('src', '/ec/common/syscommon/fileupload/downloadFile/' + fileno+'?objid='+objId());
+        	  },
+        	  
+        	  receiptClickMainFile:  function (url, kind, name) {
+					this.tempCurItem.FILE_NO = url;
+					this.tempCurItem.FILE_KIND = kind;
+					this.tempCurItem.ORG_FILE_NAME = name;
+					
+			  },
+			  
+			  saveServer : function(response, urls){
+            	  
+                  // response가 있는 경우=======================================================
+                 if (!isEmpty(response)){	  
+	            		  this.curItem.FILE_NO = urls[0].FILE_NO;
+	            		  this.curItem.FILE_KIND = urls[0].FILE_KIND;                	  
+		            	  
+           		  if (this.curItem.TYPE == 'TOLL' && isEmpty(this.curItem.EXPENSE_NO) ){
+		                      // 이미지(파일) 배열
+		                      if (this.checkRequiredImg(urls) == false) {
+		                    	  return false;
+		                      }
+		            	  }else if (this.curItem.TYPE == 'RECEIPT' && isEmpty(this.curItem.EXPENSE_NO) ){
+		                      // 이미지(파일) 배열
+		                      if (this.checkRequiredImg(urls) == false) {
+		                    	  return false;
+		                      }
+		            	  }else if (this.curItem.TYPE == 'PREPAY' && isEmpty(this.curItem.EXPENSE_NO) ){
+		                      // 이미지(파일) 배열
+		                      if (this.checkRequiredImg(urls) == false) {
+		                    	  return false;
+		                      }         
+		            	  }else if (this.curItem.TYPE == 'GAS' && this.tempCurItem.DISTANCE_TP == '3' && isEmpty(this.curItem.EXPENSE_NO) ){
+		                      // 이미지(파일) 배열
+		                      if (this.checkRequiredImg(urls) == false) {
+		                    	  return false;
+		                      }                    
+		            	  }else if (this.curItem.TYPE == 'CARD' && isEmpty(this.curItem.EXPENSE_NO) ){
+		//             		  this.curItem.FILE_NO = response[0].fileNo;
+		                      // 이미지(파일) 배열
+		//                       this.tempCurItem.FILE_LIST = this.$refs.cardimg.getUrls(); // 파일저장 후
+		                      if (this.checkRequiredImg(urls) == false) {
+		                    	  return false;
+		                      }   
+		            	  }
+                 }else{
+               	//  ref.tempCurItem.FILE_LIST.push({ FILE_NO :  item.fileNo})
+               	//  this.$refs.cardimg.getUrls()
+//                	  if (this.curItem.TYPE == 'TOLL' && isEmpty(this.curItem.EXPENSE_NO) ){
+               		  
+//                	  }
+                 }
+                  // 
+                  
+                  if (this.curItem.TYPE == 'RECEIPT' ){
+               	   this.curItem.FILE_LIST = this.$refs.receiptimg.getUrls();
+               	   if  (this.curItem.FILE_LIST.length == 0) { 
+               		   	customAlert('','','증빙(이미지)을 업로드하세요.'); 
+               		   	return false;
+               	   }
+                  }else if (this.curItem.TYPE == 'CARD') {
+               	   this.curItem.FILE_LIST = this.$refs.cardimg.getUrls();
+                  }else if (this.curItem.TYPE == 'TOLL') {
+               	   this.curItem.FILE_LIST = this.$refs.tollimg.getUrls();
+                  }else if (this.curItem.TYPE == 'GAS') {
+               	   this.curItem.FILE_LIST = this.$refs.gasimg.getUrls();
+                  }else if (this.curItem.TYPE == 'PREPAY') {
+               	   this.curItem.FILE_LIST = this.$refs.prepayimg.getUrls();
+               	   if  (this.curItem.FILE_LIST.length == 0) { 
+              		   	customAlert('','','증빙(이미지)을 업로드하세요.'); 
+              		   	return false;
+              	   }                	   
+                  }
+                 log('this.curItem.FILE_LIST'); 
+                 log(this.curItem.FILE_LIST);
+                 
+                 var sObj =  {};
+                 Object.assign(sObj, this.curItem); 
+                 Object.assign(sObj, this.tempCurItem);
+                 Object.assign(sObj, this.tempCurItem.mngs);
+                
+                
+                 log("sObj");
+                 log(sObj);
+                var param = {
+                        svcId:"saveExpenseItem",
+                        strUrl:"/ex/expense/expensemst/saveExpenseItem", 
+                        inDs :  "" ,  
+                        param : sObj, 
+                        pCall : this.tranCallBack, 
+                        pLoad : true          
+                    };
+                    //트랜젝션 실행
+                   ajaxReadJsonData(param);  
+             },
+             
+             getImgFilesNo : function(response, urls ){
+                 log('getImgFilesNo');
+           	  log(response);
+                 log(urls);
+                 
+             },
+             
+             deleteEcImg:  function (me) {
+       		  
+       		  //  <a v-if="curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' && curItem.PRIVATE_YN !='1'" 
+                      if (this.curItem.APPROVE_STATUS == '2' ||this.curItem.APPROVE_STATUS == '4')	 {
+                   	      customAlert('','','진행중 또는 결재건은 삭제할 수 없습니다.');
+                      }else{
+                   	   me.deleteimg();
+//                    	  this.$refs.receiptimg.deleteimg();
+                      }
+       	  	},
+       	  	// 이미지 첨부 end	  
+					
+		  }, // end of methods
+
+		  mounted: function() {
+			 
+		       var ref = this;
+               this.$nextTick(function () {
+                    ref.gridView  = ref.$refs.gridmaster.myGridID;
+                    ref.gridView1 = ref.$refs.griddetail.myGridID;
+               });
+               
+               //popup-code에 코드 input 제거
+               $('#'+ref.pgmid+'popuppaymethodcodeId').addClass('d-none');
+               $('#'+ref.pgmid+'popuppayconcodeId').addClass('d-none');
+               $('#'+ref.pgmid+'popuppayaccntcodeId').addClass('d-none');
+               $('#'+ref.pgmid+'popuptaxcdcodeId').addClass('d-none');
+//**********************************************************************************************			  
+             vueArr.push(this);
+			},
+      }) // end of new Vue
+		
+      // resize bar 설정
+      $(function () {
+    	    window.onresize = resize;
+    	    resize();
+    	});
+
+    	function resize() {
+    	    if((window.innerWidth || (window.document.documentElement.clientWidth || window.document.body.clientWidth)) <= 750) {
+    	    	$('#leftPanel').css('width','');
+    	    	$('#rightPanel').css('width','');
+    	    	$('#leftPanel').css('min-width','');
+    	    	$('#rightPanel').css('min-width','');
+    	    	$('#leftPanel').addClass('col-12');
+    	    	$('#rightPanel').addClass('col-12');
+    	    	$('#div_top').css('height','220px');
+    	    	$('#div_bottom').css('height','');
+    	    } else {
+    	    	$('#leftPanel').removeClass('col-12');
+    	    	$('#rightPanel').removeClass('col-12');
+    	    	$('#leftPanel').css('min-width','450px');
+    	    	$('#rightPanel').css('min-width','150px');
+    	    	$('#rightPanel').css('width','500px');
+    	    } 
+    	} 
+      
+      jQuery.resizable = function (resizerID, vOrH) {
+    	    jQuery('#' + resizerID).bind("mousedown", function (e) {
+    	    	var start = 0;
+    	    	if(e.pageY <= 300) start = 300;
+	        	else start = e.pageY;
+    	    	
+    	        if (vOrH == 'v') start = e.pageX;
+    	        jQuery('body').bind("mouseup", function () {
+    	            jQuery('body').unbind("mousemove");
+    	            jQuery('body').unbind("mouseup");
+    	        });
+    	        
+    	        jQuery('body').bind("mousemove", function (e) {
+    	        	var end = 0;
+    	        	if(e.pageY <= 300) end = 300;
+    	        	else end = e.pageY;
+    	        	
+    	            if (vOrH == 'v') end = e.pageX;
+    	            if (vOrH == 'h') {
+    	                jQuery('#' + resizerID).prev().height(jQuery('#' + resizerID).prev().height() + (end - start));
+    	                jQuery('#' + resizerID).next().height(jQuery('#' + resizerID).next().height() - (end - start));
+    	            } else {
+    	                jQuery('#' + resizerID).prev().width(jQuery('#' + resizerID).prev().width() + (end - start));
+    	                jQuery('#' + resizerID).next().width(jQuery('#' + resizerID).next().width() - (end - start));
+    	            }
+    	            start = end;
+    	        });
+    	    });
+    	}
+	  
+	  jQuery.resizable('div_vertical', "v");
+      jQuery.resizable('div_horizontal', "h");
+    </script>
+   </div> 
+   
+  </body>
+</html>

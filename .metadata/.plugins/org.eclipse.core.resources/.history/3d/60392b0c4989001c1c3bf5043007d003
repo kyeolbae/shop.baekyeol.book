@@ -1,0 +1,143 @@
+<!-- 
+	-- 프로그램명 : 급여관리 / 급여 RC
+	-- 날짜 : by ghbae
+	-- 수정 : 2021.10.18 by hshwang (삭제 기능 추가, 내용 수정 및 삭제시 본인 게시물인지 확인 후 진행, 제목에 들어오는 색깔 테두리 초기화 및 저장 시 없어지도록 수정)
+-->
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id} , create_tp=${param.create_tp})}">
+<head>
+<meta charset="utf-8" />
+<!--   법인카드 -->
+</head>
+
+<body>
+	<section layout:fragment="content" class="ec-scrollbar overflow-y">
+
+		<form class="d-flex  flex-column h-100" th:id=${param.pgm_id}>
+
+			<div class="ec-grid-box-search" >
+			
+				<div class="ec-grid-row w-100 border-bottom d-flex">
+				
+<!-- 					<label class="col-lg-2 col-md-2 ec-col-label-search justify-content-md-end">순번</label> -->
+<!-- 					<div class="col-lg-4 col-md-10 ec-col-input" :id="pgmid+'seq'"> -->
+<!-- 						<input type="text" name=BOARD_SEQ th:id="${param.pgm_id}+'board_seq'" class="col-lg-6 form-control form-control-sm required" disabled /> -->
+<!-- 					</div> -->
+						<label class="col-lg-1 col-md-2 ec-col-label-search justify-content-md-end" style="border-bottom:none">게시유형</label>
+						<div class="col-lg-4 col-md-4 col-sm-4 col-xs-6 ec-col-input w-100" style="border-bottom:none" :id="pgmid+'tp'">
+							<dropdown-syscommon class="w-100" ref="board_tp" :pgmid="pgmid"  all="NO" selectid="board_tp" selectname="BOARD_TP" clcd="BOARD_TYPE"></dropdown-syscommon> 
+						</div>
+						<div class="col-3 col-xs-3 ec-col-input justify-content-center">
+<!-- 						<div class="checkbox checkbox-css" > -->
+<!-- 					  	  <label :for= "pgmid+'popup_yn'" ></label> -->
+<!-- 						  <input type="checkbox" name="POPUP_YN" :id="pgmid+'popup_yn'" /> -->
+<!-- 						</div> -->
+
+							<div class="checkbox checkbox-css p-0">
+							  <input type="checkbox" :id="pgmid+'popup_yn'"  />
+							  <label :for="pgmid+'popup_yn'">HOME</label>
+							</div>
+
+						</div>
+
+				</div>
+				
+				
+				
+<!-- 				<div class="ec-grid-lastrow justify-content-center" > -->
+<!-- 					<label class="col-lg-2 col-md-2 ec-col-label-search justify-content-md-end">게시기간 </label> -->
+<!-- 					<div class="col-lg-6 col-md-10"> -->
+<!--                         <date-new-component-v1  ref="board_fr_dt" class="" th:pgmid="${param.pgm_id}" subname="DISPLAY_FR_DH"  required="true"  initval="today" ></date-new-component-v1> -->
+<!--                         <dropdown-syscommon  ref="board_fr_hh" class="" :pgmid="pgmid" dropdownlabel=""  selectid="board_fr_hh" selectname="DISPLAY_FR_HH" clcd="LIST_TIME"  ></dropdown-syscommon> -->
+<!--                         <h4 class="m-5" > ~ </h4> -->
+<!--                         <date-new-component-v1  ref="board_to_dt" class="" th:pgmid="${param.pgm_id}" subname="DISPLAY_TO_DH"  required="true"  initval="today"  ></date-new-component-v1> -->
+<!-- 						<dropdown-syscommon  ref="board_to_hh" class="" :pgmid="pgmid" dropdownlabel=""  selectid="board_to_hh" selectname="DISPLAY_TO_HH" clcd="LIST_TIME"  ></dropdown-syscommon> -->
+<!-- 					</div> -->
+					
+					
+				
+<!-- 					<label class="col-lg-2 col-md-2 ec-col-label-search justify-content-md-end">팝업공지</label> -->
+<!-- 					<div class="col-lg-2 col-md-10 ec-col-input" :id="pgmid+'yn'"> -->
+<!-- 						<input class="ml-2" type="checkbox" name="POPUP_YN" th:id="${param.pgm_id}+'popup_yn'"> -->
+<!-- 					</div> -->
+<!-- 			</div> -->
+				
+<!-- 				<div class="ec-grid-lastrow justify-content-center" > -->
+<!-- 					<label class="col-lg-2 col-md-2 ec-col-label-search justify-content-md-end">등록일시/등록자</label> -->
+<!-- 					<div class="col-lg-2 col-md-5 ec-col-input"> -->
+<!-- 						<input type="text" name="REGR_DH" th:id="${param.pgm_id}+'regr_dh'" class="col-lg-12 form-control form-control-sm " disabled/> -->
+<!-- 					</div> -->
+<!-- 					<div class="col-lg-2 col-md-5 ec-col-input"> -->
+<!-- 						<input type="text" name="REGR_ID" th:id="${param.pgm_id}+'regr_id'" class="col-lg-12 form-control form-control-sm " disabled/> -->
+<!-- 					</div> -->
+					
+				
+<!-- 					<label class="col-lg-2 col-md-2 ec-col-label-search justify-content-md-end">최종변경일시/변경자 </label> -->
+<!-- 					<div class="col-lg-2 col-md-5 ec-col-input"> -->
+<!-- 						<input type="text" name="MOD_DH" th:id="${param.pgm_id}+'mod_dh'" class="col-lg-12 form-control form-control-sm" disabled /> -->
+<!-- 					</div> -->
+<!-- 					<div class="col-lg-2 col-md-5 ec-col-input"> -->
+<!-- 						<input type="text" name="MOD_ID" th:id="${param.pgm_id}+'mod_id'" class="col-lg-12 form-control form-control-sm" disabled/> -->
+<!-- 					</div> -->
+<!-- 				</div> -->
+				
+				<div class="ec-grid-row">
+					<label class="col-lg-1 col-md-2 ec-col-label-search justify-content-md-end"><span class='text-danger'>*</span>제목</label>
+					<div class="col-lg-11 col-md-10 ec-col-input " :id="pgmid+'b_title'">
+						<input  type="text"  name="BOARD_TITLE" th:id="${param.pgm_id}+'board_title'" data-parsley-trigger="keyup" data-parsley-maxlength="1000"  class=" col-lg-12 form-control form-control-sm required" />
+					</div>
+					
+				      
+				</div>
+				
+					<div class="ec-grid-row justify-content-center">
+							<label class="col-lg-1 col-md-2 ec-col-label-search justify-content-md-end">내용</label>
+							<div class="col-lg-11 col-md-10 ec-col-input" :id="pgmid+'BOARD_CONTENTS'">
+								<input class="w-100" :id="pgmid+'summernote'" >
+							</div>
+					</div>
+					<div v-if="userYn == true || boardSeq == ''" class="ec-grid-row  justify-content-center">
+                            <label class="col-1  col-md-2 ec-col-label justify-content-md-end">첨부파일</label>
+                               <div class="col-11 col-md-10 ec-col-input">
+                                  <div class="w-100">
+                                  <input type="file"  multiple="multiple"  name="files[]"  class="form-control-file btn btn-xs border " :id="pgmid+'BoardFile'">
+                                  </div>
+                                     <div class="btn-group ml-1">
+	                                   <a class="btn btn-sm border text-nowrap" @click="resetBoardFile">초기화</a>
+                                     </div>
+                               </div>
+                    </div>
+                    
+<!--                       <div v-for="(item, index) in approveList" class="rounded border m-5 m-t-4 m-b-4 bg-white"   @click="searchfileButtonOnClickCallback(item,index)">  -->
+                    
+					<div    class="ec-grid-row  justify-content-center">
+                            <label class="col-1  col-md-2 ec-col-label justify-content-md-end">파일</label>
+                            <div class="col-11 col-md-10 ">
+	                            <div  v-for="(item,index) in fileList" class="w-100"  >
+	                                 <a :href="'/ec/common/syscommon/fileupload/downloadFile/'+item.FILE_NO" > {{ item.ORG_FILE_NAME }}  </a>
+	                                 <div v-if="userYn == true || boardSeq == ''" class="btn-group ml-1">
+	                                 	<a class="btn btn-sm border p-4"  @click="deletefile( item.FILE_NO   )">삭제</a>
+	                           		 </div>
+	                            </div>
+                            </div>
+                    </div>
+                             
+                    
+			
+			</div> 
+			<!-- end ec-grid-box  -->
+			
+			<div v-if="$options.filters.isNotEmpty(boardSeq)" class="d-flex justify-content-end">
+			  No.{{boardSeq}} &nbsp
+			  등록:{{regrNm}}({{regrDh | dateformat("card") }}) 
+			
+			</div>	
+		</form>
+
+		<!-- ================== BEGIN THIS PAGE JS ================== -->
+		<div th:replace="contents/ex/config/board-js :: js"></div>
+
+	</section>
+
+</body>
+</html>

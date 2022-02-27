@@ -1,0 +1,271 @@
+<!-- 
+	-- 프로그램명 : 비용관리 / 증빙이미지-이미지삭제함
+	-- 날짜 : 2021.07.29 by hshwang
+	-- 수정 : 2021.08.19 by hshwang (검색 조건 삭제)
+	-- 수정 : 2021.12.07 by hshwang (gallary devide 수정)
+-->
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+
+    var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************        
+          
+          data: {  pgmid : "[[${param.pgm_id}]]",
+        	  imglist : [],
+        	  curImg : {},
+        	  curExpense : {},
+        	  curReport : {},
+        	  curItem : {},
+        	  columnlayout : [],
+              gridView : '',
+              girdProps : {},
+              viewType : "box",
+              isBox : true,
+              isGrid : false,
+        	  
+                   
+          },//data    
+          created () { //초기화================================================================
+            
+        	  this.girdProps = { wordWrap : true, showTooltip : true};
+        	  this.columnlayout =   
+                  [   
+                      {dataField : "BE_SHARED_YN",   headerText : "BE_SHARED_YN",  width: 100, renderer : auiCheckboxRenderer() , style : "aui_col_center",  },
+                      {dataField : "EXPENSE_NO",   headerText : "EXPENSE_NO",  width: 100, style : "aui_col_center",  },
+                      {dataField : "REPORT_NO",   headerText : "REPORT_NO",  width: 100, style : "aui_col_center",  },
+                      {dataField : "FILE_NO",   headerText : "FILE_NO",  width: 220, style : "aui_col_center",  },
+                      {dataField : "FILE_KIND",   headerText : "FILE_KIND",  width: 100, style : "aui_col_center",  },
+                      {dataField : "SOURCE",   headerText : "SOURCE",  width: 100, style : "aui_col_center",  },
+                      {dataField : "ORG_FILE_NAME",   headerText : "ORG_FILE_NAME",  width: 180, style : "aui_col_center",  },
+                      {dataField : "GROUP_NO",   headerText : "GROUP_NO",  width: 100, style : "aui_col_center",  },
+                      {dataField : "FILE_SIZE",   headerText : "FILE_SIZE",  width: 100, style : "aui_col_center",  },
+                      {dataField : "OCR_YN",   headerText : "OCR_YN",  width: 80,renderer : auiCheckboxRenderer() , style : "aui_col_center",  },
+                      {dataField : "REGR_DH",   headerText : "REGR_DH",  width: 120, style : "aui_col_center",  },
+                      {dataField : "FILE_OWNER_TP",   headerText : "FILE_OWNER_TP",  width: 130, style : "aui_col_center",  },
+                      {dataField : "FILE_OWNER_YN",   headerText : "FILE_OWNER_YN",  width: 100,  renderer : auiCheckboxRenderer() ,style : "aui_col_center",  },
+                      {dataField : "REGR_ID",   headerText : "REGR_ID",  width: 100, style : "aui_col_center",  },
+                      {dataField : "SHARED_ID",   headerText : "SHARED_ID",  width: 100, style : "aui_col_center",  },
+                      {dataField : "NAME",   headerText : "NAME",  width: 100, style : "aui_col_center",  },
+                      {dataField : "SHARED_EMP_NAME",   headerText : "SHARED_EMP_NAME",  width: 140, style : "aui_col_center",  },
+                      {dataField : "MOD_DH",   headerText : "MOD_DH",  width: 120, style : "aui_col_center",  },
+                      {dataField : "EXPENSE_MOD_DH",   headerText : "EXPENSE_MOD_DH",  width: 140, style : "aui_col_center",  },
+                      {dataField : "DEL_DH",   headerText : "DEL_DH",  width: 100, style : "aui_col_center",  },
+                      {dataField : "DEL_ID",   headerText : "DEL_ID",  width: 100, style : "aui_col_center",  },
+
+                      ] ;//columnlayout
+        	  
+        	  
+        	  
+        	  this.columnlayoutOcrItems =   
+                  [   
+                      {dataField : "RECEIPT_ITEM_NM",   headerText : "품목명",  width: 120, style : "aui_col_left",},
+                      {dataField : "RECEIPT_ITEM_CNT",   headerText : "수량",  width: 60, style : "aui_col_center",  },
+                      {dataField : "RECEIPT_ITEM_PRICE",   headerText : "금액",  width: 80, style : "aui_col_right",dataType : "numeric",formatString : "#,###"},
+                      
+                ] ;//columnlayouttoll 
+                  
+          }, // created  
+          
+		  computed: {
+			  
+		  }, // computed
+          methods : {  // ======================================================================================
+        	  clickModal: function(item) {
+        	     this.$refs.gallerymodal.showmodal();
+        	  },
+        	  
+        	  //파일 완전 삭제
+        	  removeImgClick : function(item) {
+        		  customConfirm("영구적으로 삭제하시겠습니까?", this.removeImgClickCall, null, item);
+        	  },
+        	  
+        	  removeImgClickCall : function(item) {
+       		      deleteServerFile(item.FILE_NO, this.removeImgClickCallback, true);
+        	  },
+        	  
+        	  removeImgClickCallback : function(svcId, data) {
+        		//재조회
+        		customAlert("", "", data.SVC_MSG_TEXT);
+        		  this.searchButtonOnClick();
+        	  },
+        	  
+        	  //이미지 복원 
+        	  restoreImgClick : function(item) {
+        		  customConfirm("해당 이미지를 복원하시겠습니까?", this.restoreImgClickCall, null, item);
+        	  },
+        	  
+        	  restoreImgClickCall :function(item) {
+        		  var param = {
+                          svcId:"restoreImg",
+                          strUrl:"/ex/exp/expimg/restoreImg",   //전송 url    
+                          inDs :  "" ,  
+                          param : item, 
+                          pCall : this.restoreImgClickCallback, 
+                          pLoad : true          
+                      };
+                      //트랜젝션 실행
+                      ajaxReadJsonData(param);
+        	  },
+        	  restoreImgClickCallback : function(svcId, data) {
+        		  //customAlert("", "", data.SVC_MSG_TEXT);
+        		  this.searchButtonOnClick();
+        	  },
+        	  
+        	  onImgLoad : function() {
+        	      log('onImgLoad');
+        	  },
+        	searchButtonOnClick : function() {
+        		
+        		var o = {};
+        		o.USE_YN = '0';
+
+                var param = {
+                    svcId:"search",
+                    strUrl:"/ex/exp/expimg/search",   //전송 url    
+                    inDs :  "" ,  
+                    param : Object.assign(serializeObjectX($('#[[${param.pgm_id}]]')), o), 
+                    pCall : this.searchButtonOnClickCallback, 
+                    pLoad : true          
+                };
+                //트랜젝션 실행
+                ajaxReadJsonData(param);
+            }, // end of searchButtonOnClick
+            searchButtonOnClickCallback : function(s, data) {
+            	this.imglist = [];
+            	this.imglist = data.ds_master.data;
+               	var ref = this;
+               	
+               	
+		         this.$nextTick( function() {     	
+		      	      var $grid = $('#'+ref.pgmid+ 'gallery').imagesLoaded( function() {
+		    	    	  console.log('onImgLoad imagesLoaded');
+		                  $('#'+ref.pgmid+ 'gallery').isotope('destroy')
+		                  ref.handleIsotopesGallery();
+// 		                  $('#'+ref.pgmid+ 'gallery').isotope({
+// 		                  	resizable: true,
+// 		          			masonry: { 
+// 		          				columnWidth: 4 
+// 		          			}
+// 		          		   });
+		    	    	});
+		      	      
+		      	});
+		         this.$refs.gridmaster.setGridData(data["ds_master"]['data']);
+ 	
+            },
+            calculateDivider: function() {
+            	var dividerValue = 4;
+            	if ($('#'+this.pgmid+'gallery').width() <= 576) {
+            		dividerValue = 1;
+            	} else if ($('#'+this.pgmid+'gallery').width() <= 992) {
+            		dividerValue = 2;
+            	} else if ($('#'+this.pgmid+'gallery').width() <= 1200) {
+            		dividerValue = 3;
+            	}
+            	return dividerValue;
+            },
+            handleIsotopesGallery: function() {
+            	
+            	var container = $('#'+this.pgmid+'gallery');
+            	var dividerValue = this.calculateDivider();
+            	var containerWidth = $(container).width();
+            	log('containerWidth');log(containerWidth);
+            	var columnWidth = containerWidth / dividerValue;
+            	log('columnWidth');log(columnWidth);
+            	$(container).isotope({
+            		resizable: true,
+            		masonry: {
+            			columnWidth: columnWidth
+            		}
+            	});
+            	
+            	var ref = this;
+            	$(window).on('resize', function() {
+            		log('handleIsotopesGallery resize')
+            		var dividerValue = ref.calculateDivider();
+            		log(dividerValue);
+            		
+            		var containerWidth = $(container).width();
+            		log(containerWidth)
+            		var columnWidth = containerWidth / dividerValue;
+            		log(columnWidth)
+            		$(container).isotope({
+            			masonry: { 
+            				columnWidth: columnWidth 
+            			}
+            		});
+            	});
+            	
+            	var $optionSets = $('#options .gallery-option-set'),
+            	$optionLinks = $optionSets.find('a');
+            	
+            	$optionLinks.click( function(){
+            		var $this = $(this);
+            		if ($this.hasClass('active')) {
+            			return false;
+            		}
+            		var $optionSet = $this.parents('.gallery-option-set');
+            		$optionSet.find('.active').removeClass('active');
+            		$this.addClass('active');
+            	
+            		var options = {};
+            		var key = $optionSet.attr('data-option-key');
+            		var value = $this.attr('data-option-value');
+            			value = value === 'false' ? false : value;
+            			options[ key ] = value;
+            		$(container).isotope( options );
+            		return false;
+            	});
+            	
+            }, // handleIsotopesGallery
+            
+            
+          }, // end of methods
+          watch: {
+              viewType: function (newVal, oldVal) {
+                   if (newVal == "grid") {
+                       this.isGrid = true;this.isBox = false;
+                        this.$nextTick(function () {
+                            window.dispatchEvent(new Event('resize'));
+                        });
+                        
+                   }else if (newVal == "box") {
+                       this.isGrid = false;this.isBox = true;
+                       this.$nextTick(function () {
+                           window.dispatchEvent(new Event('resize'));
+                       });
+                   }
+              },
+          },
+                
+          mounted: function() {
+        	  
+              var ref = this;
+              this.$nextTick(function () {
+           	     ref.handleIsotopesGallery();
+              	  ref.gridView = ref.$refs.gridmaster.myGridID;
+              	  
+              	$('#'+ref.pgmid+'midbtn1').append($('#'+ref.pgmid + 'toolbtn'));
+
+               });  
+        	  
+        	  
+//**********************************************************************************************              
+             vueArr.push(this);
+            },
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

@@ -1,0 +1,26 @@
+package org.opentutorials.javatutorials.method;
+
+public class CarExample {
+
+	
+	
+	public static void main(String[] args) {
+		
+//		new Car();
+//		new Car("노랑");
+		Car car = new Car("빨강",1500);
+		
+		System.out.println(car.color+car.cc);
+		
+		System.out.println("차가 출발합니다.");
+	}
+	
+		while(i<10) {
+			int i = 0
+			System.out.println(helloworld);
+			i=i+1;
+		}
+	
+
+}
+

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<!--     <meta charset="utf-8" /> -->
+</head>
+  <body>
+   
+                 <div :id="pgmid+'expChange'" class="modal ec-modal" data-backdrop="false" tabindex="-1" style="display: none; z-index:1100;" >
+                     <div class="modal-dialog modal-lg modal-dialog-centered"> 
+                          <div class="modal-content d-flex flex-column  " >
+                            <div class="modal-header ec-modal-header">
+                               <h4 class="">비용 추가 삭제</h4>
+                               <a class="close" aria-hidden="true" type="button" data-dismiss="modal"><i class="icon-cross2"></i></a>
+                            </div>
+                            <div class= "modal-body  d-flex flex-column h-100  ">
+
+                                              <!-- begin widget-todolist -->
+                                              <div class="widget-todolist widget-todolist-rounded border">
+                                                  <!-- begin widget-todolist-header -->
+                                                  <div class="widget-todolist-header bg-light">
+                                                    <div class="widget-todolist-header-left">
+                                                      <div class="widget-todolist-header-total">
+                                                        <h4 class="text-right widget-todolist-header-title text-primary"><strong>{{getSelectedExpCount}}건 ,&nbsp 합계 : {{getSelectedExpTotal | numberformat('0,000')}}원,&nbsp 부가세 : {{getSelectedExpVatTotal | numberformat('0,000')}}원</strong></h4>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                  <!-- end widget-todolist-header -->
+                                                  
+                                                  <!-- begin widget-todolist-body -->
+                                                  <div class="widget-todolist-body">
+                                                    <!-- begin widget-todolist-item -->
+                                                    <div v-for="(item, index) in expAllList" class="widget-todolist-item">
+                                                           <div class=" widget-todolist-content checkbox ">
+                                                               <label class="form-check-label w-100" :for="pgmid+'expChangeCheck'+index">
+                                                                  <div class="">
+                                                                        <h4 class="widget-todolist-title">EXPENSE_NO:{{item.EXPENSE_NO}}</h4>
+                                                                        <p class="widget-todolist-desc">REPORT_NO.{{item.REPORT_NO}}&nbsp 금액:{{item.EXPENSE_AMT}} </p>
+                                                                  </div>                                                               
+                                                               </label>
+                                                               <input @change="reportExpCheckboxChange(item, $event)"  v-model="item.CHECKED" true-value="1" false-value="0" type="checkbox" :id="pgmid+'expChangeCheck'+index" name="customRadio" class="form-check-input">
+                                                           </div>
+                                                    </div>
+                                                    <!-- end widget-todolist-item -->
+                                                  </div>
+                                                  <!-- end widget-todolist-body -->
+                                                </div>
+                                                <!-- end widget-todolist -->
+                              </div>
+                              <div class="modal-footer">
+                                <a class="btn btn-white"  data-dismiss="modal">닫기</a>
+                                <a class="btn btn-success"  data-dismiss="modal">저장</a>
+                            </div>
+                          </div>
+                     </div>
+                </div> 
+  </body>
+</html>

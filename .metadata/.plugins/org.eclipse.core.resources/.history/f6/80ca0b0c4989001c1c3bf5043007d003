@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+  <meta charset="utf-8" />
+</head>
+
+<body>
+  <section layout:fragment="content">
+
+   <form class="d-flex  flex-column h-100" th:id=${param.pgm_id}  >
+   
+         <div class="ec-grid-box-search ">
+             <div class="ec-grid-lastrow">     
+                    <label class="col-lg-1 col-md-2 ec-col-label-search justify-content-md-end">유형</label>
+                       <div class="col-lg-2 col-md-4 ec-col-input">
+                      <dropdown-syscommon class="w-100" :pgmid="pgmid"   all="NO" selectid="BOARD_TYPE" selectname="BOARD_TP" clcd="BOARD_TYPE"></dropdown-syscommon> </div>
+             			<label class="col-lg-1 col-md-2 ec-col-label-search justify-content-md-end">기간</label>
+                     <div class="col-lg-5 col-md-10 ec-col-input">
+                          <daterange-m-component-v1 th:pgmid="${param.pgm_id}" subname1="REGR_DH_FR" subname2="REGR_DH_TO"  required="true"  initval1="firstday" initval2="lastday"></daterange-m-component-v1>
+                      </div>
+             </div>
+		 </div>
+                     <!-- 에이유아이 그리드가 이곳에 생성됩니다. -->
+                    <div class="flex-shrink-1 flex-grow-1 h-100">
+                        <grid-r1 ref="gridmaster" :columnlayout="columnlayout" :pgmid="pgmid" subname="gridmaster" ></grid-r1> 
+                    </div>      
+                   
+   </form>
+           
+	  	<!-- ================== BEGIN THIS PAGE JS ================== -->
+ 	<div th:insert="contents/ex/config/boardlist-js :: js"></div>  
+   </section>
+
+</body>
+</html>

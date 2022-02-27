@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+  <meta charset="utf-8" />
+  
+
+</head>
+
+<body>
+  <section layout:fragment="content">
+	 <form class="d-flex flex-column h-100 overflow-y ec-scrollbar" th:id=${param.pgm_id}  >
+	 
+	 
+	      <div class=" p-10 bg-submaintheme"> 
+          		<div class="">
+                        <boardlist-component ref="boardlist" :pgmid="pgmid" cnt="6" fontclass="f-s-15" date=false headerclass="m-10 d-none" seq=false modaltitle="공지사항" rolling=true rolling_speed=3 checked_only='true'></boardlist-component>
+                </div>  
+            </div>
+	 
+	 
+<!--     mainmain 1-->  
+            <div class="m-30 f-title-plane m-b-5">
+               <session-name></session-name>님,
+               <div class="d-flex justify-content-between">
+	               <div>안녕하세요.</div>
+	               <a class="btn text-nowrap" data-toggle="collapse" data-target="#collapse_date" 
+	                     aria-expanded="true" aria-controls="collapseFilter"><i class="icon-calendar"></i></a>
+               </div>
+
+                   <div class="collapse f-s-15" id="collapse_date">
+                      <div class="d-flex align-items-center justify-content-end m-10">
+                          <daterange-m-component-v1 ref="searchdt" th:id=${param.pgm_id} subname1="SEARCH_FR_DT" subname2="SEARCH_TO_DT"  required="true"  initval1="firstday-1m" initval2="lastday" loc="center"></daterange-m-component-v1>
+                          <div class="ml-1 p-0 "><a class="btn text-nowrap bg-light w-100 border rounded-0" @click="getDashboardDataV2">조회</a></div>
+                      </div>
+                   </div>           
+
+
+
+            </div>
+
+            <div class=" m-20"> 
+              <!-- tab -->
+                    <ul class="nav nav-tabs nav-tabs-blue nav-justified nav-justified-mobile border border-bottom-0" data-sortable-id="index-2">
+						<li class="nav-item"><a href="#main-approval-report" data-toggle="tab" class="nav-link nav-link-white active"><span class="d-md-inline f-subtitle">결재</span><div v-if="myApprovalDataList.REPORT_CNT > 0" class="label label-notification">{{myApprovalDataList.REPORT_CNT}}</div></a></li>
+						<li class="nav-item"><a href="#main-approving-report" data-toggle="tab" class="nav-link nav-link-white "><span class="d-md-inline f-subtitle ">진행</span></a></li>
+						<li class="nav-item"><a href="#main-approved-report" data-toggle="tab" class="nav-link nav-link-white"><span class="d-md-inline f-subtitle">완료</span></a></li>
+						<li class="nav-item"><a href="#main-rejected-report" data-toggle="tab" class="nav-link nav-link-white"><span class="d-md-inline f-subtitle">반려</span></a></li>
+						
+					</ul>    
+                    <div class="border-top-0 tab-content border m-0" data-sortable-id="index-1">
+						<div class="tab-pane fade " id=main-approving-report>
+						  <div class="d-flex flex-column">
+						   <div class="d-flex justify-content-between ">
+						      <div class="ml-3">총 {{myApprovingReportData.CNT | numberformat('0,000')}}건</div>
+<!-- 						      <div class="border badge bg-white text-black f-plane">자세히 보기</div> -->
+						   </div> 
+						   
+						   <div class="d-flex justify-content-between m-10">
+						     <div class="col-1 p-0"></div>
+						     <div class="col p-0 d-flex flex-nowrap justify-content-center">
+							     <div class="f-title">{{myApprovingReportData.AMT | numberformat('0,000')}}</div>
+							     <div class="d-flex align-items-center"><span>원</span></div>
+<!-- 							     <div class="d-flex align-items-center"><i class="icon-refresh"></i></div> -->
+	                         </div>
+	                         <div class="col-1 p-0">
+			                         <a class="btn text-nowrap" data-toggle="collapse" data-target="#collapse-main-approving-report" 
+			                     aria-expanded="true" aria-controls="collapseFilter"><i class="icon-arrow-down"></i></a>
+	                          </div>					     
+						   </div>
+						   <div class="collapse" id="collapse-main-approving-report">
+							   <div class=" d-flex justify-content-center flex-wrap text-maintheme" >
+							     <div v-if="myApprovingReportData.CNT >= 2"><span>{{myApprovingReportData.TITLE}} 외 {{myApprovingReportData.CNT -1}}건</span></div>
+							     <div v-if="myApprovingReportData.CNT == 1"><span>{{myApprovingReportData.TITLE}}</span></div>
+							   
+							   </div>	
+						   </div>					   
+					      </div>
+						</div> <!-- end of approving report -->
+                        <!-- 완료 -->
+						<div class="tab-pane fade " id=main-approved-report>
+						  <div class="d-flex flex-column">
+						   <div class="d-flex justify-content-between ">
+						      <div class="ml-3">총 {{myApprovedReportData.CNT | numberformat('0,000')}}건</div>
+<!-- 						      <div class="border badge bg-white text-black f-plane">자세히 보기</div> -->
+						   </div>
+						   
+						   <div class="d-flex justify-content-between m-10">
+						     <div class="col-1 p-0"></div>
+						     <div class="col p-0 d-flex flex-nowrap justify-content-center">
+							     <div class="f-title">{{myApprovedReportData.AMT | numberformat('0,000')}}</div>
+							     <div class="d-flex align-items-center"><span>원</span></div>
+<!-- 							     <div class="d-flex align-items-center"><i class="icon-refresh"></i></div> -->
+	                         </div>
+	                         <div class="col-1 p-0">
+			                         <a class="btn text-nowrap" data-toggle="collapse" data-target="#collapse-main-approved-report" 
+			                     aria-expanded="true" aria-controls="collapseFilter"><i class="icon-arrow-down"></i></a>
+	                          </div>					     
+						   </div>
+						   <div class="collapse" id="collapse-main-approved-report">
+							   <div class=" d-flex justify-content-center flex-wrap text-maintheme" >
+							     <div v-if="myApprovedReportData.CNT >= 2"><span>{{myApprovedReportData.TITLE}} 외 {{myApprovedReportData.CNT -1}}건</span></div>
+							     <div v-if="myApprovedReportData.CNT == 1"><span>{{myApprovedReportData.TITLE}}</span></div>
+							   
+							   </div>	
+						   </div>					   
+					      </div>
+						</div> <!-- end of approving report -->
+						
+						<!-- 반려 -->
+						<div class="tab-pane fade" id=main-rejected-report>
+						  <div class="d-flex flex-column">
+						   <div class="d-flex justify-content-between ">
+						      <div class="ml-3">총 {{myRejectedReportData.CNT | numberformat('0,000')}}건</div>
+<!-- 						      <div class="border badge bg-white text-black f-plane">자세히 보기</div> -->
+						   </div>
+						   
+						   <div class="d-flex justify-content-between m-10">
+						     <div class="col-1 p-0"></div>
+						     <div class="col p-0 d-flex flex-nowrap justify-content-center">
+							     <div class="f-title">{{myRejectedReportData.AMT | numberformat('0,000')}}</div>
+							     <div class="d-flex align-items-center"><span>원</span></div>
+	                         </div>
+	                         <div class="col-1 p-0">
+			                         <a class="btn text-nowrap" data-toggle="collapse" data-target="#collapse-main-rejected-report" 
+			                     aria-expanded="true" aria-controls="collapseFilter"><i class="icon-arrow-down"></i></a>
+	                          </div>					     
+						   </div>
+						   <div class="collapse" id="collapse-main-rejected-report">
+							   <div class=" d-flex justify-content-center flex-wrap text-maintheme" >
+							     <div v-if="myRejectedReportData.CNT >= 2"><span>{{myRejectedReportData.TITLE}} 외 {{myRejectedReportData.CNT -1}}건</span></div>
+							     <div v-if="myRejectedReportData.CNT == 1"><span>{{myRejectedReportData.TITLE}}</span></div>
+							   
+							   </div>	
+						   </div>					   
+					      </div>
+						</div> <!-- end of approving report -->				
+
+						<div class="tab-pane fade active show" id="main-approval-report">
+						   <div class="d-flex justify-content-between ">
+						      <div class="ml-3">총 {{myApprovalDataList.REPORT_CNT | numberformat('0,000')}}건</div>
+<!-- 						      <div class="border badge bg-white text-black f-plane">자세히 보기</div> -->
+						   </div>
+						   
+						   <div class="d-flex justify-content-between m-10">
+						     <div class="col-1 p-0"></div>
+						     <div class="col p-0 d-flex flex-nowrap justify-content-center">
+							     <div class="f-title"> {{myApprovalDataList.PAY_AMT | numberformat('0,000') }}</div>
+							     <div class="d-flex align-items-center"><span>원</span></div>
+<!-- 							     <div class="d-flex align-items-center"><i class="icon-refresh"></i></div> -->
+	                         </div>
+	                         <div class="col-1 p-0">
+			                         <a class="btn text-nowrap" data-toggle="collapse" data-target="#collapse-main-approval-report" 
+			                     aria-expanded="true" aria-controls="collapseFilter"><i class="icon-arrow-down"></i></a>
+	                          </div>					     
+						   </div>
+						   <div class="collapse" id="collapse-main-approval-report">
+							   <div class=" d-flex justify-content-center flex-wrap text-maintheme" >
+							     <div v-if="myApprovalDataList.REPORT_CNT >= 2"><span>{{myApprovalDataList.REPORT_TITLE}} 외 {{myApprovalDataList.REPORT_CNT -1}}건</span></div>
+							     <div v-if="myApprovalDataList.REPORT_CNT == 1"><span>{{myApprovalDataList.REPORT_TITLE}}</span></div>
+							   </div>	
+						   </div>	
+						</div>
+					</div>    
+            </div>    <!--   end of  tab -->    
+            <div v-for='(item, index) in myCardDataList' class="border p-10 m-20 rounded m-t-0" :class="{'bg-blue-transparent-1' : item.RECEIPT_MT == getMaxMt  }"   >
+               <div class="mb-2 d-flex justify-content-between mr-1">
+                   <div class="f-plane">{{item.OWNER_KNM}}</div>
+                   <div class="f-plane">{{item.RECEIPT_MT | dateformat('yyyy.mm') }}&nbsp사용분 </div>
+<!-- 				   <a class="border badge bg-white text-black f-plane" href="javascript:goMenu('/ec/fi/exp/receipt/m_page','영수증 비용처리','FI_EXP_RECEIPT','330104');">자세히 보기</a> -->
+			   </div>
+               <div class="d-flex justify-content-center m-5">
+				   <div class="f-subtitle"><span class="f-plane">{{item.CARD_BRAND}}</span>&nbsp {{item.CARD_NO | cardformat }}</div>
+			   </div>
+			   <div class="d-flex justify-content-center text-maintheme m-5 breadcrumb">
+			     <div v-if="(item.INBOX_CNT+item.APPROVAL_CNT != 0)" class="breadcrumb-item p-0">미처리 {{item.INBOX_CNT+item.APPROVAL_CNT}}건</div>
+			     <div v-if="(item.REJECT_CNT != 0)" class="breadcrumb-item p-0">반려 {{item.REJECT_CNT}}건</div>
+			     <div v-if="(item.APPROVING_CNT != 0)" class="breadcrumb-item p-0">진행 {{item.APPROVING_CNT}}건</div>
+			     <div v-if="(item.APPROVED_CNT != 0)" class="breadcrumb-item p-0">완결 {{item.APPROVED_CNT}}건</div>
+			   </div>	
+			   <div class="d-flex  justify-content-center  m-10">
+			     <div class="ml-3 f-subtitle">합계 {{item.INBOX_AMT+ item.APPROVAL_AMT +item.REJECT_AMT+item.APPROVING_AMT+item.APPROVED_AMT | numberformat('0,000')}}원 </div>
+<!-- 			     <div class="f-subtitle">&nbsp/&nbsp  총 {{item.INBOX_CNT+ item.APPROVAL_CNT + item.REJECT_CNT+item.APPROVING_CNT+item.APPROVED_CNT}}건 </div> -->
+
+			   </div>			   
+            </div>
+            <div v-if="myNotCardDataList.length > 0" class="border border-maintheme p-10 m-20 m-t-0 rounded">
+               <div class="mb-2 d-flex justify-content-end mr-1">
+<!-- 				   <div class="border badge bg-white text-black f-plane">자세히 보기</div> -->
+			   </div>
+               <div class="d-flex flex-wrap justify-content-center m-5 breadcrumb f-s-10  flex-wrap">
+				   <div v-for='(item, index) in myNotCardDataList' class="breadcrumb-item text-nowrap f-subtitle">{{item.SOURCE_TP_NM}}</div>
+			   </div>
+			   <div class="d-flex justify-content-center text-maintheme m-5 breadcrumb flex-nowrap">
+			     <div v-if="getNotCardApprovalCnt > 0" class="breadcrumb-item  text-nowrap">미처리 {{getNotCardApprovalCnt}}건</div>
+			     <div v-if="getNotCardRejectedCnt > 0" class="breadcrumb-item  text-nowrap">반려 {{getNotCardRejectedCnt}}건</div>
+			     <div v-if="getNotCardApprovingCnt > 0" class="breadcrumb-item  text-nowrap">진행 {{getNotCardApprovingCnt}}건</div>
+			     <div v-if="getNotCardApprovedCnt > 0" class="breadcrumb-item  text-nowrap">완결 {{getNotCardApprovedCnt}}건</div>
+			   </div>	
+<!-- 			   <div class="d-flex justify-content-between m-10"> -->
+<!-- 			     <div class="ml-3">총 {{item.INBOX_CNT+item.REJECT_CNT+item.APPROVING_CNT+item.APPROVED_CNT}}건 </div> -->
+<!-- 			     <div class="f-subtitle">합계 {{item.INBOX_AMT+item.REJECT_AMT+item.APPROVING_AMT+item.APPROVED_AMT | numberformat('0,000')}}원 </div> -->
+<!-- 			   </div>				    -->
+            </div>
+  <!--   end of  mainmain --> 
+	 
+	 
+	 
+	 </form>
+	  	<!-- ================== BEGIN THIS PAGE JS ================== -->
+ 	<div th:replace="contents/mainpage/exp-mobile-main-js :: js"></div>  
+ 	
+   </section>
+
+</body>
+</html>

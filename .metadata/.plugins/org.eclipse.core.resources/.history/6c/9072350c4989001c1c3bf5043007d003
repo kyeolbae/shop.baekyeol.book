@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper namespace="com.ec.eframework.mapper.ex.report.ExpenseHotelTripServiceMapper">
+ 
+    	<select id="getHotelTripExpense" resultType="HashMap">
+    		SELECT ROW_NUMBER() OVER(ORDER BY mst.RECEIPT_DT ASC, mst.EXPENSE_NO ASC) AS ID 
+			      ,ecc.CCTR_NM      -- 코스트센터명
+			      ,emp.EMP_NM       -- 사원명
+			      ,mst.RECEIPT_DT   -- 사용일
+			      ,IFNULL( CASE mst.SOURCE_TP WHEN '2' THEN (SELECT mng.MNGVAL_NM FROM EXPENSE_MST_MNG MNG WHERE MNG.EXPENSE_NO = mst.EXPENSE_NO AND MNG.MNG_CD = 'E201' ) -- 영수증/출발지
+			                          WHEN '4' THEN mst.START_ADDR  -- 유류비/출발지
+			                          WHEN '6' THEN (SELECT MNGVAL_NM FROM EXPENSE_MST_MNG MNG WHERE MNG.EXPENSE_NO = mst.EXPENSE_NO AND MNG.MNG_CD = 'E201' ) -- 통행료/출발지
+			                          ELSE '' END
+			                , '') AS START_PLACE -- 기타/출발지
+			      ,IFNULL( CASE mst.SOURCE_TP WHEN '2' THEN (SELECT MNGVAL_NM FROM EXPENSE_MST_MNG MNG WHERE MNG.EXPENSE_NO = mst.EXPENSE_NO AND MNG.MNG_CD = 'E202' ) -- 영수증/도착지                            '' then ()
+			                          WHEN '4' THEN mst.END_ADDR -- 유류비/도착지
+			                          WHEN '6' THEN (SELECT MNGVAL_NM FROM EXPENSE_MST_MNG MNG WHERE MNG.EXPENSE_NO = mst.EXPENSE_NO AND MNG.MNG_CD = 'E202' ) -- 통행료/도착지
+			                          ELSE '' END  
+			                 , '') AS END_PLACE -- 기타/도착지
+			      ,IFNULL( CASE mst.SOURCE_TP WHEN '2' THEN (SELECT MNGVAL_NM FROM EXPENSE_MST_MNG MNG WHERE MNG.EXPENSE_NO = mst.EXPENSE_NO AND MNG.MNG_CD = 'E303' ) -- 영수증/교통수단                             '' then ()
+			                          WHEN '4' THEN '유류비' -- 유류비/교통수단
+			                          WHEN '6' THEN '톨비' -- 통행료/교통수단
+			                          ELSE '' END  
+			                   , '') AS TRANSPORT -- 기타/교통수단
+			      ,IFNULL( (SELECT MNGVAL_NM FROM EXPENSE_MST_MNG MNG WHERE MNG.EXPENSE_NO = mst.EXPENSE_NO AND MNG.MNG_CD = '1200' ) 
+			                   , 0)  USE_AMT      -- 사용금액
+			      ,mst.PAY_AMT      -- 지급액
+			      ,mst.EXPENSE_NO   -- 비용번호
+			      ,cat.EXPENSE_NM
+			      ,JSON_ARRAYAGG(JSON_OBJECT("FILE_NO", B.FILE_NO , "FILE_TYPE", UCASE(SUBSTR(BB.ORG_FILE_NAME,-3,3))) ) as FILE_LIST
+				  ,FC_EXPS_GET_SYSTEM_CODE_NM2('EX_SOURCE_TP','EX_TAX_SOURCE_TP',mst.SOURCE_TP, 'ko') AS SOURCE_TP_NM
+				  ,mst.SOURCE_TP
+			 FROM EXPENSE_MST mst
+			 LEFT OUTER JOIN EXPENSE_COST_CENTER ecc 
+			      ON mst.CCTR_CD = ecc.CCTR_CD 
+			     AND mst.COMPANY_CODE = ecc.COMPANY_CODE 
+			 LEFT OUTER JOIN EXPENSE_CATEGORY cat 
+			      ON mst.EXPENSE_CD = cat.EXPENSE_CD 
+			     AND mst.COMPANY_CODE = cat.COMPANY_CODE 
+			 LEFT OUTER JOIN ADMIN_EMP emp
+			      ON mst.EXPENSE_EMP_NO = emp.EMP_NO 
+			     AND mst.COMPANY_CODE = emp.COMPANY_CODE
+			 LEFT OUTER JOIN EXPENSE_FILE B INNER JOIN ADMIN_FILE BB
+                ON B.FILE_NO = BB.FILE_NO 
+                ON mst.EXPENSE_NO = B.EXPENSE_NO
+                AND (B.USE_YN = '1' )
+			WHERE 1=1
+			<if test="REPORT_NO != null and REPORT_NO != ''"> 
+				AND mst.REPORT_NO = #{REPORT_NO}     -- 결재번호 (결재함, 상신함)
+			</if>
+			
+			<if test='EXPENSE_NOS !=null and EXPENSE_NOS.size  > 0 '>
+				AND mst.EXPENSE_NO in
+					<foreach collection="EXPENSE_NOS" item="item" open="(" close=")" separator=",">
+						 #{item.EXPENSE_NO}
+					</foreach>
+			</if>
+			GROUP BY mst.EXPENSE_NO
+		 </select>
+		 
+		 <select id="getExpReportHotelTrip" resultType="HashMap">
+			SELECT 
+				REPORT_NO,
+				COMPANY_CODE,
+				HOTEL_PKG,
+				MARRIED_TP,
+				HOTEL_PKG_NM,
+				MARRIED_TP_NM,
+				LIMIT_AMT,
+				REGR_ID,
+				REGR_NM
+			FROM EXPENSE_REPORT_HOTELTRIP 
+			WHERE COMPANY_CODE = #{g_comCd}
+			AND REPORT_NO = #{REPORT_NO};
+		</select>
+		 
+		 <select id="selectToCommonDropBox" resultType="HashMap">
+			SELECT /* selectToCommonDropBox */
+			A.COMM_CL_CD , A.COMM_CD AS CODE, B.COMM_CD_NM AS NAME, ORD,
+			CHARTR_REF1, NUM_REF1 
+			FROM ADMIN_CODE A, ADMIN_CODE_LANGUAGE B
+			WHERE A.COMM_CL_CD = #{COMM_CL_CD}
+			AND A.COMPANY_CODE = #{g_comCd}
+			AND LANG_CL = #{g_lang}
+			AND A.COMPANY_CODE = B.COMPANY_CODE
+			AND A.COMM_CL_CD = B.COMM_CL_CD
+			AND A.COMM_CD = B.COMM_CD
+			AND	USE_YN = '1'
+			ORDER BY ORD
+		</select>
+		 
+</mapper>

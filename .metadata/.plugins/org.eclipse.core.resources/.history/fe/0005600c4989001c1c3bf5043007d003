@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+ 
+      var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************        
+          
+          data: {  pgmid : "[[${param.pgm_id}]]",
+                   columnlayout : [],
+                   gridView : '',
+                   gridprop:{},
+                   
+          },//data
+          beforeDestroy () {
+     	     window.removeEventListener('gotoCpEvent', this.gotoCpEvent, false );
+       		}, 
+
+          created () { //초기화================================================================
+        	  //
+     	     window.addEventListener('gotoCpEvent', this.gotoCpEvent , false);
+
+        	  //그리드 초기화
+                this.columnlayout =   
+                	
+                   [   
+                       {dataField : "GJAHR",  headerText : "회계연도", editable : false,width: 90, filter : { showIcon : true}},
+                       {dataField : "PERIO",     headerText : "기간",  editable : false, width: 70  , filter : { showIcon : true}},
+                       {dataField : "GSBER_TXT",  headerText : "회계단위", editable : false,width: 100, filter : { showIcon : true} }, 
+                       {dataField : "FICTR_TXT",  headerText : "예산부서", editable : false,width: 180,  filter : { showIcon : true} }, 
+                       {dataField : "FIPEX_TXT", headerText : "예산과목",  editable : false, width : 180,  filter : { showIcon : true} },
+                       {dataField : "AMT_BG",  headerText : "기초예산",style : "aui_col_right",editable : false, dataType : "numeric",formatString : "#,##0", width: 100, filter : { showIcon : true} }, 
+                       {dataField : "AMT_AD",  headerText : "추가예산",style : "aui_col_right", dataType : "numeric",formatString : "#,##0",editable : false, width: 100, filter : { showIcon : true} },
+                       {dataField : "AMT_CH", headerText : "예산조정",style : "aui_col_right", editable : false, dataType : "numeric",formatString : "#,##0", width : 100, filter : { showIcon : true}  },
+                       {dataField : "TOT_BDG",  headerText : "총예산(합계)",style : "aui_col_right",editable : false,dataType : "numeric",formatString : "#,##0",width: 100 ,filter : { showIcon : true} }, 
+                       {dataField : "TOT_ACT", headerText : "총(실적)",style : "aui_col_right", dataType : "numeric",formatString : "#,##0",editable : false,  width : 120,   filter : { showIcon : true}},
+                       {dataField : "TOT_AV", headerText : "가용예산",style : "aui_col_right", dataType : "numeric",formatString : "#,##0",editable : false,  width : 120,   filter : { showIcon : true}},
+                       {dataField : "GSBER",  headerText : "회계단위코드", editable : false,width: 100, filter : { showIcon : true} }, 
+                       {dataField : "FICTR",  headerText : "예산부서코드", editable : false,width: 100, filter : { showIcon : true} }, 
+                       {dataField : "FIPEX", headerText : "예산과목코드",  editable : false, width : 100, filter : { showIcon : true} },
+                       ] ;//columnlayout
+                
+                this.gridprop  = {useContextMenu : true,
+                    		   	  useGroupingPanel : true,
+                				  groupingFields : [ "GJAHR", "PERIO","GSBER_TXT", "FICTR_TXT","FIPEX_TXT",  "GSBER", "FICTR","FIPEX"],
+            	// 그룹핑 후 합계필드를 출력하도록 설정합니다.
+        		groupingSummary : {
+        			// 합계 필드는 1월 ~ 12월에 대하여 실시 합니다.
+        			dataFields : ["AMT_BG","AMT_AD","AMT_CH","TOT_BDG","TOT_ACT","TOT_AV"]
+        		},
+        		
+        		// 최초 보여질 때 모두 열린 상태로 출력 여부
+        		displayTreeOpen : true,
+        		
+        		// 그룹핑 후 셀 병함 실행
+        		enableCellMerge : true,
+                      		 }
+                       
+                this.footerLayout = [{
+            		labelText : "∑",
+            		positionField : "#base"
+            	}];
+            for(var i=1; i<=6; i++) {
+            	footerObject.push({
+            		dataField : "AMT_BG" + i,
+            		positionField : "AMT_BG" + i,
+            		operation : "SUM",
+            		formatString : "#,##0",
+            		style : "aui-grid-my-custom-sum-total"
+            	});
+            }
+          }, // created       
+          methods : {  // ======================================================================================
+        	  
+//         	  changeBgtFictr : function(isvalid, codeId, item) {
+//         	      console.log(item);
+//         	      $("#" + this.pgmid + 'GSBER').val(item.REF1)
+//         	      $("#" + this.pgmid + 'GSBER_NM').val(item.REF2)
+        	      
+//         	  },
+			
+			grid : function(){
+				// 그룹핑 패널 사용
+				useGroupingPanel : true
+				// 차례로 country, product 순으로 그룹핑을 합니다.
+				// 즉, 각 나라별, 각 제품을 구매한 사용자로 그룹핑
+				groupingFields : [ "country", "product" ]
+				
+			},
+
+
+			gotoCpEvent : function(e) {
+					  this.searchButtonOnClick();	
+				},
+
+        	  
+        	  
+              searchButtonOnClick : function() {
+            	  
+//             	  if ( isEmpty(this.$refs.FICTR.getCode()) == true){
+//            		   customAlert("","","예산부서를 입력하세요.");
+//                     return false;
+// 			      } 
+            	  
+  				if (checkRequiredInput(this.pgmid+"CHECK") == false){
+            		   customAlert("","","필수항목을 확인하세요.");
+                     return false;
+ 			      } 
+
+            	  
+            	  
+            	  var param = {
+                                svcId:"bgtcp",
+                                strUrl:"ex/bgt/req/bgtcp",   //전송 url    
+                                param : serializeObjectX($('#[[${param.pgm_id}]]')),
+                                pCall : this.searchButtonOnClickCallback, 
+                                pLoad : true ,
+                                async : true 
+                            };
+                            //트랜젝션 실행
+                            ajaxReadJsonData(param);
+                            
+                      }, // end of searchButtonOnClick
+                      
+                      searchButtonOnClickCallback : function(svc, data) {
+                    	  console.log(data)
+                    	  if(data["ds_master"]['data'].RESULT == "ERROR"){
+                    		  customAlert('','',data["ds_master"]['data'].MSG);
+                    	  }
+                    	  if(data["ds_master"]['data'].RESULT == "OK"){
+                    	  this.$refs.gridmaster.setGridData(data["ds_master"]['data'].resultList);
+                    	  }console.log(data["ds_master"]['data'].resultList)
+                      },
+              
+              
+          }, // end of methods
+
+          mounted: function() {
+             var ref = this;
+             this.$nextTick(function () {
+                   ref.gridView = ref.$refs.gridmaster.myGridID;
+                   
+              });
+//**********************************************************************************************              
+             vueArr.push(this);
+            },
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

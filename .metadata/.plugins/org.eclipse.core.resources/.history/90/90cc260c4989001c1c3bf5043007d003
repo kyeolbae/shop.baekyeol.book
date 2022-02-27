@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper namespace="com.ec.eframework.mapper.ex.report.DigitalSignatureServiceMapper">
+ 	
+ 	<select id="getSignSeq" resultType="String">
+ 		SELECT NEXTVAL(SIGN_SEQ);
+ 	</select>
+ 	
+	<insert id="insertAdminSignature">
+		INSERT ADMIN_SIGNATURE(
+			SIGN_KEY,
+			COMPANY_CODE,
+			REGR_DH,
+			MOD_DH,
+			REGR_ID,
+			MOD_ID
+		)VALUES(
+			#{SIGN_SEQ}, 
+			#{g_comCd},
+			REGR_DH(),
+			REGR_DH(),
+			#{g_userId},
+			#{g_userId}
+		);
+    </insert>
+    
+    <update id="updateAdminSignature">
+    	UPDATE ADMIN_SIGNATURE 
+    	SET
+    	SIGN_TEXT = #{SIGN_TEXT},
+    	MOD_DH = REGR_DH()
+    	WHERE REGR_ID = #{g_userId} AND 
+    	SIGN_KEY = #{SIGN_SEQ};
+    	
+    </update>
+</mapper>

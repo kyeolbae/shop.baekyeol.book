@@ -1,0 +1,123 @@
+<!-- 
+	-- 프로그램명 : 사업영역 
+	-- 날짜 : 2021.08.17 by 배고현
+	-- 수정 : 
+-->
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="js">
+    <script type="text/javascript" >
+ 
+      var [[${param.pgm_id}]] = new Vue({
+          el:  '#[[${param.pgm_id}]]',
+//********************************************************************************************        
+          
+          data: {  pgmid : "[[${param.pgm_id}]]",
+                   columnlayout : [],
+                   newgriditem : {USE_YN:"1"},
+                   gridView : '',
+          },//data
+          created () { //초기화================================================================
+                //그리드 초기화
+                 this.columnlayout =   
+                   [   
+                       {dataField : "BA_CD",     headerText : "사업영역코드", editRenderer : {maxlength : 10}, width: 120 , filter : { showIcon : true}, editable : false},
+                       {dataField : "BA_NM",     headerText : "사업영역명",  editRenderer : {maxlength : 40}, width: 120 , filter : { showIcon : true}, editable : false},
+                       {dataField : "USE_YN",     headerText : "사용여부", renderer : auiCheckboxRenderer() ,  width: 80 , editable : false},
+                       {dataField : "REGR_DH",     headerText : "등록일시", width: 120 , editable : false },
+                       {dataField : "REGR_ID",   headerText : "등록자", width: 100, editable : false },
+                       {dataField : "MOD_DH", headerText : "변경일시",  width : 120, editable : false,},
+                       {dataField : "MOD_ID",     headerText : "변경자",    width: 100 ,editable : false},
+                       
+                ] ;//columnlayout
+                  
+          }, // created       
+          methods : {  // ======================================================================================
+              searchButtonOnClick : function() {
+              
+                            var param = {
+                                svcId:"searchSapBa",
+                                strUrl:"/ec/ex/sap/sapba/searchSapBa",   //전송 url    
+                                inDs :  "" ,  
+                                param : serializeObjectX($('#[[${param.pgm_id}]]')), 
+                                pCall : this.tranCallBack, 
+                                pLoad : true          
+                            };
+                            //트랜젝션 실행
+                            ajaxReadJsonData(param);
+                            
+                      }, // end of searchButtonOnClick
+              
+              saveButtonOnClick : function() {
+              
+                            // 변경된 데이터가 있는지 없는지 체크
+                            var    ds_master = getCRUDdata(this.gridView);
+                            
+                            if (ds_master['data'].length == 0 ) {
+                                customAlert('','','변경된 데이터가 없습니다.');
+                                return;
+                            }
+                            // Confirmation dialog, 시스템 설정에 따라 보이고 안보이고
+                            bootboxSaveConfirm(this);             
+              },  //saveButtonOnClick
+              
+              saveButtonOnClickCallback(){
+                
+                   saveColumnLayout(this.gridView);
+                
+                // 저장할 데이터 만들기
+                var    ds_master = {};
+                ds_master['ds_master'] = getCRUDdata(this.gridView);
+                
+                if(!ds_master){ return; }
+                
+                var param = {
+                    svcId:"saveSapBa", 
+                    strUrl: "/ec/ex/sap/sapba/saveSapBa",   //전송 url 
+                    inDs : {
+                        ds_master:ds_master
+                    },
+                    param : ds_master,        // 전송할 파라미터
+                    pCall : this.tranCallBack, 
+                    pLoad : true          // 로딩이미지 노출 여부  
+                };
+
+                //트랜젝션 실행
+                ajaxReadJsonData(param); 
+            }, //   saveButtonOnClickCallback         
+              
+                tranCallBack : function(svcId, data, errCd, msgTp, msgCd, msgText) { //******************************
+                      if(svcId=="searchSapBa"){
+                            if(data["ds_master"]['data'].length >= 0) {
+                                this.$refs.gridmaster.setGridData(data["ds_master"]['data']);
+                            }
+                      }else if(svcId =="saveSapBa"){
+                            this.searchButtonOnClick(); // 재조회  
+                            saveGritter();
+                      } // end if
+                    },  // tranCallBack
+                    
+          }, // end of methods
+
+          mounted: function() {
+             var ref = this;
+             this.$nextTick(function () {
+                   ref.gridView = ref.$refs.gridmaster.myGridID;
+              });
+             
+//**********************************************************************************************              
+             vueArr.push(this);
+            },
+      }) // end of new Vue
+
+    </script>
+   </div> 
+   
+  </body>
+</html>

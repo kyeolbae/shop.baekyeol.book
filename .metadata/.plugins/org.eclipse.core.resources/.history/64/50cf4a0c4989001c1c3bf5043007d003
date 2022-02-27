@@ -1,0 +1,255 @@
+/* 
+	-- 프로그램명 : KWICHUB DATAHUB - 휴폐업조회
+	-- 날짜 : 
+	-- 수정 : 2021.10.25 by hshwang (HttpSapConnectionService 추가 및 코드 수정)
+	-- 수정 : 2021.11.04 by hshwang (return data 수정)
+	-- 수정 : 2021.11.10 by hshwang (전자세금계산서 on-demand 요청 프로그램 추가)
+*/
+package com.ec.eframework.ex.kwichub;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.configurationprocessor.json.JSONArray;
+import org.springframework.boot.configurationprocessor.json.JSONObject;
+import org.springframework.stereotype.Service;
+
+import com.ec.eframework.ex.common.HttpSapConnectionService;
+import com.ec.eframework.ex.datahub.KwichubService2;
+import com.ec.eframework.ex.datahub.KwichubTransactionService;
+import com.ec.eframework.lib.P;
+import com.ec.eframework.mapper.ex.datahub.KwichubServiceMapper2;
+import com.ec.eframework.mapper.ex.kwichub.KwichubServiceMapper3;
+
+@Service
+public class KwichubService3 {
+	
+	@Autowired
+	private HttpSapConnectionService httpConnectionService;
+	
+	@Autowired
+	private KwichubService2 kwichubService2;
+	@Autowired
+	private KwichubServiceMapper2 kwichubServiceMapper2;
+	@Autowired
+	private KwichubServiceMapper3 kwichubServiceMapper3;
+	@Autowired
+	private KwichubTransactionService kwichubTransactionService;
+	
+//	휴폐업조회_건별조회
+	public Map<String, Object> getCorpState(Map<String, Object> paramMap)  {
+		// 순서 중요	
+		Map<String, Object> result = new HashMap();		
+		if (!(kwichubService2.CheckConfigData(paramMap, result, "KH_GET_CORP" ))) return result;
+
+		try {
+			// json 추가
+			JSONObject json = kwichubService2.JSONObjectFactory(paramMap);
+			json.put("CORP_NO", paramMap.get("CORP_NO"));
+			P.ln(json.toString());
+			JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, json, "DATAHUB"); // API 호출
+			P.ln(jObject.toString());
+			
+		    if (jObject.get("result").equals("SUCCESS")) {
+			   jObject = jObject.getJSONObject("data");
+			   if (jObject.get("ERR_MSG").equals("정상")) {
+				   result.putAll(httpConnectionService.getMapFromJsonObject(jObject));
+				   if(paramMap.get("API_YN") != "Y") {
+					   if(kwichubTransactionService.insertCorpState(paramMap) <= 0) {
+						   result.put("RESULT" , "ERROR");
+						   result.put("MSG" , "데이터가 저장되지 않았습니다");
+					   }
+				   }
+				   result.put("RESULT" , "OK");
+				   result.put("MSG" , "성공적으로 조회되었습니다");
+			   } else { // 에러
+				   result.put("RESULT" , "ERROR");
+				   result.put("MSG" , jObject.get("ERR_MSG").toString());
+			 }
+		   } else { // 에러
+			   result.put("RESULT" , "ERROR");
+			   result.put("MSG" , jObject.get("errMsg").toString());
+		   } // if
+		} catch (Exception e) {  
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "실행 도중 에러가 발생했습니다.");
+			e.printStackTrace();
+		}
+		return result;
+	}
+	
+//	휴폐업조회_대량_신청
+	public Map<String, Object> requestBulkCorpState(Map<String, Object> paramMap)  {
+		// 순서 중요	
+		Map<String, Object> result = new HashMap();
+		if (!(kwichubService2.CheckConfigData(paramMap, result, "KH_BULK_CORP_REQUEST" ))) return result;
+		
+		try {
+			// json 추가
+			JSONObject json = kwichubService2.JSONObjectFactory(paramMap);
+			List<Map<String, Object>> list = kwichubServiceMapper3.getBiz_no();
+			JSONArray jArray = new JSONArray(list);
+			json.put("LIST", jArray);
+			P.ln(json.toString());
+			JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, json, "DATAHUB"); // API 호출
+			P.ln(jObject.toString());
+			
+		    if (jObject.get("result").equals("SUCCESS")) {
+			   jObject = jObject.getJSONObject("data");
+			   if (jObject.get("ERR_MSG").equals("정상")) {
+				   paramMap.put("HUB_IF_KEY", kwichubServiceMapper2.nextVal());
+				   paramMap.put("LIST", httpConnectionService.getMapFromJsonObject(jObject));
+				   if(kwichubTransactionService.insertBulkCorpState(paramMap) <= 0) {
+					   result.put("RESULT" , "ERROR");
+					   result.put("MSG" , "데이터가 저장되지 않았습니다");
+				   };
+				   result.put("RESULT" , "OK");
+				   result.put("MSG" , "신청 접수되었습니다 (접수 번호: " + paramMap.get("DOC_NO") + ")");
+			   } else { // 에러
+				   result.put("RESULT" , "ERROR");
+				   result.put("MSG" , jObject.get("ERR_MSG").toString());
+			 }
+		   } else { // 에러
+			   result.put("RESULT" , "ERROR");
+			   result.put("MSG" , jObject.get("errMsg").toString());
+		   } // if
+		} catch (Exception e) {  
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "실행 도중 에러가 발생했습니다.");
+			e.printStackTrace();
+		}
+		return result;
+	}
+	
+//	휴폐업조회_대량_결과조회
+	public Map<String, Object> updateBulkCorpStateResult(Map<String, Object> paramMap)  {
+		// 순서 중요		
+		Map<String, Object> result = new HashMap();
+		if (!(kwichubService2.CheckConfigData(paramMap, result, "KH_BULK_CORP_RESULT" ))) return result;
+
+		try {
+			// json 추가
+			JSONObject json = kwichubService2.JSONObjectFactory(paramMap);
+			json.put("DOC_NO", paramMap.get("DOC_NO"));
+			json.put("DETAIL_VIEW", "Y");
+			P.ln(json.toString());
+			JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, json, "DATAHUB"); // API 호출
+			
+		    if (jObject.get("result").equals("SUCCESS")) {
+			   jObject = jObject.getJSONObject("data");
+			   if (jObject.get("ERR_MSG").equals("정상")) {
+				   paramMap.put("TOTAL_CNT", jObject.get("TOTAL_CNT"));
+				   paramMap.put("STATE", jObject.get("STATE"));
+				   paramMap.put("STATE_NM", jObject.get("STATE_NM"));
+				   paramMap.put("SUCC_CNT", jObject.get("SUCC_CNT"));
+				   paramMap.put("FAIL_CNT", jObject.get("FAIL_CNT"));
+				   paramMap.put("WAIT_CNT", jObject.get("WAIT_CNT"));
+				   paramMap.put("LIST", httpConnectionService.getListMapFromJsonArray(jObject.getJSONArray("LIST")));
+				   paramMap.put("HUB_IF_KEY", kwichubServiceMapper3.getBizStatusHubIfKey(paramMap));
+				   int check = kwichubTransactionService.updateBulkCorpState(paramMap);
+				   if(check <= 0) {
+					   result.put("RESULT" , "ERROR");
+					   result.put("MSG" , "데이터가 저장되지 않았습니다");
+				   }
+				   result.put("RESULT" , "OK");
+				   result.put("MSG" , check + "개의 데이터가 처리 되었습니다.");
+			   } else { // 에러
+				   result.put("RESULT" , "ERROR");
+				   result.put("MSG" , jObject.get("ERR_MSG").toString());
+			 }
+		   } else { // 에러
+			   result.put("RESULT" , "ERROR");
+			   result.put("MSG" , jObject.get("errMsg").toString());
+		   } // if
+		} catch (Exception e) {  
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "실행 도중 에러가 발생했습니다.");
+			e.printStackTrace();
+		}
+		return result;
+	}
+	
+//	전자세금계산서 on-demand 요청
+	public Map<String, Object> requestHomeTax(Map<String, Object> paramMap)  {
+		// 순서 중요	
+		Map<String, Object> result = new HashMap();
+		if (!(kwichubService2.CheckConfigData(paramMap, result, "KH_REQ_HTAX" ))) return result;
+		
+		try {
+			// json 추가
+			JSONObject json = kwichubService2.JSONObjectFactory(paramMap);
+			json.put("TRAN_TYPE", paramMap.get("TRAN_TYPE").equals("E") ? "KH0415" : "KH0417");	//KH0415: 전자세금계산서(E) / KH0417: 세금계산서(H)
+			P.ln(json.toString());
+			JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, json, "DATAHUB"); // API 호출
+			
+//		response
+			P.ln(jObject.toString());
+		    if (jObject.get("result").equals("SUCCESS")) {
+			   jObject = jObject.getJSONObject("data");
+			   if (jObject.get("RTN").equals("SUCCESS")) {
+				   result.put("TYPE", paramMap.get("TRAN_TYPE"));
+				   result.put("SCHE_GUID", jObject.get("SCHE_GUID"));
+				   result.put("RESULT" , "OK");
+				   result.put("MSG" , "요청이 접수되었습니다.");
+			   } else { // 에러
+				   result.put("RESULT" , "ERROR");
+				   result.put("MSG" , jObject.get("ERR_MSG").toString());
+			 }
+		   } else { // 에러
+			   result.put("RESULT" , "ERROR");
+			   result.put("MSG" , jObject.get("errMsg").toString());
+		   } // if
+		} catch (Exception e) {  
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "실행 도중 에러가 발생했습니다.");
+			e.printStackTrace();
+		}
+		return result;
+	}
+	
+//	전자세금계산서 on-demand 요청 결과 조회
+	public Map<String, Object> getReqResult(Map<String, Object> paramMap)  {
+		// 순서 중요	
+		Map<String, Object> result = new HashMap();
+		if (!(kwichubService2.CheckConfigData(paramMap, result, "KH_REQ_HTAX_RESULT" ))) return result;
+		
+		try {
+			// json 추가
+			JSONObject json = kwichubService2.JSONObjectFactory(paramMap);
+			json.put("ST_DT", paramMap.get("ST_DT"));
+			json.put("ED_DT", paramMap.get("ED_DT"));
+			json.put("TRAN_TYPE", paramMap.get("TRAN_TYPE").equals("E") ? "KH0415" : "KH0417");	//KH0415: 전자세금계산서(E) / KH0417: 세금계산서(H)
+			json.put("SCHE_GUID", paramMap.get("SCHE_GUID"));
+			P.ln(json.toString());
+			JSONObject jObject = httpConnectionService.httpURLConnectionResult(paramMap, json, "DATAHUB"); // API 호출
+			
+//		response
+			P.ln(jObject.toString());
+			result.put("TYPE", paramMap.get("TRAN_TYPE"));
+		    if (jObject.get("result").equals("SUCCESS")) {
+			   jObject = jObject.getJSONObject("data");
+			   if(jObject.has("RTN")) {
+				   if (jObject.get("RTN").equals("FAIL")) {
+					   result.put("RESULT" , "ERROR");
+					   result.put("MSG" , jObject.get("ERR_MSG").toString());
+				   } 
+			   } else {
+				   result.put("ITEMLIST" ,httpConnectionService.getListMapFromJsonArray(jObject.getJSONArray("LIST")));
+				   result.put("RESULT" , "OK");
+				   result.put("MSG" , "처리완료");
+			   }
+		   } else { // 에러
+			   result.put("RESULT" , "ERROR");
+			   result.put("MSG" , jObject.get("errMsg").toString());
+		   } // if
+		} catch (Exception e) {  
+			result.put("RESULT" , "ERROR");
+			result.put("MSG" , "실행 도중 에러가 발생했습니다.");
+			e.printStackTrace();
+		}
+		return result;
+	}
+
+}

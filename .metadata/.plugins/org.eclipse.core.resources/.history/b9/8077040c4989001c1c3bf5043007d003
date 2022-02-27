@@ -1,0 +1,15 @@
+package com.ec.eframework.mapper.fi_exp;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.annotations.Mapper;
+
+import com.ec.eframework.config.db.FirstMapper;
+import com.ec.eframework.mapper.basic.GridServiceMapper;
+@FirstMapper
+public interface ExpenseServiceMapper extends GridServiceMapper  {
+	
+	List<HashMap<String , String >> getReceiptList(Map map); //
+}

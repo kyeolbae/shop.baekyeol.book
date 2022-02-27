@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper
+	namespace="com.ec.eframework.mapper.ex.config.CardBizServiceMapper">	
+	
+	<update id="updateCardBiz">
+	    UPDATE /* com.ec.eframework.mapper.ex.config.CardBizServiceMapper.updateCardBiz 2021.07.23 by 배고현 */ 
+	    expense_card_biz         
+        SET
+         BIZ_NM= #{BIZ_NM},
+         NO_VAT_YN= #{NO_VAT_YN},
+         EVID_YN= #{EVID_YN},
+         NO_POSTING_YN= #{NO_POSTING_YN},
+         RMK= #{RMK},
+         MOD_DH= REGR_DH(),
+         MOD_ID= #{g_userId}
+        where COMPANY_CODE = #{g_comCd}
+        and BIZ_NO = #{BIZ_NO}
+        </update>
+    
+	<insert id="insertCardBiz">
+        INSERT /* com.ec.eframework.mapper.ex.config.CardBizServiceMapper.insertCardBiz 2021.07.23 by 배고현 */
+        INTO expense_card_biz
+        ( COMPANY_CODE
+        ,BIZ_NO
+        ,BIZ_NM
+        ,NO_VAT_YN
+        ,EVID_YN
+        ,NO_POSTING_YN
+        ,RMK
+        ,REGR_DH
+        ,REGR_ID
+        ) VALUES
+        (
+        #{g_comCd},
+        #{BIZ_NO},
+        #{BIZ_NM},
+        #{NO_VAT_YN},
+        #{EVID_YN},
+        #{NO_POSTING_YN},
+        #{RMK},
+        REGR_DH(),
+        #{g_userId}
+
+        );
+
+    </insert>
+	 
+	
+	 <select id="searchCardBiz" resultType="HashMap">
+	 	/* com.ec.eframework.mapper.ex.config.CardBizServiceMapper.searchCardBiz 2021.07.23 by 배고현 */
+		SELECT
+		ROW_NUMBER() OVER() AS ID
+    	,COMPANY_CODE
+    	,BIZ_NO
+    	,BIZ_NM
+    	,NO_VAT_YN
+    	,EVID_YN
+    	,NO_POSTING_YN
+    	,RMK
+    	,DATE_FORMAT(REGR_DH, '%Y-%m-%d %T') REGR_DH
+    	,DATE_FORMAT(MOD_DH, '%Y-%m-%d %T') MOD_DH
+    	,REGR_NM(REGR_ID) AS REGR_NM
+    	,REGR_NM(MOD_ID) AS MOD_NM
+		FROM expense_card_biz
+		WHERE COMPANY_CODE = #{g_comCd}
+	</select> 
+	
+	
+	    <delete id="deleteCardBiz">
+        DELETE  /* com.ec.eframework.mapper.ex.config.CardBizServiceMapper.deleteCardBiz 2021.10.12 by 배고현 */
+        FROM expense_card_biz 
+        where COMPANY_CODE = #{g_comCd}
+        and BIZ_NO = #{BIZ_NO}
+    </delete>
+	
+	
+	
+</mapper>

@@ -1,0 +1,302 @@
+package com.ec.eframework.ex.report;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.ec.eframework.lib.JsonDataMap;
+import com.ec.eframework.lib.JsonResultMsgMap;
+import com.ec.eframework.lib.KafkaProducer;
+import com.ec.eframework.lib.P;
+import com.ec.eframework.lib.Util;
+import com.ec.eframework.lib.MapSession;
+import com.ec.eframework.mapper.ex.expense.ApproveServiceMapper;
+
+import com.ec.eframework.notification.NotificationService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ec.eframework.ex.report.KafkaApproveService;
+
+// 결재, 반려, 회수
+// 알림 : 다음결재자, 결재 완료후 기안자
+
+
+@Controller
+@RequestMapping("/ex/expense/approve")
+public class ApproveController {
+	@Autowired
+	private ApproveServiceMapper approveServiceMapper;
+	@Autowired
+	private KafkaApproveService kafkaApproveService;	
+	@Autowired
+	private NotificationService notificationService;
+	@Autowired
+	KafkaProducer kafkaProducer;
+	@Autowired
+	ApproveApiService approveApiService;
+	
+	
+	
+	@Transactional
+	@ResponseBody
+	@RequestMapping(value = "/procApprove", produces = MediaType.APPLICATION_JSON_VALUE)
+	public Map<String, Object>  proccApprove(@RequestBody Map paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+		paramMap.putAll((Map)new MapSession(session));
+		 
+		// sap 인터페이스
+		// 외부 api호출
+		// 1. 최종결재 전 sap 결재상태 보내기
+//		NEXT_APPROVE_ID
+		P.ln(Util.getMapValue(paramMap, "NEXT_APPROVE_ID"));
+		if (Util.getMapValue(paramMap, "NEXT_APPROVE_ID").equals("")) { // 최종결재(다음 결재자가 없을 때)
+				P.ln(paramMap.toString());
+		//{APPROVE_SEQ=72380, REPORT_NO=72378, APPROVAL=1, APPROVE_TP_NM=합의, REGR_NM=홍길동, EMAIL=jhlee@e-accounting.co.kr, APPROVE_STEP_NM=신청부서, REAL_APPROVE_ID=2, SUBMIT_EMAIL=hcho@e-accounting.co.kr, REGR_ID=Y-0001, REAL_APPROVE_NM=이정현, USER_NM=이정현, APPROVE_YN=0, APPROVE_STEP=1, REAL_DEPT_CD=D000293, APPROVE_ID=2, APPROVE_TP=2, REAL_DEPT_NM=정보전략팀, NEXT_APPROVE_ID=2, NEXT_EMAIL=jhlee@e-accounting.co.kr, SUBMIT_ID=Y-0001, SUBMIT_NM=홍길동, LOGIN_ID=2, URGENCY_YN=0, CNT=1, REPORT_TITLE=호텔 패키지 교통비 정산, SUBMIT_DH=20211028113514, PAY_SUM_AMT=11, APPROVE_STATUS_NM=진행중, APPROVE_STATUS=2, APPROVAL_NM=이정현, APPROVAL_ID=2, REPORT_RMK=11111}
+		
+				paramMap.put("APPROVE_ACTION_CD", "20"); // 20 : 최종결재, 30:반려  40 : 회수
+				paramMap.put("BDGT_STAT", "20");
+				Map map = approveApiService.callReportIfApi(paramMap, session);
+				
+				if (!map.get("ErrorCode").toString().equals("0")) {
+					return map; // JsonResultMsgMap(false); 리턴됨
+				}
+				// end of "1."
+				P.ln("po리턴값");
+				P.ln(map.toString());
+				
+				//{"ES_RESULT":{"RETURN_CD":"S","RETURN_MSG":""},"ES_ITEM":{"BUKRS":1000,"GJAHR":2021,"REQDOC":75284,"REQTY":"A1"}}
+				// {"ES_RESULT":{"RETURN_CD":"S","RETURN_MSG":""},"ES_ITEM":{"BUKRS":1000,"GJAHR":2021,"REQDOC":75285,"REQTY":"A2"}}
+//				if ( !Util.getMapValue(paramMap, "ES_ITEM").equals("") ) {	
+			if ( !map.getOrDefault("ITEM", "").equals("") ) {
+				    
+					paramMap.put("TXT_REF1", ((Map)map.get("ITEM")).get("DOCNR_BG").toString() );
+					paramMap.put("TXT_REF2",  ((Map)map.get("ITEM")).get("DOCNR_RS").toString() ); 
+					P.ln("결재완료");
+					P.ln(paramMap.toString());
+					
+				}
+		
+		}
+		
+		
+        if (   approveServiceMapper.procApprove(paramMap) > 0 )  {
+
+             // APPROVE_TP == "3" 최종결재 / 결재 후 기안자에 알림발송
+        	 if  (paramMap.get("APPROVE_TP").toString().equals("3")) {
+        		 try {
+					 // 최종 결재 후 rfc, 전표 연동 등...
+        			 kafkaApproveService.sendToKafka(paramMap); // 메일 아님 , 외부 연동
+        			 
+        			//기안자에 메일 보내기
+ 					// 메일전송
+ 				    String title = paramMap.get("REGR_NM").toString() + "님의 문서가 완결되었습니다.";
+ 				    String mailMsg = "<div>문서번호 :" + paramMap.get("REPORT_NO").toString()  + "</div>";
+ 				    mailMsg = mailMsg + "<div>문서제목 :" + paramMap.get("REPORT_TITLE").toString() + "</div>";
+ 				    mailMsg = mailMsg + "<div>기안자 :" + paramMap.get("SUBMIT_NM").toString() + "</div>";
+ 				    
+ 				    kafkaProducer.sendMail(paramMap.get("SUBMIT_EMAIL").toString(), title, mailMsg);
+        			 
+					// 모바일 알림 보내기
+				    String msg = "[제목] " + paramMap.get("REPORT_TITLE").toString() + "";
+					notificationService.sendMobileNotification(paramMap.get("REGR_ID").toString(),
+						                       	               paramMap.get("g_userNm").toString() + "님의 결재가 완료되었습니다.",
+						                       	               "",
+						                       	               msg,
+						                       	               paramMap);
+					
+				} catch (JsonProcessingException e) {
+					e.printStackTrace();
+				} catch (Exception  e) {
+					//카프카 전송은 옵션으로 카프카쪽 문제 발생시 영향을 주지 않도록 함.
+					e.printStackTrace();
+				}
+        		 
+        	 }else {  // 중간 결재, 다음 결재자에게 알림 발송
+        	
+        	// NEXT_APPROVE_ID
+        		 try {
+				    String msg = "[제목] " + paramMap.get("REPORT_TITLE").toString() + "";
+					// m : nUserId, nTitle, nBody
+					notificationService.sendMobileNotification(paramMap.get("NEXT_APPROVE_ID").toString(),
+							                                   paramMap.get("SUBMIT_NM").toString() + "님의 결재요청 문서가 도착하였습니다.",
+							                                   "",
+							                                   msg,
+							                                   paramMap);
+					
+					
+					// 메일전송
+				    String title = paramMap.get("SUBMIT_NM").toString() + "님으로부터 결재요청 문서가 도착했습니다.";
+				    String mailMsg = "<div>문서번호 :" + paramMap.get("REPORT_NO").toString()  + "</div>";
+				    mailMsg = mailMsg + "<div>문서제목 :" + paramMap.get("REPORT_TITLE").toString() + "</div>";
+				    mailMsg = mailMsg + "<div>기안자 :" + paramMap.get("SUBMIT_NM").toString() + "</div>";
+				    
+				    kafkaProducer.sendMail(paramMap.get("NEXT_EMAIL").toString(), title, mailMsg);
+					
+				}catch (Exception  e) {
+					//카프카 전송은 옵션으로 카프카쪽 문제 발생시 영향을 주지 않도록 함.
+					e.printStackTrace();
+				}
+        	 }
+        	 
+             return new JsonResultMsgMap(true);
+         }else {
+	    	return new JsonResultMsgMap(false);
+	   }
+	} // proccApprove
+	
+	@Transactional
+	@ResponseBody
+	@RequestMapping(value = "/procReject", produces = MediaType.APPLICATION_JSON_VALUE)  // 반려
+	public Map<String, Object>  procReject(@RequestBody Map paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+         
+		
+		
+		P.ln("procReject");
+		P.ln(paramMap.toString());
+		 paramMap.putAll((Map)new MapSession(session));
+		 
+		 
+		 
+			// 1. 최종결재 전 sap 결재상태 보내기
+			
+					paramMap.put("APPROVE_ACTION_CD", "30"); // 20 : 최종결재, 30:반려  40 : 회수
+					paramMap.put("BDGT_STAT", "30");
+					Map map = approveApiService.callReportIfApi(paramMap, session);
+					
+					if (!map.get("ErrorCode").toString().equals("0")) {
+						return map; // JsonResultMsgMap(false); 리턴됨
+					}
+					
+				//	{"ES_RESULT":{"RETURN_CD":"E","RETURN_MSG":"취소 대상이 존재하지 않습니다."},"ES_ITEM":{"BUKRS":"","GJAHR":"0000","REQDOC":"","REQTY":""}}
+					// end of "1."
+					P.ln("po리턴값");
+					P.ln(map.toString());
+					
+					paramMap.put("TXT_REF1", "DOCNR_BG");
+					paramMap.put("TXT_REF2", "DOCNR_RS");
+			
+		 
+         if (   approveServiceMapper.procReject(paramMap) > 0 )  {
+             return new JsonResultMsgMap(true);
+         }else {
+	    	return new JsonResultMsgMap(false);
+	   }
+	} // procReject
+	
+	@Transactional
+	@ResponseBody
+	@RequestMapping(value = "/rejectExpenseItem", produces = MediaType.APPLICATION_JSON_VALUE)  // 반려
+	public Map<String, Object>  rejectExpenseItem(@RequestBody Map paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+         
+//		P.ln(paramMap.toString());
+		 paramMap.putAll((Map)new MapSession(session));
+         if (   approveServiceMapper.rejectExpenseItem(paramMap) > 0 )  {
+             return new JsonResultMsgMap(true); 
+         }else {
+	    	return new JsonResultMsgMap(false);
+	   }
+	} // procReject
+	@Transactional
+	@ResponseBody   
+	@RequestMapping(value = "/procCancel", produces = MediaType.APPLICATION_JSON_VALUE)  //회수
+	public Map<String, Object>  procCancel(@RequestBody Map paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+		P.ln("procReject");
+		P.ln(paramMap.toString());
+		// {APPROVE_NM=홍길동, APPROVE_STATUS_NM=진행중, REPORT_NO=74285, LOGIN_ID=2, CNT=1, APPROVE_TP_NM=기안, REPORT_TITLE=국내 출장 정산서, APPROVAL_ID=Y-0001, SUBMIT_DH=20211030193504, REPORT_RMK=, REPORT_TP=1020, PAY_SUM_AMT=225000}
+
+		 paramMap.putAll((Map)new MapSession(session));
+		 
+		 
+			// 1. 최종결재 전 sap 결재상태 보내기
+//			NEXT_APPROVE_ID
+			//{APPROVE_SEQ=72380, REPORT_NO=72378, APPROVAL=1, APPROVE_TP_NM=합의, REGR_NM=홍길동, EMAIL=jhlee@e-accounting.co.kr, APPROVE_STEP_NM=신청부서, REAL_APPROVE_ID=2, SUBMIT_EMAIL=hcho@e-accounting.co.kr, REGR_ID=Y-0001, REAL_APPROVE_NM=이정현, USER_NM=이정현, APPROVE_YN=0, APPROVE_STEP=1, REAL_DEPT_CD=D000293, APPROVE_ID=2, APPROVE_TP=2, REAL_DEPT_NM=정보전략팀, NEXT_APPROVE_ID=2, NEXT_EMAIL=jhlee@e-accounting.co.kr, SUBMIT_ID=Y-0001, SUBMIT_NM=홍길동, LOGIN_ID=2, URGENCY_YN=0, CNT=1, REPORT_TITLE=호텔 패키지 교통비 정산, SUBMIT_DH=20211028113514, PAY_SUM_AMT=11, APPROVE_STATUS_NM=진행중, APPROVE_STATUS=2, APPROVAL_NM=이정현, APPROVAL_ID=2, REPORT_RMK=11111}
+		            paramMap.put("BDGT_STAT", "40");
+					paramMap.put("APPROVE_ACTION_CD", "40"); // 20 : 최종결재, 30:반려  40 : 회수
+					Map map = approveApiService.callReportIfApi(paramMap, session);
+					
+					if (!map.get("ErrorCode").toString().equals("0")) {
+						return map; // JsonResultMsgMap(false); 리턴됨
+					}
+					// end of "1."
+					P.ln("po리턴값");
+					P.ln(map.toString());
+					
+					paramMap.put("TXT_REF1", "DOCNR_BG");
+					paramMap.put("TXT_REF2", "DOCNR_RS");
+		 
+		 
+         if (   approveServiceMapper.procCancel(paramMap) > 0 )  {
+             return new JsonResultMsgMap(true);
+         }else {
+	    	return new JsonResultMsgMap(false);
+	   }
+	} // procCancel	
+	
+	
+	@Transactional
+	@ResponseBody
+	@RequestMapping(value = "/saveApproveLine", produces = MediaType.APPLICATION_JSON_VALUE)
+	public Map<String, Object>  saveApproveLine(@RequestBody Map paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+		 paramMap.putAll((Map)new MapSession(session));
+		 
+         if (   approveServiceMapper.saveApproveLine(paramMap) >= 0 )  { // delete & insert
+             return new JsonResultMsgMap(true);
+         }else {
+	    	 return new JsonResultMsgMap(false);
+	     }
+		// return null;
+		 
+	} // procReject
+
+    @RequestMapping(value = "/getApproveList" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  getApproveList(@RequestBody Map<String, Object> paramMap,HttpServletRequest request, HttpSession session) {
+    
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master",approveServiceMapper.getApproveList(paramMap));
+    } // getApproveList
+
+    @RequestMapping(value = "/getApprovalReportList" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  getApprovalReportList(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+    
+        //paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master",approveServiceMapper.getApprovalReportList(paramMap));    
+    } // getApprovalReportList
+    
+    @RequestMapping(value = "/getApproveHist" , produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object>  getApproveHist(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+    
+        paramMap.putAll((Map)new MapSession(session));
+        P.ln(session);
+        return new JsonDataMap("ds_master",approveServiceMapper.getApproveHist(paramMap));    
+    } // getApproveHist
+    
+    
+    @RequestMapping(value = "/getReportedList")
+    @ResponseBody
+    public Map<String, Object>  search(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+    
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master",approveServiceMapper.getReportedList(paramMap));    
+    }   
+    
+    @RequestMapping(value = "/getReportByNo")
+    @ResponseBody
+    public Map<String, Object>  getReportByNo(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+    
+        paramMap.putAll((Map)new MapSession(session));
+        return new JsonDataMap("ds_master",approveServiceMapper.getReportByNo(paramMap));    
+    } 
+    
+}

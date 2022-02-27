@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+<!--     <meta charset="utf-8" /> -->
+</head>
+  <body>
+   
+   <div  :class="{'d-flex': curItem.TYPE =='TRAVEL' }" class="d-none flex-column flex-md-row" th:fragment="html">
+       <!-- begin modal 법인카드-->
+						<!-- begin modal 이미지-->
+						<div class="col-12 col-md-6  p-0 flex-column d-flex border-right " :id="pgmid+'bizcard-clon-receipt'">
+                           <div class="pt-3 pl-4 pr-4 pb-2">
+	                           <div class="ec-grid-row">
+	                                <label class="col-3  ec-col-label-0 bg-white">근무지</label>
+	                                <div class="col-9 ec-col-input border-0">
+	                                    <input type="text" name="officeLoc" :id="pgmid+'officeLoc'" :value="curItem.START_ADDR" v-on:keyup.enter="setOfficeLoc"  class="form-control form-control-sm" /> 
+	                                    <button type="button" class="btn btn-sm btn-white rounded-0 border-dark text-nowrap mr-1 px-1 "    @click="setOfficeLoc"><i class="icon-magnifier"></i></button>  
+	                                    <a class="  btn btn-sm btn-white rounded-0 text-nowrap"   @click="saveOfficeLoc">등록</a> 
+	                                </div>
+	                           </div>  
+	                           <div class="ec-grid-row">
+	                                <label class="col-3  ec-col-label-0 bg-white">출장지</label>
+	                                <div class="col-9 ec-col-input border-0">
+	                                    <input type="text" name="travelLoc" :id="pgmid+'travelLoc'" :value="curItem.END_ADDR " v-on:keyup.enter="setTravelLoc"  class="form-control form-control-sm"  /> 
+	                                    <button type="button" class="btn btn-sm btn-white rounded-0 border-dark  text-nowrap mr-1 px-1 "   @click="setTravelLoc"><i class="icon-magnifier"></i></button>
+	                                    <a  class="bg-submaintheme btn btn-sm btn-white rounded-0 text-nowrap"   @click="travelSearchPath">계산</i></a> 
+	                                </div>
+	                           </div> 
+	                           <div class="ec-grid-row">
+	                                <label class="col-3  ec-col-label-0 bg-white">거리(km)</label>
+	                                <div class="col-9  ec-col-input border-0">
+	                                    <input type="text" name="TRAVELDIST" :id="pgmid+'TRAVELDIST'" class="form-control form-control-sm text-right"/>
+	                                </div>
+	                           </div>  
+                           </div>
+                           <!-- 지도 -->
+                           <div class = "tmap">
+                                 <div id="map_wrap" class="map_wrap d-flex justify-content-center">
+<!--                                     <div :id="pgmid+'travel_map_div'"></div> -->
+                                    <div v-show="!($options.filters.isNotEmpty(tempCurItem.FILE_NO))" :id="pgmid+'travel_map_div'"></div>
+                                    <img v-if="curItem.TYPE =='TRAVEL'" v-show="$options.filters.isNotEmpty(tempCurItem.FILE_NO) "  class="img-fluid" :src="tempCurItem.FILE_NO" >
+                                 </div>
+                            </div>    
+						</div>          
+						
+						 
+                         <div class="col-12 col-md-6 d-flex flex-column p-25 border-left" :id="pgmid+'travelmodalbody'" style="height:650px;">
+                           <popup-help visible="false" ref="travelmodalhelp" th:helpkey="${param.pgm_id}+'travelmodalbody'" th:pgmid=${param.pgm_id} th:subname="travelmodalbody"  ></popup-help>
+			               <div class="text-nowrap  d-flex flex-column p-0  modal-header" :class="pgmid+'modal-header-receipt'" >
+	                          <div class="d-flex w-100 justify-content-between">
+	                                  <div class="d-flex">
+				                          <div  v-show="curItem.SOURCE_TP_NM!=undefined" class="f-title-plane d-flex align-items-center">{{curItem.SOURCE_TP_NM}}&nbsp <span v-show="curItem.INDEX!=undefined">상세</span>
+		                                      <a class="ml-2 btn" @click="$refs.travelmodalhelp.clickOpenModal()"><i class="icon-question"></i></a>
+		                                      <exp-log class="px-0" ref="expLogTravel" th:pgmid=${param.pgm_id} subname="log" @clicklog="clickExpDetailLog('expLogTravel')" ></exp-log>
+				                          </div>
+				                          
+			                          </div>
+			                          <a class="close h-100" aria-hidden="true" type="button" data-dismiss="modal"><i class="mi-close mi-3x"></i></a>
+	                          </div>
+	                          <div class="d-flex w-100 flex-wrap  justify-content-between mb-3">
+	                        
+			                        <div class="d-flex align-items-center flex-nowrap  f-s-12">
+			                            <a v-for="item in approveStatus" :class="[{'text-blue  font-weight-bold' : item.CODE == curItem.APPROVE_STATUS},
+			                                                                       ]"   
+			                                                                     class="breadcrumb-item">{{item.NAME}}</a>
+			                        </div>  
+			                        
+		                          <!-- 페이저 -->
+		                          <div  class="d-flex justify-content-end ">
+		                                  <div v-if="curItem.INDEX!=undefined" class="d-flex  m-0" >
+	                                            <div class="badge text-white bg-black-transparent-4 m-3 f-plane p-5"><span class="f-s-12">{{curItem.INDEX+1}}/{{receiptList.length}}</span></div>
+	                                            <a  class="btn btn-white btn-sm border-0" @click="previousItem"><i class="icon-arrow-left"></i></a>
+	                                            <a  class="btn btn-white btn-sm border-0 pr-1" @click="nextItem"><i class="icon-arrow-right"></i></a>
+		                                  </div>
+		                          </div>          
+	                          </div> 
+	                      </div>
+	                      <hr>
+                            <div class="h-100 overflow-y ec-scrollbar">
+                                            <div class="ec-grid-row">
+                                                <label class="col-3 ec-col-label-0 bg-white label-required">비용 청구자</label>
+                                                <div class="col-9  ec-col-input border-0">
+                                                    <popup-code class="w-100" ref="popuptravelemp" :pgmid="pgmid"  pgmnm="비용 청구자" subname="popuptravelemp"   name="EMP_NO_TRAVEL" searchname="비용 청구자"  columnlayout="popupemp"   tablename="EMP" @codechanged="empNoChange"  required="true" ></popup-code>
+                                                </div>
+                                           </div>                                               
+                                            <div class="ec-grid-row">
+                                                <label class="col-3 ec-col-label-0 bg-white label-required">기간 </label>
+                                                <div class="col-9  ec-col-input border-0">
+                                                    <daterange-m-component-v1  class="w-100"  ref="biztriprange" th:pgmid="${param.pgm_id}" subname1="BIZTRIP_START"  subname2="BIZTRIP_END" required="true"  initval1="today" initval2="today"   @changedate="setTravelDuration"></daterange-m-component-v1>
+                                                
+                                                </div>
+                                           </div>
+                                            <div class="ec-grid-row">
+                                                <label class="col-3 ec-col-label-0 bg-white">일수</label>
+                                                <div class="col-9  ec-col-input border-0">
+                                                    <input type="text" name="BIZTRIP_DAYS" :id="pgmid+'BIZTRIP_DAYS'" class="form-control form-control-sm server-input "   @change="changeTripType" disabled />
+                                                </div>
+                                           </div>        
+                                           <div class="ec-grid-row">
+                                           		<label class="col-3 ec-col-label-0 bg-white label-required">금액계산방법</label>
+                                           		<div class="col-9  ec-col-input border-0">
+													<div class="radio radio-css radio-inline mx-auto">
+														<input type="radio" :name="biztripCalTypeName" th:id="${param.pgm_id}+'biztripCalType10'" value="10" checked="" @click="biztripCalTypeClick('10')">
+														<label th:for="${param.pgm_id}+'biztripCalType10'">기간<span class="label-required"></span>일당유형 합계</label>
+													</div>
+													<div class="radio radio-css radio-inline mx-auto">
+														<input type="radio" :name="biztripCalTypeName" th:id="${param.pgm_id}+'biztripCalType20'" value="20" @click="biztripCalTypeClick('20')">
+														<label th:for="${param.pgm_id}+'biztripCalType20'">일자별<span class="label-required"></span>일당유형 합계</label>
+													</div>									
+                                           		</div>
+											</div>                             
+                                              <div class="ec-grid-row">
+                                                <label class="col-3 ec-col-label-0 bg-white label-required">일당유형</label>
+                                                <div :id="pgmid+'bizTrip_type_A'" class="col-9 p-0">
+	                                                <div class="ec-col-input border-0">
+	                                                    <dropdown-tablecommon class="w-100" ref="BizTripType" th:pgmid=${param.pgm_id}  server="true" all="NO" selectid="getBizTripType" selectname="TRIPTYPE" tableid="getBizTripType" @dropdownchanged="changeTripType" ></dropdown-tablecommon>
+	                                                </div>
+                                                </div>
+                                                <div :id="pgmid+'bizTrip_type_B'" class="col-9 p-0">
+	                                                <div class="ec-col-input border-0">
+	                                                    <a type="button" @click="bizTripCalOnclick" class="p-5 btn btn-default btn-block">일자별 등록</a>
+	                                                </div>
+                                                </div>
+                                           </div>                                                                 
+                                            <div class="ec-grid-row">
+                                                <label class="col-3 ec-col-label-0 bg-white label-required">금액</label>
+                                                <div class="col-9 d-flex flex-column ec-col-input border-0">
+                                                     <input type="text" name="EXPENSE_AMT_TRAVEL" :id="pgmid+'EXPENSE_AMT_TRAVEL'" class="form-control form-control-sm text-right required" disabled  />
+                                                     <div :class="{'d-none': currencyCd == curItem.BASE_CURRENCY_CD }" class="d-flex w-100 justify-content-end" >
+                                                            <div class="text-blue mr-3"><span>환율일자:</span><strong><span>{{currencyDt | dateformat('card-week')  }}</span></strong></div>   
+                                                            <div class="text-blue"><span>1{{currencyCd}}=</span><span>{{currencyRate  }}{{curItem.BASE_CURRENCY_CD}}</span></div>   
+                                                     </div>                                              
+                                                </div>
+                                           </div> 
+
+                                            <div class="ec-grid-row">
+                                                <label class="col-3 ec-col-label-0 bg-white label-required">비용항목</label>
+                                                <div class="col-9  ec-col-input border-0">
+                                                    <popup-code  class="w-100"  ref="popupexptravel" :pgmid="pgmid"  pgmnm="비용항목" subname="popupexptravel"  name="EXPENSE_CD_TRAVEL"   searchname="비용항목"  columnlayout="popupexpcard"   tablename="EXTRAVEL" required="true"  @codechanged="expCdChange" ></popup-code>
+                                                </div>
+                                           </div> 
+                                           
+                                            <span v-show="receiptbelongtype != '0'">
+                                              <div  class="ec-grid-row">
+                                                 <label class="col-3 ec-col-label-0 bg-white label-required">비용귀속</label>                                                
+                                                 <div class="col-9 flex-column ec-col-input border-0">
+                                                  <div class="w-100  p-0 mb-1 d-flex">
+                                                             <dropdown-syscommon    ref="TRAVEL_CCENTER_TP" class="w-100 p-0 flex-shrink-0"  :pgmid="pgmid"  
+                                                                     dropdownlabel=""  selectid="TRAVEL_CCENTER_TP" selectname="TRAVEL_CCENTER_TP" 
+                                                                     clcd="EX_CCENTER_TP"   @changed="ccenterTpChange"></dropdown-syscommon>
+                                                  </div>
+                                                  <div class="w-100  p-0  d-flex">  
+	                                                  <span class="w-100"  v-show="receiptcosttype=='1'" ><popup-code  class="w-100"  ref="popupcostcentertravel" :pgmid="pgmid"  pgmnm="코스트센터" subname="popupcostcenter-travel"   name="CCTR_CD_TRAVEL" searchname="코스트센터"   columnlayout="popupcostcenter"   tablename="CCTR" @codechanged="costCenterCdChange"  ></popup-code></span>
+	                                                  <span class="w-100"  v-show="receiptcosttype=='2'" ><popup-code  class="w-100"  ref="popupprojecttravel" :pgmid="pgmid"  pgmnm="프로젝트" subname="popupproject-travel"   name="PROJECT_TRAVEL" searchname="프로젝트"  columnlayout="popupproj"   tablename="PROJ" @codechanged="projectCdChange"  ></popup-code></span>
+                                                  </div>
+                                                </div>
+                                           </div> 
+                                           </span>                                          
+
+                                            <div class="ec-grid-row">
+                                                <label class="col-3 ec-col-label-0 bg-white">적요</label>
+                                                <div class="col-9  ec-col-input border-0">
+                                                    <input type="text" name="RMK_TRAVEL" :id="pgmid+'RMK_TRAVEL'" class="form-control form-control-sm server-input"  /> 
+                                                </div>
+                                           </div> 
+                                           
+                                           <div class="ec-grid-row d-none">
+	                                             <div>office</div>
+		                                             <input type="text" name="OFFICE_LONG" :id="pgmid+'OFFICE_LONG'" class="form-control "  :value="curItem.START_LONG " />
+		                                             <input type="text" name="OFFICE_LAT" :id="pgmid+'OFFICE_LAT'" class="form-control "  :value="curItem.START_LAT " />
+		                                             <input type="text" name="OFFICE_ADDR" :id="pgmid+'OFFICE_ADDR'" class="form-control "  :value="curItem.START_ADDR "   />
+		                                             <input type="text" name="OFFICE_DH" :id="pgmid+'OFFICE_DH'" class="form-control "  :value="curItem.START_DH "   />
+	                                             <div>end</div>
+		                                             <input type="text" name="TravelLon" :id="pgmid+'TRAVEL_LONG'" class="form-control "  :value="curItem.END_LONG "  />
+		                                             <input type="text" name="TravelLat" :id="pgmid+'TRAVEL_LAT'" class="form-control "  :value="curItem.END_LAT "  />
+		                                             <input type="text" name="TravelAddr" :id="pgmid+'TRAVEL_ADDR'" class="form-control "  :value="curItem.END_ADDR " />
+		                                             <input type="text" name="TravelDh" :id="pgmid+'TRAVEL_DH'" class="form-control "  :value="curItem.END_DH " />
+										  </div>
+                                           
+                                           
+                                </div>
+			                    <div class="d-flex flex-row btn-row ec-btn-bottom-row">
+									<a v-if="curItem.PRIVATE_YN !='1' && curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' && curItem.PRIVATE_YN !='1'"
+										class="btn ec-btn-bottom w-100  bg-light " @click="newCurItem">신규</a>
+				                    <a v-if="curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' && curItem.PRIVATE_YN !='1'" class="btn ec-btn-bottom w-100  bg-grey-lighter" @click="deleteExpMst(curItem, curItem.INDEX)">삭제</a>
+	                                <a v-if="curItem.APPROVE_STATUS !='2' && curItem.APPROVE_STATUS !='4' && curItem.PRIVATE_YN !='1'" class="btn  ec-btn-bottom w-100  btn-maintheme" @click="saveCurItem">저장</a>
+								</div>  
+                            </div>
+          <!-- end of popup 법인카드-->   
+          
+   
+   		</div> 
+			<!-- 				일자별 등록 modal -->
+			<div class="modal ec-modal h-100" data-backdrop="false" :id="pgmid+'modal_biztrip_cal'"   >
+                   <div class="modal-dialog modal-md modal-dialog-centered ui-draggable" >
+                       <div class="modal-content modal-content d-flex flex-column" >
+                           <div class="modal-header ec-modal-header ui-draggable-handle">
+                               <h4 class="modal-title">일자별 등록</h4>
+                               <a class="" type="button"@click="bizTripModalClose"><i class="mi-close mi-3x"></i></a>
+                           </div>
+                           <div class="modal-body  d-flex flex-column h-100 p-25">     
+               	 			<!-- grid -->
+                			<div class="col-12 p-0"  :id="pgmid+'ocrmstinputs'">
+								<div class="flex-shrink-1 flex-grow-1" style="height:300px">
+							    	<grid-crud ref="gridbiztrip" gridcaption="" :columnlayout="columnlayoutBizTripCal" :footerlayout="footerLayout" :pgmid="pgmid" subname="gridbiztrip"  :newitem="biztripnewItem" buttons="" :gridprop="gridProps"></grid-crud> 
+			                    </div>
+								<div class="d-flex flex-row btn-row ec-btn-bottom-row">
+								<a  class="btn  ec-btn-bottom w-100  btn-maintheme" @click="saveBizTripCal">확인</a>
+								</div>
+
+							</div>
+                          </div>
+                         <!--end of modal body -->
+                       </div>
+                   </div>
+               </div>
+   
+  </body>
+</html>

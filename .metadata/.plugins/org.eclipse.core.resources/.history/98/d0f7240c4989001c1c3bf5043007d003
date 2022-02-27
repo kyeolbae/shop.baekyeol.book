@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+</head>
+  <body>
+   
+   <div th:fragment="html">
+   
+           <!-- begin modal 보고서 등록 -->
+          <div class="modal ec-modal animated animated_ec fadeInRight rounded-0" data-backdrop="false" :id="pgmid+'report'"    >
+              <div class="modal-dialog w-100 h-100 m-0 modal-lg modal-dialog-centered ">
+                  <div class="modal-content rounded-0 h-100  border-0">
+                      <div class="modal-header bg-light p-0">
+                          <a class="icon-arrow-left col-1 my-3"  data-dismiss="modal"></a>
+                          <h4 class="modal-title text-center">결재요청</h4>
+                          <div class="col-1"></div>
+                      </div>
+                      <div class="modal-body overflow-auto h-100 row">
+                      
+                         <div class="col-12  " :id="pgmid+'ApproveModalBody'">
+                           
+                               <div class=" mb-1 ">
+  
+                                    <div class="d-flex flex-column  mb-2">
+                                         
+                                         <div  class="d-flex justify-content-between  align-items-center">
+                                                <label class="w-100 m-0">제목<span class="text-danger">*</span></label>
+			                                    <div class="p-0 checkbox checkbox-css text-nowrap">
+			                                         <input type="checkbox" :id="pgmid+'URGENCY_YN'" name="URGENCY_YN" />
+			                                         <label :for="pgmid+'URGENCY_YN'">중요</label>
+			                                    </div>       
+                                         </div>
+                                         
+                                         <input type="text" name="REPORT_TITLE" th:id="${param.pgm_id}+'REPORT_TITLE'" class="form-control ec-mobile-input required" /> 
+                                    </div>                              
+                               
+                               		<!-- 관리항목                         -->
+					 				<div v-for="item in reportMngList " class="ec-grid-row m-0">
+										<label class="w-100 m-0" :class="{'label-required' : item.MUST_YN=='1' }">{{item.MNG_NM}}</label>
+										<div v-if="item.INPUT_FORMAT_CD =='03' " class="d-flex flex-column mb-2 w-100">
+											<input type="text" :id="pgmid+'reportmng'+item.MNG_CD" :class="{required : item.MUST_YN=='1'}" class="form-control ec-mobile-input" />
+										</div>
+										<div v-if="item.INPUT_FORMAT_CD=='01'" class="flex-column mb-2 w-100 w-100">
+											<popup-m-code searchinput="true" :ref="'popupreportmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD"  :pgmnm="item.MNG_NM" subname="popupcostcenter-receipt"   name="CCTR_CD_RECEIPT" :searchname="item.MNG_NM"  :columnlayout="item.COLUMN_LAYOUT"   :tablename="item.TABLE_CD" :required="item.MUST_YN=='1' ?  'true' : '' " :codecl="item.COMM_CL_CD"></popup-m-code>
+										</div>
+										<div v-if="item.INPUT_FORMAT_CD=='02'" class="d-flex flex-column mb-2 w-100">
+											<inputnumber-m-component :ref="'popupreportmng'+item.MNG_CD" :pgmid="pgmid+item.MNG_CD" :pgmnm="item.MNG_NM" subname="popupcostcenter-receipt" :required="item.MUST_YN=='1' ?  'true' : '' "></inputnumber-m-component>
+										</div>
+										<div v-if="item.INPUT_FORMAT_CD=='05'" class="d-flex flex-column mb-2 w-100">
+											<date-m-component-v1  :ref="'popupreportmng'+item.MNG_CD" th:pgmid="pgmid+item.MNG_CD" :pgmnm="item.MNG_NM" subname="receipt-mng-date" :required="item.MUST_YN=='1' ?  'true' : '' " readonly="readonly"></date-m-component-v1>
+										</div>
+										<div v-if="item.INPUT_FORMAT_CD=='06'" class="d-flex flex-column mb-2 w-100">
+										    <textarea :id="pgmid+'reportmng'+item.MNG_CD" :class="{required : item.MUST_YN=='1'}" class="form-control ec-mobile-input border border-black"
+										      rows="2"></textarea>
+										</div>									
+									</div>       
+                               
+                               
+                                    <div class="d-flex flex-column  mb-2">
+                                         <label class="w-100 m-0">내용</label>
+                                            <textarea class="form-control ec-mobile-input border border-black " NAME="REPORT_RMK" th:id="${param.pgm_id}+'REPORT_RMK'"  rows="2"></textarea>
+                                    </div>
+                                                                   
+                                    <div class="d-flex flex-column  mb-2">
+                                         <div class="d-flex justify-content-between align-items-center">
+                                             <label class="w-100 m-0">결재자<span class="text-danger">*</span></label>
+                                                 <popup-m-code  searchinput="true" ref="popupapprovemp" :pgmid="pgmid"  pgmnm="결재자" subname="popupapprovemp"  name="" searchname="결재자"  columnlayout="popupuser"   tablename="USER" @codechanged="changeApproveLine" inputvisible="false" btnvisible="false"></popup-m-code>
+
+                                             <div v-show="approveLineTp == 'LINE10'" class="btn-group m-b-5">
+                                                 <a class="btn btn-xs  border " @click="clickpopupapprovemp"><i class="icon-magnifier"></i></a>
+                                                 <a class="btn btn-xs border  " @click="resetApproveLine"><i class="icon-reload"></i></a>
+                                                 <a class="btn btn-xs border  " @click="saveapproveline"><i class="icon-cloud-upload"></i></a>                                
+                                             </div>
+                                         </div>
+                                         <div class="d-flex justify-content-between align-items-center">
+	                                         
+<!-- 	                                         <div class="d-flex ml-1 align-items-center w-100" id="approveline"> -->
+<!-- 	                                            <div  class="" v-for="(item, index) in approveLine"> <a class="btn btn-xs border text-nowrap">{{item.APPROVE_TP_NM}}:{{item.APPROVE_NAME}}({{item.DEPT_NM}})</a></div> -->
+<!-- 	                                         </div> -->
+	                                         
+	                                         
+                                               <div class="d-flex flex-wrap w-100"><div class="mr-1 w-100" v-for="(item, index) in approveLine"> 
+                                                    <a class="btn btn-sm rounded-0 text-left w-100 bg-submaintheme"  role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" >{{item.APPROVE_TP_NM}}:{{item.APPROVE_NAME}}({{item.DEPT_NM}})</a>
+                                                      <div v-show="index > 0  && approveLineTp == 'LINE10'" class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                                                        <a  :class="{disabled : indextp==0}" v-for="(itemtp, indextp) in approvetpList" class="dropdown-item" href="#" @click="clickApproveTpList(itemtp, indextp, item, index)">{{itemtp.CODE}}.{{itemtp.NAME}}</a>
+                                                      </div>
+                                               </div></div>  
+	                                         
+
+                                         </div>
+                                    </div>
+                                    
+                                    <div class="d-flex flex-column  mb-2">
+                                      <label class="w-100 m-0">첨부파일</label>
+                                      <div class="d-flex" id="approveline">
+                                                <div class="w-100"><input type="file"  multiple="multiple"  name="files[]"  class="form-control-file btn btn-sm border rounded-0 " :id="pgmid+'reportAddedFile'"></div>
+                                                <div class=""><a class="btn  border text-nowrap  ml-1 rounded-0" @click="resetReportAddedFile"><i class="icon-reload"></i></a></div>
+                                         </div>
+                                    </div>
+                                                                  
+                             </div>   
+                            <div class="col   mb-2 p-10 d-flex justify-content-between algin-items-center bg-submaintheme" >
+                                     <small class="d-flex justify-content-left align-items-center f-plane w-100"><p class="m-0">TOTAL &nbsp {{getSelectedExpCount()}}건</p></small>
+                                     <span class="w-100 text-right border-bottom justify-content-end align-items-center border-white f-title d-flex">{{getSelectedExpTotal() | numberformat('0,000') }}원</span>
+                            </div>
+                           
+<!--                            <h4 class="modal-title text-center">결재요청 &nbsp[{{getSelectedExpCount()}}건  / 지급액 :{{getSelectedExpTotal() | numberformat('0,000') }}원]</h4> -->
+                          <!-- 합계 -->
+                            
+
+<!-- begin panel -->
+                               <div class="panel panel-inverse bg-light" data-sortable-id="index-8">
+                                   <div class="panel-body p-0">
+                                       <ul class="todolist " :id="pgmid+'addReportList'"  >  
+                                           <li v-for="(item, index) in receiptList" v-if="item.CHECKED=='1'"  class="d-flex flex-column border-bottom p-4 " >
+<!--                                                  <div class="d-flex flex-column w-100 justify-content-between "> -->
+                                                 <div class="d-flex flex-column align-content-center p-0 " data-toggle="collapse" :data-target="'#expDetail'+pgmid+index">  
+                                                   <div class="d-inline-flex w-100 justify-content-between">
+                                                     <p class=" mb-1 p-0 f-plane-bold"><i class="fa fa-fw f-s-8 m-r-5 fa-circle text-blue-lighter"></i>&nbsp{{item.EXPENSE_NM}}</p>
+                                                     <p class=" mb-1 p-0 text-right f-plane-bold">{{to_number(item.EXPENSE_AMT)+to_number(item.EXPENSE_VAT_AMT)+to_number(item.EXCLUDE_AMT)  | numberformat('0,000')}}원 </p>
+                                                   </div> 
+                                                   <div class="d-inline-flex w-100 justify-content-end">
+                                                     <p class=" mb-1 p-0 text-nowrap">{{item.RECEIPT_DH | dateformat('card-week')}}&nbsp{{item.RECEIPT_DH | dateformat('card-time')}}</p>
+                                                   </div>                                                     
+                                                   <div class="d-inline-flex w-100 justify-content-end">
+<!--                                                      <p class="col-6 mb-1 p-0">코스트센터:&nbsp{{item.CCTR_NM}}</p> -->
+                                                     <p v-show="$options.filters.isNotEmpty(item.RMK)" class=" mb-1 p-0 ">비고:&nbsp{{item.RMK}}</p>
+                                                   </div> 
+                       
+                                                 </div>
+<!--                                                     <div class="col-12  d-flex flex-column w-100 justify-content-between "  >   -->
+                                                    <div :id="'expDetail'+pgmid+index" class="collapse  " :data-parent="'#'+pgmid+'addReportList'"   >  
+                                                            <!--  1:법인카드 -->
+                                                            <!-- 2:영수증 -->
+                                                            <!-- 3:일당계산 -->
+                                                            <!-- 4:거리계산 -->
+                                                            <div class="text-center" v-if="item.SOURCE_TP == '2' && item.FILE_NO != ''">
+                                                               <img  class="zoom-center"  :src="'/ec/common/syscommon/fileupload/downloadFile/'+item.FILE_NO" height="65" >
+                                                            </div>
+                                                            <div class="pt-2" v-if="item.SOURCE_TP == '3'">
+                                                               <!-- 일당 -->
+                                                              <p class="p-0">{{item.BIZTRIP_START | dateformat('card-week')}}&nbsp~&nbsp {{item.BIZTRIP_END | dateformat('card-week')}} </p>
+                                                            </div>
+                                                            <div v-if="item.SOURCE_TP == '4'" class="pt-2">
+                                                               <!-- 유류비 -->
+                                                                 {{item.DISTANCE | numberformat('0,000')}} km
+                                                            </div>
+                                                            <div class="pt-2" v-if="item.SOURCE_TP == '1'">
+                                                               <p class="m-0">{{item.BIZ_NM}}</p>
+                                                               <p class="m-0">{{item.BIZ_ADDR}}</p>
+                                                            </div>                                                  
+                                                    </div>
+                                                 
+                                                 <div class="d-none checkbox checkbox-css custom-control custom-checkbox  form-control-sm col-1 p-0">
+                                                     <input @change="boxCheckboxChange(item, $event)" type="checkbox"  v-bind:boxCheckedExpenseNo="item.TYPE" :id="pgmid+'expAppvCheckbox'+index" class="form-check-input" :class="pgmid+'boxCheckbox'" v-model="item.CHECKED" true-value="1" false-value="0" >
+                                                     <label @click="clickReceiptBox(pgmid+'expboxContainer'+ index,item,index)" class="custom-control-label " :for="pgmid+'expAppvCheckbox'+index">선택</label>
+                                                 </div> 
+                                           </li>
+                                       </ul>
+                                   </div>
+                               </div>
+                               <div class="collapse" id="collapseNewReport">
+                               <div class="panel panel-inverse "  >
+                                   <div class="panel-body p-0">
+                                       <ul class="todolist border-top" th:id="${param.pgm_id}+'addReportList'" >
+                                           <li v-for="(item, index) in receiptList" v-if="item.CHECKED=='0' && item.EXPENSE_NO!='' && item.APPROVE_STATUS != '2'  && item.APPROVE_STATUS != '4' "  class="d-flex justify-content-between align-items-center" >
+                                                 <div class="d-flex flex-column w-100 justify-content-between col-7">
+                                                   <div class="d-inline-flex w-100">
+                                                     <p class="col-6 mb-1">비용항목:&nbsp{{item.EXPENSE_NM}}</p>
+                                                     <p class="col-6 mb-1 text-right">비용금액:&nbsp{{to_number(item.EXPENSE_AMT)+to_number(item.EXPENSE_VAT_AMT)+to_number(item.EXCLUDE_AMT)  | numberformat('0,000')}}원 </p>
+                                                   </div> 
+                                                   <div class="d-inline-flex w-100">
+                                                     <p class="col-6 mb-1">코스트센터:&nbsp{{item.CCTR_NM}}</p>
+                                                     <p class="col-6 mb-1 text-right">비고:&nbsp{{item.RMK}}</p>
+                                                   </div> 
+                                                   <div class="d-inline-flex w-100">
+                                                     <p class="col-6 mb-1 text-nowrap">사용일시:&nbsp{{item.RECEIPT_DH | dateformat('card-week')}}&nbsp{{item.RECEIPT_DH | dateformat('card-time')}}</p>
+                                                   </div>                         
+                                                 </div>
+                                                    <div class="col-4"  >  
+                                                            <!--  1:법인카드 -->
+                                                            <!-- 2:영수증 -->
+                                                            <!-- 3:일당계산 -->
+                                                            <!-- 4:거리계산 -->
+                                                            <img v-if="item.SOURCE_TP == '2' && item.FILE_NO != ''" class="zoom"  :src="'/ec/common/syscommon/fileupload/downloadFile/'+item.FILE_NO" height="65" >
+                                                            <div v-if="item.SOURCE_TP == '3'">
+                                                               <!-- 일당 -->
+                                                              <p>{{item.BIZTRIP_START | dateformat('card-week')}}&nbsp~</p>
+                                                              <p>{{item.BIZTRIP_END | dateformat('card-week')}} </p>
+                                                            </div>
+                                                            <div v-if="item.SOURCE_TP == '4'">
+                                                               <!-- 유류비 -->
+                                                                 {{item.DISTANCE | numberformat('0,000')}} km
+                                                            </div>
+                                                            <div v-if="item.SOURCE_TP == '1'">
+                                                               <p>{{item.BIZ_NM}}</p>
+                                                               <p>{{item.BIZ_ADDR}}</p>
+                                                            </div>                                                  
+                                                    </div>
+                                                 
+                                                 <div class="checkbox checkbox-css custom-control custom-checkbox  form-control-sm col-1 p-0">
+                                                     <input @change="boxCheckboxChange(item, $event)" type="checkbox"  v-bind:boxCheckedExpenseNo="item.TYPE" :id="pgmid+'expAppvCheckbox'+index" class="form-check-input" :class="pgmid+'boxCheckbox'" v-model="item.CHECKED" true-value="1" false-value="0" >
+                                                     <label @click="clickReceiptBox(pgmid+'expboxContainer'+ index,item,index)" class="custom-control-label " :for="pgmid+'expAppvCheckbox'+index">선택</label>
+                                                 </div> 
+                                           </li>
+                                       </ul>
+                                   </div>
+                               </div>  
+                               </div>                             
+<!-- end panel -->
+
+
+
+                       </div>    <!-- col -->                    
+                         
+
+                      </div>
+                      
+<!--                       <div class="modal-footer"> -->
+<!--                           <a class="btn btn-white" href="javascript:;"  @click="procApprove">승인요청</a> -->
+<!--                           <a class="btn btn-white" href="javascript:;" data-dismiss="modal">취소</a> -->
+<!--                       </div> -->
+                      
+                      <div class="modal-footer bg-light p-0">
+                          <div class="btn-group m-0 w-100">
+                              <div class="d-flex justify-content-center align-items-center btn btn-border w-100  rounded-0 bg-grey-darker">
+                                      <a data-dismiss="modal">
+                                          <span class="f-title text-white">취소</span>
+                                      </a>
+                              </div>                     
+                              <div class="d-flex justify-content-center align-items-center btn btn-border w-100  rounded-0 bg-maintheme">
+                                      <a   @click="procApprove">
+                                          <span class="f-title text-white">결재요청</span>
+                                      </a>
+                              </div>
+
+                          </div>                         
+                      </div>   
+                  
+                      
+                      
+                  </div>
+              </div>
+          </div>
+          <!-- end of popup 보고서 등록 --> 
+   
+   </div> 
+   
+  </body>
+</html>

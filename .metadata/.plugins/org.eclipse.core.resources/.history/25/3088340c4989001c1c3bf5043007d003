@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper
+	namespace="com.ec.eframework.mapper.ex.ledger.LedgerServiceMapper">
+
+
+	<select id="searchExp" resultType="HashMap">
+
+		
+	
+		SELECT/* [com.ec.eframework.mapper.ex.ledger.LedgerServiceMapper
+		searchCompanyExp][회사 비용 현황 조회] */
+		ROW_NUMBER() OVER() AS ID
+		,M.POSTING_DT 
+		,M.RECEIPT_DT 
+		,M.RECEIPT_TS 
+		,C.EXPENSE_NM 
+		,M.PAY_AMT  
+		,CCTR.CCTR_NM 
+		,EMP.EMP_NM as EMP_NM 
+		,FC_EXPS_GET_SYSTEM_CODE_NM('EX_SOURCE_TP',M.SOURCE_TP,'ko') SOURCE_TP
+		,USER1.USER_NM as SUBMIT_NM 
+		,DATE_FORMAT(REPORT.SUBMIT_DH, '%Y-%m-%d %T') SUBMIT_DH
+		,USER2.USER_NM as APPROVE_NM 
+		,DATE_FORMAT(REPORT.APPROVE_DH , '%Y-%m-%d %T') APPROVE_DH 
+		,FC_EXPS_GET_SYSTEM_CODE_NM('EX_APPROVE_STATUS',REPORT.APPROVE_STATUS,'ko') APPROVE_STATUS 
+		,BP.BP_NM as BP_NM 
+		,M.EXPENSE_NO 
+		,M.REPORT_NO
+		from EXPENSE_MST M
+		left outer join EXPENSE_CATEGORY C
+		on M.COMPANY_CODE = C.COMPANY_CODE
+		and M.EXPENSE_CD = C.EXPENSE_CD
+		left outer join EXPENSE_COST_CENTER CCTR
+		on M.COMPANY_CODE = CCTR.COMPANY_CODE
+		and M.CCTR_CD = CCTR.CCTR_CD
+		left outer join EXPENSE_REPORT REPORT
+		on M.REPORT_NO = REPORT.REPORT_NO
+		left outer join ADMIN_USER USER1
+		on REPORT.SUBMIT_ID = USER1.USER_ID
+		left outer join ADMIN_USER USER2
+		on REPORT.APPROVE_ID = USER2.USER_ID
+		left outer join ADMIN_EMP EMP
+		on M.COMPANY_CODE = EMP.COMPANY_CODE
+		and M.EXPENSE_EMP_NO = EMP.EMP_NO
+		left outer join SLIP_BP BP
+		on M.COMPANY_CODE = BP.COMPANY_CODE
+		and M.PAY_BP_CD = BP.BP_CD
+		where M.COMPANY_CODE = #{g_comCd} 
+		and M.RECEIPT_DT <![CDATA[>= REPLACE_DATE(#{SEARCH_FR_DT},'')]]>  
+		and M.RECEIPT_DT <![CDATA[<= REPLACE_DATE(#{SEARCH_TO_DT},'')]]> 
+		and M.USE_YN = '1'
+	
+ 		<if test='page =="personal-exp"'>
+ 		/* [개인 비용 현황 조회] */
+             and M.EXPENSE_EMP_NO in (select EMP_NO from ADMIN_EMP where COMPANY_CODE = #{g_comCd} and USER_ID = #{g_userId})
+        </if>
+       
+        <if test='page =="costcenter-exp"'>
+         /* [코스트센터 비용 현황 조회] */
+             and M.CCTR_CD in (select ERP_CCTR_CD from ADMIN_EMP where COMPANY_CODE = #{g_comCd} and USER_ID = #{g_userId})
+        </if>
+        
+        <if test='page =="dept-exp"'>
+         /* [부서 비용 현황 조회] */
+             and M.CCTR_CD in (select C.CCTR_CD 
+                        from ADMIN_EMP A, EXPENSE_COST_CENTER C
+                       where A.COMPANY_CODE = #{g_comCd} and A.USER_ID = #{g_userId}
+                         and A.COMPANY_CODE = C.COMPANY_CODE
+                         and A.DEPT_CD      = C.DEPT_CD
+                    )  
+        </if>
+
+	</select>
+
+	<select id="searchReceipt" resultType="HashMap">
+
+		
+		select 
+		ROW_NUMBER() OVER() AS ID,
+		C.EMP_NO          
+		,E.EMP_NM         
+		,E.ERP_CCTR_CD         
+		,CCTR.CCTR_NM      
+		,CAT.EXPENSE_NM    
+		,M.POSTING_DT      
+		,M.TAX_CD          
+		,A.RECEIPT_DT    
+		,A.RECEIPT_TS    
+		,A.CANCEL_YN     
+		,A.CURRENCY_CD   
+		,A.SUPPLY_AMT    
+		,A.VAT_AMT      
+		,A.ETC_AMT       
+		,A.TOT_AMT      
+		,A.TAX_TP       
+		,A.BIZ_NO       
+		,A.BIZ_NM       
+		,A.BIZ_TYPE          
+		,A.BIZ_CATEGORY_CD    
+		,A.BIZ_CATEGORY      
+		,A.BIZ_ADDR           
+		,A.CARD_CD            
+		,FC_CARD_NO_MASK(FC_DEC(A.CARD_NO,#{ENC_KEY})) AS CARD_NO            
+		,A.CARD_BILL_NO      
+		,A.OVERSEAS_YN        
+		,A.OVERSEAS_CUR_CD   
+		,A.OVERSEAS_AMT       
+		,A.OVERSEAS_CUR_RATE  
+		,A.OVERSEAS_DH       
+		,A.USE_YN            
+		,A.EXPENSE_NO         
+		,A.PRIVATE_YN         
+		,A.PRIVATE_RMK        
+		,A.EVID_NO        
+		from EXPENSE_INBOX_CARD A
+		 left outer join EXPENSE_CARD C
+		              on A.COMPANY_CODE = C.COMPANY_CODE
+		              and A.CARD_CD = C.CARD_CD
+		 left outer join ADMIN_EMP E
+		              on C.COMPANY_CODE = E.COMPANY_CODE
+		              and C.EMP_NO = E.EMP_NO              
+		 left outer join EXPENSE_COST_CENTER CCTR
+		              on E.COMPANY_CODE = CCTR.COMPANY_CODE
+		              and E.ERP_CCTR_CD = CCTR.CCTR_CD       
+		 left outer join EXPENSE_MST M
+		              on A.COMPANY_CODE = M.COMPANY_CODE
+		              and A.EXPENSE_NO = M.EXPENSE_NO
+		 left outer join EXPENSE_CATEGORY CAT
+		              on M.COMPANY_CODE = CAT.COMPANY_CODE
+		              and M.EXPENSE_CD  = CAT.EXPENSE_CD
+		where A.COMPANY_CODE = #{g_comCd}
+		  and A.RECEIPT_DT <![CDATA[>= REPLACE_DATE(#{SEARCH_FR_DT},'')]]> 
+		  and A.RECEIPT_DT <![CDATA[<= REPLACE_DATE(#{SEARCH_TO_DT},'')]]> 
+		  
+		<if test='page =="personal-receipt"'>
+		  /* 개인기준 */
+		  and C.EMP_NO in (select EMP_NO from ADMIN_EMP where COMPANY_CODE = #{g_comCd} and USER_ID = #{g_userId})
+		</if>
+		
+		<if test='page =="costcenter-receipt"'>
+		  /* 코스트센터기준 */
+		  and E.ERP_CCTR_CD in (select ERP_CCTR_CD from ADMIN_EMP where COMPANY_CODE = #{g_comCd} and USER_ID = #{g_userId})
+		</if>
+		
+		<if test='page =="dept-receipt"'>
+		  /* 부서기준 */
+		  and M.CCTR_CD in (select C.CCTR_CD 
+		                        from ADMIN_EMP A, EXPENSE_COST_CENTER C
+		                       where A.COMPANY_CODE = #{g_comCd} and A.USER_ID = #{g_userId}
+		                         and A.COMPANY_CODE = C.COMPANY_CODE
+		                         and A.DEPT_CD      = C.DEPT_CD
+		                    )
+		</if>
+		                     
+		  order by A.RECEIPT_DT desc, A.RECEIPT_TS asc
+	
+	</select>
+</mapper>

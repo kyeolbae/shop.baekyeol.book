@@ -1,0 +1,125 @@
+<!-- 
+	-- 프로그램명 : 비용관리 / 증빙이미지-이미지보관함
+	-- 날짜 : 2021.07.29 by hshwang
+	-- 수정 : 2021.08.20 by hshwang (조회 시 입력 사항들 삭제, popup-code 추가)
+	-- 수정 : 2021.12.07 by hshwang (gallary devide 수정)
+-->
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id})}">
+<head>
+  <meta charset="utf-8" />
+</head> 
+
+<body>
+  
+  <section layout:fragment="content"  >
+
+     <form class="d-flex  flex-column h-100" th:id=${param.pgm_id} >
+     
+                     <div class="ec-grid-box-search pb-2">
+	                     <div class="ec-grid-row w-100">
+	                     	 <div class="col-xs-12 col-sm-9 col-lg-6 col-md-8 d-flex pl-0">
+		                         <label class="col-xs-3 col-sm-4 col-lg-3 col-md-3 ec-col-label-search justify-content-md-end"><span class="text-danger">*</span>증빙일자</label>
+		                         <div class="col-xs-9 col-sm-8 col-lg-9 col-md-9 ec-col-input">
+		                            <daterange-m-component-v1  ref="daterange" th:pgmid="${param.pgm_id}" subname1="FR_DATE" subname2="TO_DATE"  required="true"  initval1="firstday-1m" initval2="today"></daterange-m-component-v1>
+		                         </div>
+	                         </div>
+	                     </div>
+                     </div>
+         <div class="mb-2">
+             <div class="ec-grid-row">
+			     <div class="d-none  d-sm-flex  " :id="pgmid+ 'toolbtn'" >
+                        <a href="javascript:;" class="ec-btn btn btn-sm btn-white mr-1" @click="viewType='box'"><i class="fa fa-th-large"></i></a>
+                        <a href="javascript:;" class="ec-btn btn btn-sm btn-white mr-3" @click="viewType='grid'"><i class="fas fa-table"></i></a>
+     
+     			</div>
+     		</div>
+     	</div>
+                     
+             <!-- begin #gallery -->
+		      <div :class="[{'d-flex':isBox}]" :id="pgmid+'gallery'" class="d-none gallery bg-light overflow-y ec-scrollbar h-100" >
+			
+				<!-- begin image -->
+				<div  v-for="(item, index) in imglist" class="image gallery-group-1">
+					<div class=" ">
+						<a :href="'/ec/common/syscommon/fileupload/downloadFile/'+item.FILE_NO" data-lightbox="gallery-group-1">
+					                           <img class="h-100" :src="'/ec/common/syscommon/fileupload/downloadFile/'+item.FILE_NO" @load="onImgLoad" >
+						</a>
+					</div>
+					<div class="image-info p-1">
+						<div class="p-5">
+							<div class="d-flex">
+								<div class="btn-group col-6 p-1">
+									<div :class="{'border-info' : $options.filters.isNotEmpty(item.EXPENSE_NO) }" class="col-4 p-0 align-self-center d-flex justify-content-center btn  btn-sm btn-white rounded-0 m-1">
+										<a data-toggle="modal" :data-target="'#'+pgmid+'info-modal'" class="p-3 m-l-1" @click="infoClick(item)">상세</a>
+									</div>
+									<div class="col-4 p-0 align-self-center d-flex justify-content-center btn  btn-sm btn-white rounded-0 m-1">
+										<a class="p-3 m-l-1" @click="simultaneityControl(item)">삭제</a>
+									</div>
+									<div class="col-4 pr-0 pl-0 d-flex justify-content-start">
+										<div v-if="item.DATA_EXT_NO !='' " class="p-0 align-self-center d-flex justify-content-center btn  btn-sm btn-white rounded-0 m-1">
+											<a data-toggle="modal" :data-target="'#'+pgmid+'ocr-modal'" class="p-3" @click="ocrClick(item)">OCR</a>
+										</div>
+									</div>
+								</div>
+								<div class="col-6 d-flex justify-content-end p-2">
+									<div class="d-flex" v-if="item.SHARED_ID == '' && item.BE_SHARED_YN == 0">
+		                                 <popup-code ref="'popupcardsharedemp'+index" :pgmid="pgmid"  pgmnm="비용처리자" :subname="index.toString()" :name="'EMP_NO_SHARED'+index.toString()" searchname="사용자ID"  columnlayout="popupuser"   tablename="USER" @codechanged="saveCardSharedEmp" inputvisible="false"  ></popup-code>
+	                                     <label class="m-l-5 f-plane m-0 text-center d-flex align-items-center">정산위임</label>
+									</div>
+									<div class="d-flex align-items-center btn-group" v-if="item.SHARED_ID != '' && item.BE_SHARED_YN == 0">
+										{{item.SHARED_EMP_NAME}}
+										<div class="btn btn-sm btn-white rounded-0 ml-1 p-3">
+											<a class="p-3" @click="cancelSharedEmp(item)">위임취소</a>
+										</div>
+									</div>
+									<div class="d-flex align-items-center btn-group" v-if="item.BE_SHARED_YN == 1">
+										{{item.NAME}}
+										<div class="btn btn-sm btn-white rounded-0 ml-1 p-3">
+											<a class="p-3" @click="cancelSharedEmp(item)">위임취소</a>
+										</div>
+									</div>
+										
+								</div>
+							</div>
+							<div class="d-flex col-12 p-0">
+								<div class="col-6 d-flex justify-content-start pl-1">
+									<div v-if="$options.filters.isNotEmpty(item.FILE_OWNER_TP)">
+										<small>used by</small> <a >{{item.FILE_OWNER_TP}}</a>
+									</div>
+								</div>
+								<div class="col-6 d-flex justify-content-end pr-1">
+									<div v-if="item.BE_SHARED_YN == 1">
+										<small class="text-info">위임된 파일</small>
+									</div>
+								</div>
+							</div>	
+						</div>
+					</div>
+				</div>
+				<!-- end image -->
+			</div>
+			<!-- end #gallery -->
+         <!-- begin 그리드형 -->                   
+          <div :class="{'d-flex':isGrid}"  :id="pgmid+'grid'" class="d-none flex-shrink-1 flex-grow-1 h-100">
+            <grid-r1 ref="gridmaster" :columnlayout="columnlayout" :pgmid="pgmid" subname="gridmaster"   :gridprop="girdProps" class="p-3"></grid-r1> 
+          </div>    
+ 		 <!-- end 그리드형 -->  
+            <div class="modal ec-modal  " data-backdrop="false" :id="pgmid+'ocr-modal'"   >
+              <div class="modal-dialog modal-xl  modal-dialog-centered ui-draggable">
+                  <div class="modal-content border-0">
+					<div th:replace="contents/ex/exp/modal/expimg-ocr-modal :: html"></div>
+                  </div>
+              </div>
+           	</div>
+           	
+			<div th:replace="contents/ex/exp/modal/expimg-info-modal :: html"></div>  
+     
+     </form>
+        <!-- ================== BEGIN THIS PAGE JS ================== -->
+     <div th:replace="contents/ex/exp/exp_img-js :: js"></div>  
+   </section>
+
+</body>
+</html>

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/layout-content(pgmid=${param.pgm_id},pgmnm=${param.pgm_nm}, objname=${param.pgm_id} , subparam=${param.subParam}, authparam=${param.authParam})}">
+<head>
+<!--   <meta charset="utf-8" /> -->
+<!--/*   영수증 비용처리 */-->
+</head>
+
+<body>
+  
+  <section layout:fragment="content"  class="h-100 overflow-hidden" >
+   			<!--  영수증 비용처리2 -->
+   			<!--/*   영수증 비용처리1 */-->
+            <form class="d-flex  flex-column h-100 overflow-hidden" th:id=${param.pgm_id}>
+             <div class="">
+             <div class="ec-grid-row d-flex align-items-center justify-content-between">
+                  <div class="d-none  d-sm-flex" :id="pgmid+ 'toolbtn'" >
+                                    <a href="javascript:;" class="ec-btn btn btn-sm btn-white mr-1 text-nowrap"  data-toggle="collapse" :data-target="'#'+pgmid+'collapseExample'" aria-expanded="false" aria-controls="collapseExample"><i class="icon-filter4 "></i></a>
+                                    <a href="javascript:;" class="ec-btn btn btn-sm btn-white mr-2 text-nowrap" @click="searchButtonOnClick()"><i class="icon-refresh "></i></a>                                       
+
+                                    <a href="javascript:;" :class="[{'btn-maintheme':viewType=='box'},{'btn-white': viewType !='box'}]" class="ec-btn btn btn-sm  mr-1" @click="viewType='box'"><i class="icon-grid"></i></a>
+                                    <a href="javascript:;" :class="[{'btn-maintheme': viewType=='grid' },{'btn-white': viewType !='grid'}]" class="ec-btn btn btn-sm  mr-3" @click="viewType='grid'; changeSourceType($refs.EX_GRID_SOURCE_TYPE.getValue());"><i class="icon-table2"></i></a>
+                  </div>
+<!--                   <div class="d-flex col"> -->
+<!--                                     <div class="dropdown mr-2"> -->
+<!--                                         <a href="#" class="btn btn-white  dropdown-toggle" data-toggle="dropdown"> -->
+<!--                                             <i class="icon-sort-alpha-asc mr-2"></i>정렬 -->
+<!--                                         </a> -->
+<!--                                         <div class="dropdown-menu" role="menu"> -->
+<!--                                             <a href="javascript:;"    @click="orderby='DATE'; searchButtonOnClick();"   class="dropdown-item">증빙일자(최신순)</a> -->
+<!--                                             <a href="javascript:;"    @click="orderby='REJECT'; searchButtonOnClick();"   class="dropdown-item">반려건</a> -->
+<!--                                             <a href="javascript:;"    @click="orderby='APPROVING'; searchButtonOnClick();"   class="dropdown-item">결재진행중</a> -->
+<!--                                         </div> -->
+<!--                                     </div> -->
+                  
+                  
+<!--                   </div> -->
+                    <div class="d-flex">
+							<div class="checkbox checkbox-css p-10 ml-2  mr-5">
+								<input type="checkbox" :id="pgmid+'selectAll'"  @change="clickSelectAll" /> <label
+									:for="pgmid+'selectAll'">전체선택</label>
+							</div>
+		
+							<div>
+							  <a class="btn btn-sm btn-maintheme  mr-1" v-for="item in selectedReportTypes"  v-bind:key="item.REPORT_TP" @click="user2ButtonOnClick(item)">
+		<!-- 					     {{item.REPORT_TP  }} : -->
+							     {{item.REPORT_TP_NM  }} 
+							     ({{item.COUNT  }}건)
+							  </a>
+		                    </div>
+                    </div>
+                    
+                    <dropdown-tablecommon  ref="selectReportType" :addedlist="addedreportType"  @dropdownchanged="changeReportType" class=""  th:pgmid=${param.pgm_id} alllabel="전체" all="YES" selectid="getExReportTp" selectname="getExReportTp" tableid="getExReportTp" url="/ex/common/commonSelect/search" ></dropdown-tablecommon>
+ 
+                    
+<!--                     //                initGridDropDownBox("CLOSING_TP","/ex/common/commonSelect/search", auiDropDownCallBack,{ SELECT_ID :"getExClosingTp" }); // 비용마감일구분 -->
+                    
+                  
+                                <div class=" mr-2 d-flex justify-content-end w-100 mr-2 "  :id="pgmid+'expTypeBtn'">
+                                    <a class="ec-btn btn btn-default btn-sm mr-1 border pl-3 text-nowrap" data-toggle="dropdown">
+                                        등록 <i class="icon-arrow-down"></i>
+                                    </a>
+                                    <div class="dropdown-menu dropdown-menu-right">
+<!--                                         <a class="dropdown-item  f-s-15"><i class="icon-credit-card mr-2 text-pink"></i> 카드</a> -->
+                                        <a  data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openReceipt()" class="btn dropdown-item"><i class="fas fa-lg fa-fw  icon-picture mr-2 text-maintheme"></i><span class=" f-s-15">영수증</span></a>
+                                        <a data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openGas()" class="btn dropdown-item "><i class="icon-gas mr-2 text-danger"></i> <span class=" f-s-15">유류비</span></a>
+                                        <a data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openToll()" class="btn dropdown-item "><i class="fas fa-lg fa-fw fa-road mr-1 text-lime"></i> <span class=" f-s-15">통행료</span></a>
+                                        <a data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openTravel()" class="btn dropdown-item "><i class="icon-user-follow mr-2 text-success"></i> <span class=" f-s-15">출장일당</span></a>
+                                        <a data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openCon()" class="btn dropdown-item "><i class="far fa-lg icon-heart text-blue mr-2 text-blue"></i> <span class=" f-s-15">부서경조금</span></a>
+                                        <a data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openAtm()" class="btn dropdown-item "><i class="icon-share-alt mr-2 text-success"></i> <span class=" f-s-15">전도금</span></a>
+                                        <a data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openGen()" class="btn dropdown-item "><i class="icon-share-alt mr-2 text-success"></i> <span class=" f-s-15">일반비용</span></a>
+                                        
+<!--                                         <a  @click="user2ButtonOnClick" class="dropdown-item"><i class="icon-check mr-2 text-aqua"></i> 결재요청</a> -->
+                                        
+                                    </div>
+                                </div>              
+                  
+                  <div v-if="false" class="d-none btn-group btn-sm-group d-lg-flex col justify-content-end"  :id="pgmid+'expsourcebtn'">
+                  
+<!--                                 <button type="button" class="ec-btn btn btn-sm btn-white  text-nowrap"><i class="icon-credit-card mr-2 text-blue"></i>법인카드</button> -->
+                                <button type="button" class="ec-btn btn btn-sm btn-white  text-nowrap" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openReceipt()"><i class="fas fa-lg fa-fw  icon-picture mr-2 text-maintheme"></i>영수증</button>
+                                <button type="button" class="ec-btn btn btn-sm btn-white  text-nowrap" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openGas()"><i class="icon-gas mr-2 text-blue"></i>유류비 </button>
+                                <button type="button" class="ec-btn btn btn-sm btn-white  text-nowrap" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openToll()"><i class="fas fa-lg fa-fw fa-road mr-1 text-blue"></i>통행료</button>                                
+                                <button type="button" class="ec-btn btn btn-sm btn-white  text-nowrap" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openTravel()"><i class="icon-user-follow mr-2 text-blue"></i>출장일당</button>  
+                                
+                                <button type="button" class="ec-btn btn btn-sm btn-white  text-nowrap" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openCon()"><i class="far fa-lg icon-heart text-blue"></i>부서경조금</button>   
+<!--                                 <button type="button" class="ec-btn btn btn-sm btn-white  text-nowrap" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openPrepay()"><i class="icon-wallet mr-2 text-blue"></i>전도금</button>    -->
+                                <button type="button" class="ec-btn btn btn-sm btn-white  text-nowrap" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openAtm()"><i class="icon-share-alt mr-2 text-blue"></i>전도금</button>   
+                                <button type="button" class="ec-btn btn btn-sm btn-white  text-nowrap" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openGen()"><i class="icon-share-alt mr-2 text-blue"></i>일반비용</button>                                  
+<!--                                 <authbutton-v1  th:authparam=${param.authParam} authcode="AUTH_CODE" > -->
+                                   <button type="button" class=" mx-3 px-4 ec-btn-primary  btn btn-sm  text-nowrap "  @click="user2ButtonOnClick">결재요청</button>    
+<!--                                 </authbutton-v1> -->
+                  </div>
+             </div>
+             </div>
+             
+                <!--  begin 조회조건             -->
+                                     <div class="collapse ec-grid-box-search mb-3 " :id="pgmid+'collapseExample'">
+                                            <div class="ec-grid-row">
+                                                <label class="col-lg-2 col-md-2 ec-col-label-search justify-content-md-end"><span class="text-danger">*</span>증빙일자</label>
+                                                <div class="col-lg-10 col-md-10 ec-col-input">
+                                                   <daterange-m-component-v1  ref="daterange" th:pgmid="${param.pgm_id}" subname1="SEARCH_FR_DT" subname2="SEARCH_TO_DT"  required="true"  initval1="firstday-1m" initval2="lastday"></daterange-m-component-v1>
+                                                </div>
+                                            </div>
+                                            <div class="ec-grid-row">
+                                                <label class="col-lg-2 col-md-2 ec-col-label-search justify-content-md-end">진행상태</label>
+                                                <div class="col-lg-10 col-md-10 ec-col-input ">
+                                                    <checkbox-syscommon  all="true" ref="EX_APPROVE_STATUS" th:pgmid=${param.pgm_id}    :selectid="pgmid+'EX_APPROVE_STATUS'" selectname="EX_APPROVE_STATUS" clcd="EX_APPROVE_STATUS" @changed="" @complete="completeApprStatus"> </checkbox-syscommon> 
+                                                </div>      
+                                            </div>
+                                            
+                                            <div class="ec-grid-row">
+                                                <label class="col-lg-2 col-md-2 ec-col-label-search justify-content-md-end">유형</label>
+                                                <div class="col-lg-10 col-md-10 ec-col-input">
+                                                    <checkbox-syscommon  all="true" ref="EX_SOURCE_TP" th:pgmid=${param.pgm_id} :selectid="pgmid+'EX_SOURCE_TP'" selectname="EX_SOURCE_TP" clcd="EX_SOURCE_TP" @changed="" @complete="completeSrcType"> </checkbox-syscommon>
+                                                </div>   
+                                            </div>                                            
+                                            
+                                        </div>                        
+                        <!--  end 조회조건             -->
+		
+             
+<!-- begin 박스형 -->
+             <div :class="[{'d-flex':isBox}]" :id="pgmid+'singleReceipt'"  class="d-none bg-light w-100 flex-shrink-1 flex-grow-1 h-100 overflow-auto ec-scrollbar flex-wrap"  >
+<!--              <virtual-scroll-v1 ref="virtualscroll" :items="receiptList" benchline="5" width="288" height="312"> -->
+<!--                <template slot-scope={item,index}> -->
+<!--                <div  :id=id class="overflow-auto h-100 w-100" :class="{ \'ec-scrollbar\' : mobile != \'true\'}"   > \ -->
+<!--     	       '<div  :id=id class="overflow-auto h-100 w-100" :class="{ \'ec-scrollbar\' : mobile != \'true\'}"   > \ -->
+<!--     	           <div   class="virtual-scroll align-content-start flex-wrap d-flex " :style="getStyle" > \ -->
+<!--              <div class="overflow-auto h-100 w-100" :class="{ 'ec-scrollbar' : mobile != 'true'}" > -->
+                <div v-for="(item, index) in receiptList" v-show="!item.NOT_SHOW =='1'" class="bizcard m-10" >
+                <!-- begin image -->
+                    <div v-show="!item.NOT_SHOW =='1'" v-if="item.TYPE=='RECEIPT'"  style="margin-bottom: -29px;">
+                       <div @mouseover="mouseoverReceiptBox(pgmid+'expboxContainer'+index)" @mouseleave="mouseleaveReceiptBox(pgmid+'expboxContainer'+index)" :id="pgmid+'expboxContainer'+index" @click="changedReceiptBox(pgmid+'expboxContainer'+index, item, index)" >
+                          <div class="ml-3 d-flex align-items-center justify-content-start" style="height: 34px; position: relative; left:5px; top: 20px; z-index: 2;">
+                                    <div class="d-none btn btn-danger btn-icon btn-circle bg-silver-transparent-7 checkPlus" :class="{'d-nothing' : item.CHECKED =='1'  }"  ><i class="fa fa-check"></i> </div>
+                                    <div class="btn bg-blue btn-icon btn-circle text-white selectedBtn" :class="{'d-none' : item.CHECKED !='1'  }"><i class="fa fa-check"></i> </div>
+                          </div> 
+                        <div  class="receipt-box bg-white m-4" :class="{'receipt-selected-border-top' : item.CHECKED =='1'}" :id="pgmid+'expbox'+index" style="position: relative; top: -34px; z-index: 1;">
+<!--                             <img v-if="item.FILE_KIND == 'IMG'" class="img-fluid receipt-img-box w-100"  :src="$options.filters.objid('/ec/common/syscommon/fileupload/downloadFile/'+item.FILE_NO)"  > -->
+<!--  objid 시 re-rendering 문제 -->
+                            <img v-if="item.FILE_KIND == 'IMG'" class="img-fluid receipt-img-box w-100"  :src="'/ec/common/syscommon/fileupload/downloadFile/'+item.FILE_NO"  >
+                            <div v-if="item.FILE_KIND == 'FILE'" class="justify-content-center d-flex align-items-center img-fluid receipt-img-box w-100 h-100 f-subtitle"   >{{ item.ORG_FILE_NAME }}</div>
+                        </div>
+                       </div>
+                        <div :class="[ {'bg-white' : item.CHECKED !='1' },
+                                       {'border-left-blue border-left-3 ' : item.EXPENSE_NO != '' && item.CHECKED !='1'},
+                                       {'bg-blue-transparent-1' : item.CHECKED =='1'},
+                                       {'bg-light-darker' : item.EXPENSE_NO == ''},
+                                       {'receipt-selected-border-bottom' : item.CHECKED =='1'}]" 
+                            class="receipt-info m-4" style="position: relative; top: -34px; ">
+                          <div class="px-2 py-1">  
+                                <div class="d-flex justify-content-between">
+                                    <div>증빙일:&nbsp<strong class="m-0 d-inline">{{item.RECEIPT_DT | dateformat('yyyy-mm-dd')}}</strong></div>
+                                    <div>지급액:&nbsp<strong>{{to_number(item.EXPENSE_AMT)+to_number(item.EXPENSE_VAT_AMT)+to_number(item.EXCLUDE_AMT)  | numberformat('0,000')}}원</strong></div>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <div class="text-max-250">비용항목:&nbsp<strong>{{item.EXPENSE_NM}}&nbsp</strong></div>
+                                </div>                              
+                                <div class="d-flex justify-content-between">
+                                   <div class="text-max-200" v-show="item.BELONGING_TP == '1'">코스트센터:&nbsp<strong >{{item.CCTR_NM}}&nbsp</strong></div>
+                                   <div class="text-max-200"  v-show="item.BELONGING_TP == '2'">프로젝트:&nbsp<strong>{{item.PS_NM}}&nbsp</strong></div>
+                                   <div><a class="font-weight-bold icon-note  mr-2 btn p-0" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openDetail(item,index)" ></a>
+                                         <a class=" font-weight-bold icon-trash btn p-0" @click="deleteExpMst(item, index)"></a>  
+                                   </div>   
+                                </div>
+                          </div>
+                          <div class="px-2 py-1 border-left-0 bg-silver-transparent-3">
+                            <div class="d-flex justify-content-between">
+                               <div  class="text-max-200"><strong >{{item.REPORT_TP_NM}}</strong>&nbsp</div>
+<!--                                <div class="text-max-200"><strong >{{item.REPORT_TITLE.substr(0,15)}}</strong>&nbsp</div> -->
+                               <div>
+                                    <label  v-if="item.APPROVE_STATUS_NM !='' && item.APPROVE_STATUS_NM != null " class="label label-primary m-0"><strong class="f-s-11">{{item.APPROVE_STATUS_NM}}</strong></label>
+                                    <label  v-if="!$options.filters.isNotEmpty(item.APPROVE_STATUS_NM)"  class="label label-default border m-0"><strong class="f-s-11">미처리</strong></label>
+                               </div>
+                               
+                            </div>
+                          </div>
+                        </div>
+                       </div>
+                     <div v-show="!item.NOT_SHOW =='1'"  v-if="item.TYPE=='PREPAY' ||item.TYPE=='ATM' ||item.TYPE=='CON' ||item.TYPE=='GEN'"  style="margin-bottom: -29px;">
+                       <div @mouseover="mouseoverReceiptBox(pgmid+'expboxContainer'+index)" @mouseleave="mouseleaveReceiptBox(pgmid+'expboxContainer'+index)" :id="pgmid+'expboxContainer'+index" @click="changedReceiptBox(pgmid+'expboxContainer'+index, item, index)" >
+                          <div class="ml-3 d-flex align-items-center justify-content-start" style="height: 34px; position: relative; left:5px; top: 20px; z-index: 2;">
+                                    <div class="d-none btn btn-danger btn-icon btn-circle bg-silver-transparent-7 checkPlus" :class="{'d-nothing' : item.CHECKED =='1'  }"  ><i class="fa fa-check"></i> </div>
+                                    <div class="btn bg-blue btn-icon btn-circle text-white selectedBtn" :class="{'d-none' : item.CHECKED !='1'  }"><i class="fa fa-check"></i> </div>
+                          </div>
+                        <div v-if = "!($options.filters.isNotEmpty(item.FILE_NO))" :class="{'receipt-selected-border-top' : item.CHECKED =='1'}" class="receipt-box align-items-center d-flex bg-white m-4" style="position: relative; top: -34px; z-index: 1;"><div class=" m-4 d-flex justify-content-center w-100 "><i class="icon-wallet mr-2 text-success f-s-160 text-blue-transparent-2"></i></div></div>
+                        <div v-if = "$options.filters.isNotEmpty(item.FILE_NO)" :class="{'receipt-selected-border-top' : item.CHECKED =='1'}" class="receipt-box bg-white m-4"  :id="pgmid+'expbox'+index" style="position: relative; top: -34px; z-index: 1;">
+                            <img class="img-fluid receipt-img-box w-100 "  :src="'/ec/common/syscommon/fileupload/downloadFile/'+item.FILE_NO" >
+                        </div>
+                       </div>
+                        <div :class="[ {'bg-white' : item.CHECKED !='1' },
+                                       {'border-left-blue border-left-3 ' : item.EXPENSE_NO != '' && item.CHECKED !='1'},
+                                       {'bg-blue-transparent-1' : item.CHECKED =='1'},
+                                       {'bg-light-darker' : item.EXPENSE_NO == ''},
+                                       {'receipt-selected-border-bottom' : item.CHECKED =='1'}]" 
+                            class="receipt-info m-4" style="position: relative; top: -34px; ">
+                          <div class="px-2 py-1">  
+                                <div class="d-flex justify-content-between">
+                                    <div>증빙일:&nbsp<strong class="m-0 d-inline">{{item.RECEIPT_DT | dateformat('yyyy-mm-dd')}}</strong></div>
+                                    <div>지급액:&nbsp<strong>{{to_number(item.EXPENSE_AMT)+to_number(item.EXPENSE_VAT_AMT)+to_number(item.EXCLUDE_AMT) | numberformat('0,000')}}원</strong></div>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <div class="text-max-250">비용항목:&nbsp<strong>{{item.EXPENSE_NM}}&nbsp</strong></div>
+                                </div>                              
+                                <div class="d-flex justify-content-between">
+                                   <div class="text-max-200"  v-show="item.BELONGING_TP == '1'">코스트센터:&nbsp<strong>{{item.CCTR_NM}}&nbsp</strong></div>
+                                   <div class="text-max-200"  v-show="item.BELONGING_TP == '2'">프로젝트:&nbsp<strong>{{item.PS_NM}}&nbsp</strong></div>
+                                   <div><a class="font-weight-bold icon-note  mr-2 btn p-0" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openDetail(item,index)" ></a>
+                                         <a class=" font-weight-bold icon-trash btn p-0" @click="deleteExpMst(item, index)"></a>  
+                                   </div>   
+                                </div>
+                          </div>
+                          <div class="px-2 py-1 border-left-0 bg-silver-transparent-3">
+                            <div class="d-flex justify-content-between">
+                               <div  class="text-max-200"><strong>{{item.REPORT_TP_NM}}</strong>&nbsp</div>
+<!--                                <div><strong>{{item.REPORT_TITLE.substr(0,15)}}</strong>&nbsp</div> -->
+                               <div>
+                                 <label  v-if="item.APPROVE_STATUS_NM !='' && item.APPROVE_STATUS_NM != null " class="label label-primary m-0"><strong class="f-s-11">{{item.APPROVE_STATUS_NM}}</strong></label>
+                                 <label  v-if="!$options.filters.isNotEmpty(item.APPROVE_STATUS_NM)"  class="label label-default border m-0"><strong class="f-s-11">미처리</strong></label>  
+                                </div>
+                            </div>
+                          </div>
+                        </div>
+                       </div>                      
+                    <div v-show="!item.NOT_SHOW =='1'" v-if="item.TYPE=='CARD'"> <!-- 카드 -->
+                       <div @mouseover="mouseoverReceiptBox(pgmid+'expboxContainer'+index)" @mouseleave="mouseleaveReceiptBox(pgmid+'expboxContainer'+index)" :id="pgmid+'expboxContainer'+index" @click="changedReceiptBox(pgmid+'expboxContainer'+index, item, index)" >
+                            <div class=" receipt-box bg-white m-4 p-10" :class="{'receipt-selected-border-top' : item.CHECKED =='1'}"  :id="pgmid+'expbox'+index"    >
+                                  <div class="d-flex align-items-center justify-content-start" style="height:34px; z-index: 2;">
+                                    <div class="d-none btn btn-danger btn-icon btn-circle bg-silver-transparent-7 checkPlus" :class="{'d-nothing' : item.CHECKED =='1'  }"  ><i class="fa fa-check"></i> </div>
+                                    <div class="btn bg-blue btn-icon btn-circle text-white selectedBtn" :class="{'d-none' : item.CHECKED !='1'  }"><i class="fa fa-check"></i> </div>
+                                  </div>                            
+                                 <div style="position:relative"><div class="d-flex justify-content-center w-100 exp-box-bgicon"><i class="icon-credit-card f-s-160 text-blue-transparent-2"></i></div></div>
+                                 <div class="d-flex justify-content-between align-items-center">
+	                                 <h4 class="m-0">{{item.RECEIPT_DT | dateformat('card-week')}}</h4>
+	                                 <div>
+		                                 <i v-if="item.FILE_CNT > 0 ||  (item.OCR_CNT > 0 && item.EXPENSE_NO == '') " class="icon-paper-clip"></i>
+		                                 <i  v-if="item.PRIVATE_YN == '1' " class="ion ion-ios-remove-circle fa-2x fa-fw float-start me-10px text-red"></i>
+	                                 </div>
+                                 </div>
+                                 <h5 class="m-0">{{item.RECEIPT_DT | dateformat('card-time')}}</h5>
+                                 <h4 class="text-right">{{item.BIZ_NM}}</h4>
+                                 <h4 class="m-0   text-right">{{item.TOT_AMT  | numberformat('0,000')}}원</h4>
+                                 <h6 class="m-0  d-flex justify-content-between" ><span><h5>{{item.CARD_NO | cardformat }}</h5></span></h6>
+                                 <h6 class="m-0">{{item.BIZ_ADDR}}</h6>
+                                 
+                            </div>
+                        </div>
+                        <div :class="[ {'bg-white' : item.CHECKED !='1' },
+                                       {'border-left-blue border-left-3 ' : item.EXPENSE_NO != '' && item.CHECKED !='1'},
+                                       {'bg-blue-transparent-1' : item.CHECKED =='1'},
+                                       {'bg-light-darker' : item.EXPENSE_NO == ''},
+                                       {'receipt-selected-border-bottom' : item.CHECKED =='1'}]" 
+                            class="receipt-info m-4" >
+                          <div class="px-2 py-1">  
+                                <div class="d-flex justify-content-between">
+                                    <div>증빙일:&nbsp<strong class="m-0 d-inline">{{item.RECEIPT_DT | dateformat('yyyy-mm-dd')}}</strong></div>
+                                    <div>지급액:&nbsp<strong>{{to_number(item.EXPENSE_AMT)+to_number(item.EXPENSE_VAT_AMT)+to_number(item.EXCLUDE_AMT)  | numberformat('0,000')}}원</strong></div>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <div class="text-max-250">비용항목:&nbsp<strong>{{item.EXPENSE_NM}}&nbsp</strong></div>
+                                </div>                              
+                                <div class="d-flex justify-content-between">
+                                   <div  class="text-max-200" v-show="item.BELONGING_TP == '1'">코스트센터:&nbsp<strong>{{item.CCTR_NM}}&nbsp</strong></div>
+                                   <div class="text-max-200"  v-show="item.BELONGING_TP == '2'">프로젝트:&nbsp<strong>{{item.PS_NM}}&nbsp</strong></div>
+                                   <div><a class="font-weight-bold icon-note  mr-2 btn p-0" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openDetail(item,index)" ></a>
+                                         <a class=" font-weight-bold icon-trash btn p-0" @click="deleteExpMst(item, index)"></a>  
+                                   </div>   
+                                </div>
+                          </div>
+                          <div class="px-2 py-1 border-left-0 bg-silver-transparent-3">
+                            <div class="d-flex justify-content-between">
+                               <div  class="text-max-200"><strong>{{item.REPORT_TP_NM}}</strong>&nbsp</div>
+<!--                                <div><strong>{{item.REPORT_TITLE.substr(0,15)}}</strong>&nbsp</div> -->
+                               <div>
+                                    <label  v-if="item.APPROVE_STATUS_NM !='' && item.APPROVE_STATUS_NM != null " class="label label-primary m-0"><strong class="f-s-11">{{item.APPROVE_STATUS_NM}}</strong></label>
+                                    <label  v-if="!$options.filters.isNotEmpty(item.APPROVE_STATUS_NM)"  class="label label-default border m-0"><strong class="f-s-11">미처리</strong></label>
+                                    
+                               </div>
+                            </div>
+                          </div>
+                            
+                        </div>
+                    </div>   <!-- end of 카드 -->    
+                     <div v-show="!item.NOT_SHOW =='1'"  v-if="item.TYPE=='GAS'"> <!-- 유류비 -->
+                       <div @mouseover="mouseoverReceiptBox(pgmid+'expboxContainer'+index)" @mouseleave="mouseleaveReceiptBox(pgmid+'expboxContainer'+index)" :id="pgmid+'expboxContainer'+index" @click="changedReceiptBox(pgmid+'expboxContainer'+index, item, index)" >
+                            <div class=" receipt-box bg-white m-4 p-10" :class="{'receipt-selected-border-top' : item.CHECKED =='1'}" :id="pgmid+'expbox'+index"    >
+                                  <div class="d-flex align-items-center justify-content-start" style="height:34px; z-index: 2;">
+                                    <div class="d-none btn btn-danger btn-icon btn-circle bg-silver-transparent-7 checkPlus" :class="{'d-nothing' : item.CHECKED =='1'  }"  ><i class="fa fa-check"></i> </div>
+                                    <div class="btn bg-blue btn-icon btn-circle text-white selectedBtn" :class="{'d-none' : item.CHECKED !='1'  }"><i class="fa fa-check"></i> </div>
+                                  </div> 
+                             <div style="position:relative"><div class="d-flex justify-content-center w-100 exp-box-bgicon"><i class="icon-gas f-s-160 text-red-transparent-2"></i></div></div>
+                             <h4 class="m-0">{{item.RECEIPT_DT | dateformat('card-week')}}</h4>
+                             <h4 class="text-right" style="font-size: 3.8rem;">{{item.DISTANCE | numberformat('0,000')}} km</h4>
+                             <h6 v-show="item.DISTANCE_TP=='2' || item.DISTANCE_TP=='4' " class="m-0   ">From: {{item.START_ADDR}}</h6>
+                             <h6 v-show="item.DISTANCE_TP=='2' || item.DISTANCE_TP=='4' " class="m-0   ">&nbsp&nbsp To: {{item.END_ADDR}}</h6>
+                             
+                          </div>
+                        </div>
+                        <div :class="[ {'bg-white' : item.CHECKED !='1' },
+                                       {'border-left-blue border-left-3 ' : item.EXPENSE_NO != '' && item.CHECKED !='1'},
+                                       {'bg-blue-transparent-1' : item.CHECKED =='1'},
+                                       {'bg-light-darker' : item.EXPENSE_NO == ''},
+                                       {'receipt-selected-border-bottom' : item.CHECKED =='1'}]" 
+                            class="receipt-info m-4" >
+                          <div class="px-2 py-1">  
+                                <div class="d-flex justify-content-between">
+                                    <div>증빙일:&nbsp<strong class="m-0 d-inline">{{item.RECEIPT_DT | dateformat('yyyy-mm-dd')}}</strong></div>
+                                    <div>지급액:&nbsp<strong>{{to_number(item.EXPENSE_AMT)+to_number(item.EXPENSE_VAT_AMT)+to_number(item.EXCLUDE_AMT)  | numberformat('0,000')}}원</strong></div>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <div class="text-max-250">비용항목:&nbsp<strong>{{item.EXPENSE_NM}}&nbsp</strong></div>
+                                </div>                              
+                                <div class="d-flex justify-content-between">
+                                   <div class="text-max-200"  v-show="item.BELONGING_TP == '1'">코스트센터:&nbsp<strong>{{item.CCTR_NM}}&nbsp</strong></div>
+                                   <div class="text-max-200"  v-show="item.BELONGING_TP == '2'">프로젝트:&nbsp<strong>{{item.PS_NM}}&nbsp</strong></div>
+                                   <div><a class="font-weight-bold icon-note  mr-2 btn p-0" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openDetail(item,index)" ></a>
+                                         <a class=" font-weight-bold icon-trash btn p-0" @click="deleteExpMst(item, index)"></a>  
+                                   </div>   
+                                </div>
+                          </div>
+                          <div class="px-2 py-1 border-left-0 bg-silver-transparent-3">
+                            <div class="d-flex justify-content-between">
+                               <div  class="text-max-200"><strong>{{item.REPORT_TP_NM}}</strong>&nbsp</div>
+<!--                                <div><strong>{{item.REPORT_TITLE.substr(0,15)}}</strong>&nbsp</div> -->
+                               <div>
+                                  <label  v-if="item.APPROVE_STATUS_NM !='' && item.APPROVE_STATUS_NM != null " class="label label-primary m-0"><strong class="f-s-11">{{item.APPROVE_STATUS_NM}}</strong></label>
+                                  <label  v-if="!$options.filters.isNotEmpty(item.APPROVE_STATUS_NM)"  class="label label-default border m-0"><strong class="f-s-11">미처리</strong></label>
+                               </div>
+                            </div>
+                          </div>
+                            
+                        </div>
+                    </div>   <!-- end of 유류비 -->  
+                    
+                     <div v-show="!item.NOT_SHOW =='1'"  v-if="item.TYPE=='TOLL'"> <!-- 통행료 -->
+                       <div @mouseover="mouseoverReceiptBox(pgmid+'expboxContainer'+index)" @mouseleave="mouseleaveReceiptBox(pgmid+'expboxContainer'+index)" :id="pgmid+'expboxContainer'+index" @click="changedReceiptBox(pgmid+'expboxContainer'+index, item, index)" >
+                            <div class=" receipt-box bg-white m-4 p-10" :class="{'receipt-selected-border-top' : item.CHECKED =='1'}"  :id="pgmid+'expbox'+index"    >
+                                  <div class="d-flex align-items-center justify-content-start" style="height:34px; z-index: 2;">
+                                    <div class="d-none btn btn-danger btn-icon btn-circle bg-silver-transparent-7 checkPlus" :class="{'d-nothing' : item.CHECKED =='1'  }"  ><i class="fa fa-check"></i> </div>
+                                    <div class="btn bg-blue btn-icon btn-circle text-white selectedBtn" :class="{'d-none' : item.CHECKED !='1'  }"><i class="fa fa-check"></i> </div>
+                                  </div> 
+                             <div style="position:relative"><div class="d-flex justify-content-center w-100 exp-box-bgicon"><i class="fas fa-lg fa-fw fa-road  f-s-160 text-lime-transparent-2"></i></div></div>
+                             <h4 class="m-0">{{item.RECEIPT_DT | dateformat('card-week')}}</h4>
+<!--                              <h5 class="text-right" style="font-size: 3.8rem;">{{item.EXPENSE_AMT | numberformat('0,000')}} 원</h5> -->
+                             <h5 class="text-center text-maintheme" style="font-size: 3.0rem; font-style:italic; ">hi-pass</h5>
+                             <h3 class="text-right" >{{item.TOLL_CNT }} 건</h3>
+<!--                              <h6 v-show="item.DISTANCE_TP=='2' || item.DISTANCE_TP=='4' " class="m-0   ">From: {{item.START_ADDR}}</h6> -->
+<!--                              <h6 v-show="item.DISTANCE_TP=='2' || item.DISTANCE_TP=='4' " class="m-0   ">&nbsp&nbsp To: {{item.END_ADDR}}</h6> -->
+                             
+                          </div>
+                        </div>
+                        <div :class="[ {'bg-white' : item.CHECKED !='1' },
+                                       {'border-left-blue border-left-3 ' : item.EXPENSE_NO != '' && item.CHECKED !='1'},
+                                       {'bg-blue-transparent-1' : item.CHECKED =='1'},
+                                       {'bg-light-darker' : item.EXPENSE_NO == ''},
+                                       {'receipt-selected-border-bottom' : item.CHECKED =='1'}]" 
+                            class="receipt-info m-4" >
+                          <div class="px-2 py-1">  
+                                <div class="d-flex justify-content-between">
+                                    <div>증빙일:&nbsp<strong class="m-0 d-inline">{{item.RECEIPT_DT | dateformat('yyyy-mm-dd')}}</strong></div>
+                                    <div>지급액:&nbsp<strong>{{to_number(item.EXPENSE_AMT)+to_number(item.EXPENSE_VAT_AMT)+to_number(item.EXCLUDE_AMT)  | numberformat('0,000')}}원</strong></div>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <div class="text-max-250">비용항목:&nbsp<strong>{{item.EXPENSE_NM}}&nbsp</strong></div>
+                                </div>                              
+                                <div class="d-flex justify-content-between">
+                                   <div class="text-max-200"  v-show="item.BELONGING_TP == '1'">코스트센터:&nbsp<strong>{{item.CCTR_NM}}&nbsp</strong></div>
+                                   <div class="text-max-200"  v-show="item.BELONGING_TP == '2'">프로젝트:&nbsp<strong>{{item.PS_NM}}&nbsp</strong></div>
+                                   <div><a class="font-weight-bold icon-note  mr-2 btn p-0" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openDetail(item,index)" ></a>
+                                         <a class=" font-weight-bold icon-trash btn p-0" @click="deleteExpMst(item, index)"></a>  
+                                   </div>   
+                                </div>
+                          </div>
+                          <div class="px-2 py-1 border-left-0 bg-silver-transparent-3">
+                            <div class="d-flex justify-content-between">
+                               <div  class="text-max-200"><strong>{{item.REPORT_TP_NM}}</strong>&nbsp</div>
+<!--                                <div><strong>{{item.REPORT_TITLE.substr(0,15)}}</strong>&nbsp</div> -->
+                               <div>
+                                   <label  v-if="item.APPROVE_STATUS_NM !='' && item.APPROVE_STATUS_NM != null " class="label label-primary m-0"><strong class="f-s-11">{{item.APPROVE_STATUS_NM}}</strong></label>
+                                   <label  v-if="!$options.filters.isNotEmpty(item.APPROVE_STATUS_NM)"  class="label label-default border m-0"><strong class="f-s-11">미처리</strong></label>
+                               </div>
+                            </div>
+                          </div>
+                            
+                        </div>
+                    </div>   <!-- end of TOLL -->  
+                    
+                    <!-- 일당 -->                
+                      <div v-show="!item.NOT_SHOW =='1'"  v-if="item.TYPE=='TRAVEL'"> 
+                       <div @mouseover="mouseoverReceiptBox(pgmid+'expboxContainer'+index)" @mouseleave="mouseleaveReceiptBox(pgmid+'expboxContainer'+index)" :id="pgmid+'expboxContainer'+index" @click="changedReceiptBox(pgmid+'expboxContainer'+index, item, index)" >
+                            <div class=" receipt-box bg-white m-4 p-10" :class="{'receipt-selected-border-top' : item.CHECKED =='1'}" :id="pgmid+'expbox'+index"    >
+                                  <div class="d-flex align-items-center justify-content-start" style="height:34px; z-index: 2;">
+                                    <div class="d-none btn btn-danger btn-icon btn-circle bg-silver-transparent-7 checkPlus" :class="{'d-nothing' : item.CHECKED =='1'  }"  ><i class="fa fa-check"></i> </div>
+                                    <div class="btn bg-blue btn-icon btn-circle text-white selectedBtn" :class="{'d-none' : item.CHECKED !='1'  }"><i class="fa fa-check"></i> </div>
+                                  </div> 
+                             <div style="position:relative"><div class="d-flex justify-content-center w-100 exp-box-bgicon"><i class="icon-user-follow f-s-160 text-green-transparent-2"></i></div></div>
+                             <h4 class="m-0">{{item.RECEIPT_DT | dateformat('card-week')}}</h4>
+                             <h4 class="text-right" style="font-size: 3.9rem;">{{item.BIZTRIP_DAYS }} 일</h4>
+                             <h5 class="m-0 text-right">{{item.BIZTRIP_START | dateformat('card-week')}}~{{item.BIZTRIP_END | dateformat('card-week')}}</h5>
+                             
+                          </div>
+                        </div>
+                        <div :class="[ {'bg-white' : item.CHECKED !='1' },
+                                       {'border-left-blue border-left-3 ' : item.EXPENSE_NO != '' && item.CHECKED !='1'},
+                                       {'bg-blue-transparent-1' : item.CHECKED =='1'},
+                                       {'bg-light-darker' : item.EXPENSE_NO == ''},
+                                       {'receipt-selected-border-bottom' : item.CHECKED =='1'}]" 
+                            class="receipt-info m-4" >
+                          <div class="px-2 py-1">  
+                                <div class="d-flex justify-content-between">
+                                    <div>증빙일:&nbsp<strong class="m-0 d-inline">{{item.RECEIPT_DT | dateformat('yyyy-mm-dd')}}</strong></div>
+                                    <div>지급액:&nbsp<strong>{{to_number(item.EXPENSE_AMT)+to_number(item.EXPENSE_VAT_AMT)+to_number(item.EXCLUDE_AMT)  | numberformat('0,000')}}원</strong></div>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <div class="text-max-250">비용항목:&nbsp<strong>{{item.EXPENSE_NM}}&nbsp</strong></div>
+                                </div>                              
+                                <div class="d-flex justify-content-between">
+                                   <div class="text-max-200"  v-show="item.BELONGING_TP == '1'">코스트센터:&nbsp<strong>{{item.CCTR_NM}}&nbsp</strong></div>
+                                   <div class="text-max-200"  v-show="item.BELONGING_TP == '2'">프로젝트:&nbsp<strong>{{item.PS_NM}}&nbsp</strong></div>
+                                   <div><a class="font-weight-bold icon-note  mr-2 btn p-0" data-toggle="modal" :data-target="'#'+pgmid+'modal-detail'" @click="openDetail(item,index)" ></a>
+                                         <a class=" font-weight-bold icon-trash btn p-0" @click="deleteExpMst(item, index)"></a>  
+                                   </div>   
+                                </div>
+                          </div>
+                          <div class="px-2 py-1 border-left-0 bg-silver-transparent-3">
+                            <div class="d-flex justify-content-between">
+                               <div  class="text-max-200"><strong>{{item.REPORT_TP_NM}}</strong>&nbsp</div>
+<!--                                <div><strong>{{item.REPORT_TITLE.substr(0,15)}}</strong>&nbsp</div> -->
+                               <div>
+                                   <label  v-if="item.APPROVE_STATUS_NM !='' && item.APPROVE_STATUS_NM != null " class="label label-primary m-0"><strong class="f-s-11">{{item.APPROVE_STATUS_NM}}</strong></label>
+                                   <label  v-if="!$options.filters.isNotEmpty(item.APPROVE_STATUS_NM)"  class="label label-default border m-0"><strong class="f-s-11">미처리</strong></label>
+                               </div>
+                            </div>
+                          </div>
+                            
+                        </div>
+                    </div>   <!-- end of 일당 -->                      
+                    
+<!--                 </div> -->
+                
+                <!-- end image -->   
+<!--                  </div> -->
+                </div>
+<!--                   </template> -->
+<!--                  </virtual-scroll-v1>          -->
+            </div>
+<!-- end #박스형 -->
+
+ <!-- begin 그리드형 -->                   
+          <div :class="{'d-flex':isGrid}"  :id="pgmid+'grid'" class="d-none flex-column   h-100">
+          
+			   <div class="">
+			      <radio-syscommon ref="EX_GRID_SOURCE_TYPE" th:pgmid=${param.pgm_id}  all="true" type="btn"  selectid="EX_GRID_SOURCE_TYPE" selectname="EX_GRID_SOURCE_TYPE" clcd="EX_SOURCE_TP" @changed="changeSourceType" @complete="completeGridSrcType"> </radio-syscommon> 
+			   </div>
+			   
+          
+              <grid-r1 ref="gridmaster" :columnlayout="columnlayout" :pgmid="pgmid" subname="gridmaster"   :gridprop="girdProps" class="p-3"></grid-r1> 
+          </div>   
+ <!-- end 그리드형 -->  
+ 
+   <div class="modal ec-modal  " data-backdrop="false" :id="pgmid+'modal-detail'"  v-if="modalVisible"  style="position: absolute;"  >
+              <div class="modal-dialog modal-xl  modal-dialog-centered" :id="pgmid+'modal-dialog-detail'" >
+                  <div class="modal-content border-0">
+                      <div class="modal-body p-0"  >
+                          <div   th:replace="contents/fi/exp/modal/receipt-card-modalbody :: html"></div>  
+                          <div   th:replace="contents/fi/exp/modal/receipt-receipt-modalbody :: html"></div>  
+                          <div   th:replace="contents/fi/exp/modal/receipt-gas-modalbody :: html"></div>  
+                          <div   th:replace="contents/fi/exp/modal/receipt-travel-modalbody :: html"></div>  
+                          <div   th:replace="contents/fi/exp/modal/receipt-toll-modalbody :: html"></div>  
+                          <div   th:replace="contents/fi/exp/modal/receipt-prepay-modalbody :: html"></div>  
+                          <div   th:replace="contents/fi/exp/modal/receipt-atm-modalbody :: html"></div>  
+                          <div   th:replace="contents/fi/exp/modal/receipt-con-modalbody :: html"></div>  
+                          <div   th:replace="contents/fi/exp/modal/receipt-gen-modalbody :: html"></div>  
+                      </div>
+                      
+                  </div>
+              </div>
+     </div> 
+           
+<!--           showModal -->
+          <div  v-if="modalVisible"  th:replace="contents/fi/exp/modal/receipt-reportAdd-modal :: html"></div>  
+    </form>
+        <!-- ================== BEGIN THIS PAGE JS ================== -->
+    
+    <div th:replace="contents/fi/exp/receipt-js :: js"></div>  
+   </section>
+
+</body>
+</html>

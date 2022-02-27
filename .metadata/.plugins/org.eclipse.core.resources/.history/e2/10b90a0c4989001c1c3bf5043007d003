@@ -1,0 +1,67 @@
+package com.ec.eframework.fi.exp;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.ec.eframework.config.AppProperty;
+import com.ec.eframework.lib.JsonDataMap;
+import com.ec.eframework.lib.MapSession;
+import com.ec.eframework.mapper.common.CommonServiceMapper;
+import com.ec.eframework.mapper.fi_exp.EtaxServiceMapper;
+import com.ec.eframework.mapper.fi_exp.ExpenseServiceMapper;
+
+/**
+ * 여우증 비용처리
+ */
+@Controller
+@RequestMapping("ec/fi/exp/receipt")
+public class ExpReceiptController  {
+	/**
+	 *  페이지 호출 
+	 */
+	    
+        @RequestMapping(value = "/page")
+        public String page() {
+         return "contents/fi/exp/receipt";
+        }	    
+
+        @RequestMapping(value = "/m_page")
+        public String m_page() {
+         return "contents/fi/exp/m_receipt";
+        }	       
+    	@Autowired
+    	AppProperty appProperty;
+	    @Autowired
+	    private ExpenseServiceMapper  expenseServiceMapper;
+	    @RequestMapping(value = "/getReceiptList" , produces = MediaType.APPLICATION_JSON_VALUE)
+	    @ResponseBody
+	    public Map<String, Object>  getReceiptList(@RequestBody Map<String, Object> paramMap,HttpServletRequest request, HttpSession session) {
+	    
+	        paramMap.putAll((Map)new MapSession(session));
+	        paramMap.put("ENC_KEY", appProperty.getEncKey());
+
+	        return new JsonDataMap("ds_master",expenseServiceMapper.getReceiptList(paramMap));    
+	    } 
+
+	    
+	    
+	    @Autowired
+	    private CommonServiceMapper  commonServiceMapper;
+	    @RequestMapping(value = "/getCurRate" , produces = MediaType.APPLICATION_JSON_VALUE) //  ec/fi/exp/receipt/getCurRate
+	    @ResponseBody
+	    public Map<String, Object>  getCurRate(@RequestBody Map<String, Object> paramMap,HttpServletRequest request, HttpSession session) {
+	    
+	        paramMap.putAll((Map)new MapSession(session));
+	        return new JsonDataMap("ds_master",  commonServiceMapper.getCurRate(paramMap));    
+	    } 
+
+}

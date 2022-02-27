@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- xml이 위치한 곳, 파일명 포함 -->
+<mapper namespace="com.ec.eframework.mapper.ex.expense.ClubListServiceMapper">
+
+    
+        
+    
+    
+    <select id="reportApprvClubList" resultType="HashMap">
+		select ROW_NUMBER() OVER(order by mst.RECEIPT_DT asc, mst.EXPENSE_NO asc) AS ID 
+		      ,ecc.CCTR_NM      -- 코스트센터명
+		      ,cat.EXPENSE_NM   -- 비용항목명
+		      ,mst.RECEIPT_DT   -- 사용일
+		      ,emp.EMP_NM       -- 사원명
+		      ,mst.PAY_AMT      -- 지급액
+		      ,mst.EXPENSE_NO   -- 비용번호
+		      ,mst.MOD_DH
+		 from expense_mst mst
+		 left outer join expense_cost_center ecc 
+		      on mst.CCTR_CD = ecc.CCTR_CD 
+		     and mst.COMPANY_CODE = ecc.COMPANY_CODE 
+		 left outer join expense_category cat 
+		      on mst.EXPENSE_CD = cat.EXPENSE_CD 
+		     and mst.COMPANY_CODE = cat.COMPANY_CODE 
+		 left outer join admin_emp emp
+		      on mst.EXPENSE_EMP_NO = emp.EMP_NO 
+		     and mst.COMPANY_CODE = emp.COMPANY_CODE									
+		where   1 = 1
+		      <if test='REPORT_NO !=null and REPORT_NO !="" '>
+				and 	mst.REPORT_NO = #{REPORT_NO}     -- 결재번호 (결재함, 상신함)
+			  </if>
+			  <if test='ds_master !=null and ds_master.size  > 0 '>
+					and mst.EXPENSE_NO in
+					<foreach collection="ds_master" item="item" open="(" close=")" separator=",">
+						 #{item.EXPENSE_NO}
+					</foreach>
+			  </if>
+		
+    -- { REPORT_NO : 889 , ds_master : [{EXPENSE_NO : 998},{EXPENSE_NO : 11},{EXPENSE_NO : 999}]  }
+    </select> 
+
+</mapper>

@@ -1,0 +1,71 @@
+package com.ec.eframework.ex.config;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.ec.eframework.lib.GridDataMap;
+import com.ec.eframework.lib.JsonDataMap;
+import com.ec.eframework.lib.JsonResultMsgMap;
+import com.ec.eframework.lib.P;
+import com.ec.eframework.lib.MapSession;
+import com.ec.eframework.mapper.basic.GridDataMultiSave;
+import com.ec.eframework.mapper.basic.MyDuplicateKeyException;
+import com.ec.eframework.mapper.ex.config.ExpConfigServiceMapper;
+import com.ec.eframework.mapper.fi_basis.AcctServiceMapper;
+
+/**
+ * 비용항목 config
+ */
+@Controller
+@RequestMapping("ec/ex/config/gasprice")
+public class GasPriceController  {
+
+	/**
+	 * 계정관리 페이지 호출 
+	 */
+	@RequestMapping(value = "/page")
+	public String page() {
+	
+	     return "contents/ex/config/gas-price";
+	}
+
+	@Autowired
+	private ExpConfigServiceMapper expConfigServiceMapper;
+	@RequestMapping(value = "/searchGasPrice" , produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	public Map<String, Object>  searchGasPrice(@RequestBody Map<String, String> paramMap,HttpServletRequest request, HttpSession session) {
+		
+	    paramMap.putAll((Map)new MapSession(session));
+		return new JsonDataMap("ds_master", expConfigServiceMapper.searchGasPrice(paramMap));	
+	}	
+	
+//	그리드 저장
+	@Autowired
+    GasPriceService gasPriceService;
+    @ResponseBody
+    @RequestMapping(value = "/saveGasPrice", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Object>  saveGasPrice(@RequestBody Map paramMap, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+       
+      try {   
+        return gasPriceService.saveGasPrice(paramMap,request, response, session );
+      } catch (MyDuplicateKeyException e){
+          return new JsonResultMsgMap(false, e.getMessage() );
+      }catch (Exception e){
+          return new JsonResultMsgMap(false, e.getMessage() );
+      }
+   
+    } // save
+	
+	
+}
